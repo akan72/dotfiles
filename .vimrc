@@ -34,6 +34,8 @@ Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'ryanoasis/vim-devicons'
+Plug 'tpope/vim-fugitive'
+Plug 'vim-airline/vim-airline'
 
 call plug#end()
 
@@ -90,4 +92,12 @@ nmap <leader>gd <Plug>(coc-definition)
 nmap <leader>gt <Plug>(coc-type-definition)
 nmap <leader>gr <Plug>(coc-references)
 nmap <leader>rr <Plug>(coc-rename)
+
+" Git fugitive
+" Choose LHS file when resolving a merge conflict
+nmap <leader>gf :diffget //3<CR>
+" Choose RHS file when resolving a merge conflict
+nmap <leader>gh :diffget //2<CR>
+" Run git status
+nmap <leader>gs :G<CR>
 
