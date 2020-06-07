@@ -17,9 +17,8 @@ set colorcolumn=80
 " Disables automatic commenting on newline:
 set formatoptions=cro
 
-" Automatically delete all trailing whitespace and newlines on save
+" Automatically delete all trailing whitespace on save
 autocmd BufWritePre * %s/\s\+$//e
-autocmd BufWritepre * %s/\n\+\%$//e
 
 " Vim plug call
 call plug#begin('~/.vim/.plugged')
@@ -64,7 +63,7 @@ nnoremap <leader>f :NERDTreeToggle<CR>
 let NERDTreeMinimalUI = 1
 let NERDTreeDirArrows = 1
 
-" NERDTre File highlighting by color
+" NERDTree File highlighting by color
 function! NERDTreeHighlightFile(extension, fg, bg, guifg, guibg)
     exec 'autocmd filetype nerdtree highlight ' . a:extension .' ctermbg='. a:bg .' ctermfg='. a:fg .' guibg='. a:guibg .' guifg='. a:guifg
     exec 'autocmd filetype nerdtree syn match ' . a:extension .' #^\s\+.*'. a:extension .'$#'
@@ -90,3 +89,10 @@ autocmd VimEnter * wincmd p
 
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" CoC
+nmap <leader>gd <Plug>(coc-definition)
+nmap <leader>gt <Plug>(coc-type-definition)
+nmap <leader>gr <Plug>(coc-references)
+nmap <leader>rr <Plug>(coc-rename)
+
