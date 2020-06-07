@@ -12,10 +12,16 @@ set noswapfile
 set relativenumber
 set incsearch
 set showmatch
-
 set colorcolumn=80
 
-" Vim plug 
+" Disables automatic commenting on newline:
+set formatoptions=cro
+
+" Automatically delete all trailing whitespace and newlines on save
+autocmd BufWritePre * %s/\s\+$//e
+autocmd BufWritepre * %s/\n\+\%$//e
+
+" Vim plug call
 call plug#begin('~/.vim/.plugged')
 
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
@@ -79,9 +85,8 @@ endfunction
     call NERDTreeHighlightFile('php', 'Magenta', 'none', '#ff00ff', '#151515')
 
 " Automatically open nerdtree on startup, but move cursor to main window
-autocmd VimEnter * NERDTree 
+autocmd VimEnter * NERDTree
 autocmd VimEnter * wincmd p
 
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
