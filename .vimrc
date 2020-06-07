@@ -15,6 +15,7 @@ set showmatch
 
 set colorcolumn=80
 
+" Vim plug 
 call plug#begin('~/.vim/.plugged')
 
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
@@ -26,31 +27,38 @@ Plug 'Xuyuanp/nerdtree-git-plugin'
 
 call plug#end()
 
+" Setting colorscheme
 colorscheme gruvbox
 let g:gruvbox_contrast_dark = 'hard'
 set background=dark
 
+" Yank to clipboard with ctrl-c
 vmap <C-c> "+y
-let mapleader = "\<Space>"
+
+" Window resizing
 let g:netrw_browse_split = 2
 let g:netrw_winsize = 25
 let g:netrw_banner = 0
+
+" Reassign leader to space
+let mapleader = "\<Space>"
 
 " Append and prepend blank lines with <leader>?<Enter>
 nnoremap <Enter> :call append(line('.'), '')<CR>
 nnoremap <leader><Enter> :call append(line('.')-1, '')<CR>
 
+"  Navigate between windows with movement keys
 nnoremap <leader>h :wincmd h<CR>
 nnoremap <leader>j :wincmd j<CR>
 nnoremap <leader>k :wincmd k<CR>
 nnoremap <leader>l :wincmd l<CR>
 
+" Nerdtree
 nnoremap <leader>f :NERDTreeToggle<CR>
-" let g:NERDTreeChDirMode = 2
 let NERDTreeMinimalUI = 1
 let NERDTreeDirArrows = 1
 
-" NERDTress File highlighting
+" NERDTre File highlighting by color
 function! NERDTreeHighlightFile(extension, fg, bg, guifg, guibg)
     exec 'autocmd filetype nerdtree highlight ' . a:extension .' ctermbg='. a:bg .' ctermfg='. a:fg .' guibg='. a:guibg .' guifg='. a:guifg
     exec 'autocmd filetype nerdtree syn match ' . a:extension .' #^\s\+.*'. a:extension .'$#'
@@ -66,7 +74,7 @@ endfunction
     call NERDTreeHighlightFile('html', 'yellow', 'none', 'yellow', '#151515')
     call NERDTreeHighlightFile('styl', 'cyan', 'none', 'cyan', '#151515')
     call NERDTreeHighlightFile('css', 'cyan', 'none', 'cyan', '#151515')
-    call NERDTreeHighlightFile('coffee', 'Red', 'none', 'red', '#151515')
+    call NERDTreeHighlightFile('py', 'Red', 'none', 'red', '#151515')
     call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
     call NERDTreeHighlightFile('php', 'Magenta', 'none', '#ff00ff', '#151515')
 
@@ -76,7 +84,4 @@ autocmd VimEnter * wincmd p
 
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
-
-" Remove preview window in jedi-vim
-" autocmd FileType python setlocal completeopt-=preview
 
