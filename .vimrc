@@ -1,4 +1,6 @@
-syntax on
+if !exists('g:syntax_on')
+    syntax enable
+endif
 
 set noerrorbells
 set tabstop=4 softtabstop=4
@@ -13,6 +15,7 @@ set relativenumber
 set incsearch
 set showmatch
 set colorcolumn=80
+set encoding=UTF-8
 
 " Disables automatic commenting on newline:
 set formatoptions=cro
@@ -29,6 +32,8 @@ Plug 'flazz/vim-colorschemes'
 Plug 'ervandew/supertab'
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
+Plug 'ryanoasis/vim-devicons'
 
 call plug#end()
 
@@ -63,32 +68,22 @@ nnoremap <leader>f :NERDTreeToggle<CR>
 let NERDTreeMinimalUI = 1
 let NERDTreeDirArrows = 1
 
-" NERDTree File highlighting by color
-function! NERDTreeHighlightFile(extension, fg, bg, guifg, guibg)
-    exec 'autocmd filetype nerdtree highlight ' . a:extension .' ctermbg='. a:bg .' ctermfg='. a:fg .' guibg='. a:guibg .' guifg='. a:guifg
-    exec 'autocmd filetype nerdtree syn match ' . a:extension .' #^\s\+.*'. a:extension .'$#'
-endfunction
-
-    call NERDTreeHighlightFile('jade', 'green', 'none', 'green', '#151515')
-    call NERDTreeHighlightFile('ini', 'yellow', 'none', 'yellow', '#151515')
-    call NERDTreeHighlightFile('md', 'blue', 'none', '#3366FF', '#151515')
-    call NERDTreeHighlightFile('yml', 'yellow', 'none', 'yellow', '#151515')
-    call NERDTreeHighlightFile('config', 'yellow', 'none', 'yellow','#151515')
-    call NERDTreeHighlightFile('conf', 'yellow', 'none', 'yellow', '#151515')
-    call NERDTreeHighlightFile('json', 'yellow', 'none', 'yellow', '#151515')
-    call NERDTreeHighlightFile('html', 'yellow', 'none', 'yellow', '#151515')
-    call NERDTreeHighlightFile('styl', 'cyan', 'none', 'cyan', '#151515')
-    call NERDTreeHighlightFile('css', 'cyan', 'none', 'cyan', '#151515')
-    call NERDTreeHighlightFile('py', 'Red', 'none', 'red', '#151515')
-    call NERDTreeHighlightFile('js', 'Red', 'none', '#ffa500', '#151515')
-    call NERDTreeHighlightFile('php', 'Magenta', 'none', '#ff00ff', '#151515')
-
 " Automatically open nerdtree on startup, but move cursor to main window
 autocmd VimEnter * NERDTree
 autocmd VimEnter * wincmd p
 
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+
+" Devicons
+if exists("g:loaded_webdevicons")
+    call webdevicons#refresh()
+endif
+
+" Highling full name with same color as devicon
+let g:NERDTreeFileExtensionHighlightFullName = 1
+let g:NERDTreeExactMatchHighlightFullName = 1
+let g:NERDTreePatternMatchHighlightFullName = 1
 
 " CoC
 nmap <leader>gd <Plug>(coc-definition)
