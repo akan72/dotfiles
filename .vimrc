@@ -93,7 +93,7 @@ autocmd VimEnter * wincmd p
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
 " Close all buffers when running :q in NERDTree
-autocmd FileType nerdtree nnoremap <buffer>:q :qa<CR>
+autocmd FileType nerdtree nnoremap <buffer>:q :qa
 
 " Devicons
 if exists("g:loaded_webdevicons")
@@ -117,8 +117,19 @@ nmap <leader>gh :diffget //2<CR>
 nmap <leader>gs :vertical belowright G<CR>
 nmap <leader>gc :Gcommit<CR>
 nmap <leader>gp :Gpush<CR>
-nmap <leader>gd :NERDTreeToggle<CR>:Gdiffsplit<CR>
 
-" Close fugitive windows with q
+" Close fugitive status with q
 autocmd FileType fugitive nnoremap <buffer>q :q<CR>
+
+" Open a vertical diffsplit, close NERDTree and remove gray foldcolumn bar
+nmap <leader>gd :NERDTreeClose<CR>:Gdiffsplit<CR>:set foldcolumn=0<CR>
+
+" TODO: Close a fugitive diff window with <leader>gd instead of gD
+" Close diff buffer and switch to working directory version of a file
+nnoremap <Leader>gD :diffoff!<CR><C-W>h:bd<CR>:NERDTreeToggle<CR>:wincmd l<CR>
+
+" Prevent gray bar from appearing after toggling NERDTree and Gdiffsplit
+" TODO: Set/reset foldcolumn when externing and exiting diff window
+set foldcolumn=0
+set signcolumn=no
 
