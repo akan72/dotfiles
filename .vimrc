@@ -19,7 +19,8 @@ set encoding=utf-8
 set fileencodings=utf-8
 
 " Disables automatic commenting on newline:
-set formatoptions=cro
+set formatoptions-=cro
+
 " Automatically delete all trailing whitespace on save
 autocmd BufWritePre * %s/\s\+$//e
 
@@ -89,9 +90,9 @@ let g:NERDTreeExactMatchHighlightFullName = 1
 let g:NERDTreePatternMatchHighlightFullName = 1
 
 " CoC
-nmap <leader>gd <Plug>(coc-definition)
-nmap <leader>gt <Plug>(coc-type-definition)
-nmap <leader>gr <Plug>(coc-references)
+nmap <leader>jd <Plug>(coc-definition)
+nmap <leader>jt <Plug>(coc-type-definition)
+nmap <leader>jr <Plug>(coc-references)
 nmap <leader>rr <Plug>(coc-rename)
 
 " Git fugitive
@@ -101,8 +102,12 @@ nmap <leader>gf :diffget //3<CR>
 " Choose RHS file when resolving a merge conflict
 nmap <leader>gh :diffget //2<CR>
 
-" Git status, commit, and push
+" Create mappings for Git status, commit, push, and diff
 nmap <leader>gs :G<CR>
 nmap <leader>gc :Gcommit<CR>
 nmap <leader>gp :Gpush<CR>
+nmap <leader>gd :Gdiffsplit<CR>
+
+" Enable vertical diff splits
+set diffopt=vertical
 
