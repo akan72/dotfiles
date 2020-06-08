@@ -14,12 +14,12 @@ set noswapfile
 set relativenumber
 set incsearch
 set showmatch
-set colorcolumn=80
-set encoding=UTF-8
+set colorcolumn=125
+set encoding=utf-8
+set fileencodings=utf-8
 
 " Disables automatic commenting on newline:
 set formatoptions=cro
-
 " Automatically delete all trailing whitespace on save
 autocmd BufWritePre * %s/\s\+$//e
 
@@ -30,6 +30,7 @@ Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'VundleVim/Vundle.vim'
 Plug 'flazz/vim-colorschemes'
 Plug 'ervandew/supertab'
+
 Plug 'preservim/nerdtree'
 Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
@@ -96,8 +97,12 @@ nmap <leader>rr <Plug>(coc-rename)
 " Git fugitive
 " Choose LHS file when resolving a merge conflict
 nmap <leader>gf :diffget //3<CR>
+
 " Choose RHS file when resolving a merge conflict
 nmap <leader>gh :diffget //2<CR>
-" Run git status
+
+" Git status, commit, and push
 nmap <leader>gs :G<CR>
+nmap <leader>gc :Gcommit<CR>
+nmap <leader>gp :Gpush<CR>
 
