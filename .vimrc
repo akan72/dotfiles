@@ -6,7 +6,6 @@ set noerrorbells
 set tabstop=4 softtabstop=4
 set shiftwidth=4
 set expandtab
-set smartindent
 set nu
 set nowrap
 set smartcase
@@ -17,6 +16,11 @@ set showmatch
 set colorcolumn=125
 set encoding=utf-8
 set fileencodings=utf-8
+set autoindent
+filetype plugin indent on
+
+" Yank to clipboard with ctrl-c
+set clipboard=unnamed
 
 " Disables automatic commenting on newline:
 set formatoptions-=cro
@@ -45,9 +49,6 @@ call plug#end()
 colorscheme gruvbox
 let g:gruvbox_contrast_dark = 'hard'
 set background=dark
-
-" Yank to clipboard with ctrl-c
-vmap <C-c> "+y
 
 " Window resizing
 let g:netrw_browse_split = 2
@@ -103,7 +104,7 @@ nmap <leader>gf :diffget //3<CR>
 nmap <leader>gh :diffget //2<CR>
 
 " Create mappings for Git status, commit, push, and diff
-nmap <leader>gs :G<CR>
+nmap <leader>gs :vertical belowright G<CR>
 nmap <leader>gc :Gcommit<CR>
 nmap <leader>gp :Gpush<CR>
 nmap <leader>gd :Gdiffsplit<CR>
