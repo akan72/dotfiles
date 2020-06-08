@@ -8,11 +8,12 @@ set shiftwidth=4
 set expandtab
 set nu
 set nowrap
-set smartcase
+set ignorecase smartcase
 set noswapfile
 set relativenumber
 set incsearch
 set showmatch
+set diffopt=vertical
 set colorcolumn=125
 set encoding=utf-8
 set fileencodings=utf-8
@@ -58,6 +59,9 @@ let g:netrw_banner = 0
 " Reassign leader to space
 let mapleader = "\<Space>"
 
+" Clear highlighting by presssing <Leader><space>
+nnoremap <Leader><space> :noh<cr>
+
 " Append and prepend blank lines with <leader>?<Enter>
 nnoremap <Enter> :call append(line('.'), '')<CR>
 nnoremap <leader><Enter> :call append(line('.')-1, '')<CR>
@@ -68,10 +72,18 @@ nnoremap <leader>j :wincmd j<CR>
 nnoremap <leader>k :wincmd k<CR>
 nnoremap <leader>l :wincmd l<CR>
 
+" Enable top-down cycling for SuperTab
+let g:SuperTabDefaultCompletionType = "<c-n>"
+
 " Nerdtree
 nnoremap <leader>f :NERDTreeToggle<CR>
 let NERDTreeMinimalUI = 1
 let NERDTreeDirArrows = 1
+
+" Highlighting full name with same color as devicon
+let g:NERDTreeFileExtensionHighlightFullName = 1
+let g:NERDTreeExactMatchHighlightFullName = 1
+let g:NERDTreePatternMatchHighlightFullName = 1
 
 " Automatically open nerdtree on startup, but move cursor to main window
 autocmd VimEnter * NERDTree
@@ -80,15 +92,13 @@ autocmd VimEnter * wincmd p
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
+" Close all buffers when running :q in NERDTree
+autocmd FileType nerdtree nnoremap <buffer>:q :qa<CR>
+
 " Devicons
 if exists("g:loaded_webdevicons")
     call webdevicons#refresh()
 endif
-
-" Highling full name with same color as devicon
-let g:NERDTreeFileExtensionHighlightFullName = 1
-let g:NERDTreeExactMatchHighlightFullName = 1
-let g:NERDTreePatternMatchHighlightFullName = 1
 
 " CoC
 nmap <leader>jd <Plug>(coc-definition)
@@ -107,8 +117,8 @@ nmap <leader>gh :diffget //2<CR>
 nmap <leader>gs :vertical belowright G<CR>
 nmap <leader>gc :Gcommit<CR>
 nmap <leader>gp :Gpush<CR>
-nmap <leader>gd :Gdiffsplit<CR>
+nmap <leader>gd :NERDTreeToggle<CR>:Gdiffsplit<CR>
 
-" Enable vertical diff splits
-set diffopt=vertical
+" Close fugitive windows with q
+autocmd FileType fugitive nnoremap <buffer>q :q<CR>
 
