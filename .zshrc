@@ -18,7 +18,7 @@ DISABLE_MAGIC_FUNCTIONS=false
 
 ENABLE_CORRECTION="true"
 HIST_STAMPS="mm/dd/yyyy"
-COMPLETION_WAITING_DOTS="true"
+COMPLETION_WAITING_DOTS="false"
 
 # Plugins
 plugins=(git)
