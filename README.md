@@ -22,7 +22,7 @@ echo "alias config='/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME'" >> $H
 
 Where `<shell_config_file>` is `.bashrc` or `.zshrc` etc.
 
-## Installing on a New System
+## Installation
 
 Make sure that your shell is configured for the correct alias by running:
 
