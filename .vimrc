@@ -36,16 +36,18 @@ autocmd BufWritePre * %s/\s\+$//e
 " Vim plug call
 call plug#begin('~/.vim/.plugged')
 
-Plug 'neoclide/coc.nvim', {'branch': 'release'}
 Plug 'VundleVim/Vundle.vim'
 Plug 'flazz/vim-colorschemes'
+
 Plug 'ervandew/supertab'
+Plug 'neoclide/coc.nvim', {'branch': 'release'}
 
 Plug 'preservim/nerdtree'
+Plug 'tpope/vim-fugitive'
 Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
+
 Plug 'ryanoasis/vim-devicons'
-Plug 'tpope/vim-fugitive'
 Plug 'vim-airline/vim-airline'
 
 call plug#end()
@@ -130,4 +132,18 @@ nmap <leader>gf :diffget //3<CR>
 
 " Choose RHS file when resolving a merge conflict
 nmap <leader>gh :diffget //2<CR>
+
+" Airline
+let g:airline_powerline_fonts = 1
+
+ "Add NERDTree name to its buffer
+let g:airline_filetype_overrides = {
+    \ 'nerdtree': [ get(g:, 'NERDTreeStatusline', 'NERDTree'), '' ],
+    \ }
+
+" Truncate all path settings except the last
+let g:airline#extensions#branch#format = 2
+
+ " Skip utf-8[unix] string
+let g:airline#parts#ffenc#skip_expected_string='utf-8[unix]'
 
