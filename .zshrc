@@ -30,13 +30,32 @@ source $ZSH/oh-my-zsh.sh
  if [[ -n $SSH_CONNECTION ]]; then
    export EDITOR='vim'
  else
-   export EDITOR='mvim'
+   export EDITOR='nvim'
  fi
 
 # Aliases
 alias vi=nvim
 alias python=python3
 alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
+
+alias jpn='jupyter notebook'
+
+alias gs='git status'
+alias gf='git fetch'
+alias gm='git merge'
+alias ga='git add'
+alias gb='git branch'
+alias gc='git commit'
+alias gck='git checkout'
+alias gd='git diff'
+alias gca='git commit -a'
+alias gcm='git commit -m'
+alias gcam='git commit -am'
+alias gcaa='git commit -a --amend -C HEAD'
+alias gg='git grep'
+alias glo='git log'
+alias gl='git pull'
+alias gp='git push'
 
 # PySpark config
 export HADOOP_HOME=~/spark/hadoop-2.7.7
