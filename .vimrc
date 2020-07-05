@@ -91,6 +91,7 @@ Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 
 Plug 'ryanoasis/vim-devicons'
 Plug 'vim-airline/vim-airline'
+Plug 'sheerun/vim-polyglot'
 
 call plug#end()
 
@@ -202,4 +203,8 @@ highlight GitGutterDelete guifg=#ff2222 ctermfg=1
 
 " Turn off sign column within Nerdtree
 autocmd filetype nerdtree setlocal signcolumn=no
+
+" Vim polyglot
+" Prevent space highlighting
+let g:python_highlight_space_errors = 0
 
