@@ -35,7 +35,8 @@ source $ZSH/oh-my-zsh.sh
 
 # Aliases
 alias vi=nvim
-alias python=python3
+alias python='python3.8'
+alias pip='pip3'
 alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
 
 alias jpn='jupyter notebook'
@@ -87,4 +88,6 @@ else
 fi
 unset __conda_setup
 # <<< conda initialize <<<
+
+export AIRFLOW_HOME=~/airflow
 
