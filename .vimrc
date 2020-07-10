@@ -50,8 +50,9 @@ set matchtime=3
 " Enable vertical diff splits
 set diffopt=vertical
 
-" Add vertical column for Github max file length
+" Add vertical column for PEP 8 and Github max file length
 set colorcolumn=125
+autocmd BufNewFile,BufRead *.py set colorcolumn=80,125
 
 " Automatically set 'filetype' option, add filetype's plugin and indent files to runtime path
 filetype plugin indent on
