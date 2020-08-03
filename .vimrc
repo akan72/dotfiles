@@ -122,6 +122,10 @@ nnoremap <leader>j :wincmd j<CR>
 nnoremap <leader>k :wincmd k<CR>
 nnoremap <leader>l :wincmd l<CR>
 
+" Center current search result to middle of screen
+nnoremap n nzz
+nnoremap N Nzz
+
 " Enable top-down cycling for SuperTab
 let g:SuperTabDefaultCompletionType = "<c-n>"
 
