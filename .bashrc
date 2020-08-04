@@ -10,9 +10,10 @@ export LANG='en_US.UTF-8'
 # ----
 # Aliases
 
-# dotfiles repo
+# general
 alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
 alias vi=nvim
+alias d=docker
 
 # python
 alias python='python3.8'
@@ -39,6 +40,16 @@ alias gl='git pull'
 alias gp='git push'
 
 # hg
+alias hs='hg status'
+alias hc='hg commit'
+alias ha='hg amend'
+alias hd='hg diff'
+alias hl='hg log'
+alias hu='hg update'
+alias hp='hg prev'
+alias hn='hg next'
+alias ht='hg top'
+alias hb='hg bottom'
 
 # ---
 # Applications
