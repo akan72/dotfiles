@@ -83,6 +83,8 @@ Plug 'flazz/vim-colorschemes'
 
 Plug 'ervandew/supertab'
 Plug 'neoclide/coc.nvim', {'branch': 'release'}
+Plug 'junegunn/fzf', {'do': { -> fzf#install() } }
+Plug 'junegunn/fzf.vim'
 
 Plug 'preservim/nerdtree'
 Plug 'tpope/vim-fugitive'
@@ -121,6 +123,13 @@ nnoremap <leader>h :wincmd h<CR>
 nnoremap <leader>j :wincmd j<CR>
 nnoremap <leader>k :wincmd k<CR>
 nnoremap <leader>l :wincmd l<CR>
+
+" Search helpdocs for word under cursor
+nnoremap <leader>ghw :h <C-R>=expand("<cword>")<CR><CR>
+
+" CoC and Ripgrep searches
+nnoremap <leader>prw :CocSearch <C-R>=expand("<cword>")<CR><CR>
+nnoremap <leader>pw :Rg <C-R>=expand("<cword>")<CR><CR>
 
 " Center current search result to middle of screen
 nnoremap n nzz
@@ -212,4 +221,10 @@ autocmd filetype nerdtree setlocal signcolumn=no
 " Vim polyglot
 " Prevent space highlighting
 let g:python_highlight_space_errors = 0
+
+" fzf
+nnoremap <silent> <C-p> :FZF<CR>
+
+let g:fzf_layout = {'window': { 'width': 0.8, 'height': 0.8 } }
+let $FZF_DEFAULT_OPS='--reverse'
 
