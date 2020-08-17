@@ -148,10 +148,6 @@ let g:NERDTreeFileExtensionHighlightFullName = 1
 let g:NERDTreeExactMatchHighlightFullName = 1
 let g:NERDTreePatternMatchHighlightFullName = 1
 
-" Automatically open nerdtree on startup, but move cursor to main window
-autocmd VimEnter * NERDTree
-autocmd VimEnter * wincmd p
-
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
