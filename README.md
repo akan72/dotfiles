@@ -48,3 +48,28 @@ config config --local status.showUntrackedFiles no
 
 An error may occur when calling `config checkout` if local dotfiles are being overwritten; to prevent this make sure to delete the original files or back them up in a temporary directory.
 
+## Checklist
+
+- General: Automatically Hide and Show the Menu Bar -> True
+- Keyboard: Key Repeat -> Fast
+- Keyboard: Delay Until Repeat -> Short
+- Trackpad: Tracking Speed -> 4th tick
+- Trackpad: Click -> Light
+- Install Chrome
+- Chrome: Settings -> Manage Passwords -> Disable offer to manage passwords
+- Install Lastpass and log in
+- Spotlight: Set default shortcut to `cmd + shift + space`
+- Install Alfred
+- Alfred: Add License
+- Alfred: Set the default shortcut to `cmd + space`
+- Alfred Clipboard history: enable text + image + file lists
+- Install VSCode
+- Install IntelliJ IDEA
+- Terminal: set default theme to Dark Background
+- Install ohmyzsh
+- Install brew
+- brew install tmux
+- ITerm2: Preferences -> Profiles -> General -> Send Text at Start: -> `tmux new`
+- Install Karabiner
+- Install Hammerspoon
+
