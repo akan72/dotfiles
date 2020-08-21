@@ -33,6 +33,7 @@ sym gitconfig           .gitconfig
 sym tmux.conf           .tmux.conf
 sym zshrc               .zshrc
 sym karabiner           .config/karabiner
+sym vimrc               .vimrc
 sym nvim                .config/nvim
 sym hammerspoon         .hammerspoon
 sym code_settings.json  .vscode/settings.json
