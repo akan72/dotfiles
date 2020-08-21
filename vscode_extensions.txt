@@ -1,0 +1,24 @@
+Anaconda Extension Pack
+Bracket Pair Colorizer 2
+Code Spell Checker
+Docker
+GitLens
+Gruvbox Theme
+Jinja
+Markdown All in One
+markdownlint
+Material Icon Theme
+Python
+Python Indent
+Scala (Metals)
+Scala (sbt)
+Scala Language Server
+Scala Syntax (official)
+SynthWave '84
+TabOut
+TODO Highlight
+Vim
+Visual Studio IntelliCode
+vscode-pdf
+YAML
+

@@ -14,6 +14,7 @@
 - Alfred: Set the default shortcut to `cmd + space`
 - Alfred Clipboard history: enable text + image + file lists
 - Install VSCode
+- Install extensions from vscode_extensions.txt
 - Install IntelliJ IDEA
 - Terminal: set default theme to Dark Background
 - Install ohmyzsh
