@@ -111,7 +111,7 @@ let g:netrw_banner = 0
 " Reassign <leader> to space
 let mapleader = "\<Space>"
 
-" Clear highlighting by presssing <Leader><space>
+" Clear highlighting by presssing <leader><leader>
 nnoremap <leader><leader> :noh<cr>
 
 " Append and prepend blank lines with <leader>?<Enter>
@@ -132,8 +132,14 @@ nnoremap <leader>prw :CocSearch <C-R>=expand("<cword>")<CR><CR>
 nnoremap <leader>pw :Rg <C-R>=expand("<cword>")<CR><CR>
 
 " Center current search result to middle of screen
-nnoremap n nzz
-nnoremap N Nzz
+nnoremap n nzzzv
+nnoremap N Nzzzv
+
+" Center merged lines
+nnoremap J mzJ`z
+
+" Make Y behave like other capital letters
+nnoremap Y y$
 
 " Enable top-down cycling for SuperTab
 let g:SuperTabDefaultCompletionType = "<c-n>"
