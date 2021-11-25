@@ -25,7 +25,11 @@ HIST_STAMPS="mm/dd/yyyy"
 COMPLETION_WAITING_DOTS="false"
 
 # Plugins
-plugins=(git)
+plugins=(
+    git
+    zsh-autosuggestions
+)
+
 
 source $ZSH/oh-my-zsh.sh
 

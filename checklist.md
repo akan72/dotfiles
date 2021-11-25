@@ -18,6 +18,7 @@
 - Install IntelliJ IDEA
 - Terminal: set default theme to Dark Background
 - Install ohmyzsh
+- Install zsh plugins
 - Install brew
 - brew install tmux
 - ITerm2: Preferences -> Profiles -> General -> Send Text at Start: -> `tmux new`
