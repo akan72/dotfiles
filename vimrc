@@ -141,6 +141,16 @@ nnoremap J mzJ`z
 " Make Y behave like other capital letters
 nnoremap Y y$
 
+" In Visual mode, move and properly indent selections together
+vnoremap J :m '>+1<CR>gv=gv
+vnoremap K :m '<-2<CR>gv=gv
+inoremap <C-j> <esc>:m .+1<CR>==
+inoremap <C-k> <esc>:m .-2<CR>==
+
+" Move entire lines down/upa with leader j/k nnoremap <leader>j :m .+1<CR>== nnoremap <leader>k :m .-2<CR>==
+nnoremap <leader>j :m .+1<CR>==
+nnoremap <leader>k :m .-2<CR>==
+
 " Enable top-down cycling for SuperTab
 let g:SuperTabDefaultCompletionType = "<c-n>"
 
