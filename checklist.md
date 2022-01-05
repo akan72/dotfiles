@@ -22,6 +22,5 @@
 - Install brew
 - brew install tmux
 - ITerm2: Preferences -> Profiles -> General -> Send Text at Start: -> `tmux new`
-- Install Karabiner
 - Install Hammerspoon
 
