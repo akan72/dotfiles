@@ -74,9 +74,6 @@ export PYSPARK_DRIVER_PYTHON_OPTS='notebook'
 # airflow
 export AIRFLOW_HOME=~/airflow
 
-# haskell
-[ -f "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}/.ghcup/env" ] && source "${GHCUP_INSTALL_BASE_PREFIX:=$HOME}/.ghcup/env"
-
 # flask
 export FLASK_APP=src/app/__init__.py
 export FLASK_ENV=development
