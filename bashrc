@@ -20,6 +20,9 @@ alias dc=docker-compose
 alias python='python3.8'
 alias pip='pip3'
 alias jpn='jupyter notebook'
+function ver {
+    pip list | grep $1
+}
 
 # git
 alias g='git status'
