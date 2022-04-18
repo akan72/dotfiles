@@ -13,6 +13,7 @@ export LANG='en_US.UTF-8'
 # general
 alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
 alias vi=nvim
+alias vim=nvim
 alias d=docker
 alias dc=docker-compose
 
