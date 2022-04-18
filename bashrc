@@ -18,7 +18,7 @@ alias d=docker
 alias dc=docker-compose
 
 # python
-alias python='python3.8'
+alias python='python3'
 alias pip='pip3'
 alias jpn='jupyter notebook'
 function ver {
