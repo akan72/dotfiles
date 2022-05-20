@@ -56,6 +56,10 @@ alias hn='hg next'
 alias ht='hg top'
 alias hb='hg bottom'
 
+# kube
+alias k='kubectl'
+alias kc='kubectl config'
+
 # ---
 # Applications
 
