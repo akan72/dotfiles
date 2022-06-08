@@ -14,8 +14,11 @@ export LANG='en_US.UTF-8'
 alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
 alias vi=nvim
 alias vim=nvim
+
+# Docker
 alias d=docker
 alias dc=docker-compose
+alias docker_rmi_dangling="docker rmi $(docker images -qa -f 'dangling=true')"
 
 # python
 alias python='python3.9'
