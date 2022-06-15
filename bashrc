@@ -60,8 +60,8 @@ alias ht='hg top'
 alias hb='hg bottom'
 
 # kube
-alias k='kubectl'
-alias kc='kubectl config'
+alias ku='kubectl'
+alias kuc='kubectl config'
 
 # ---
 # Applications
