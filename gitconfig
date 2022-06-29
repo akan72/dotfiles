@@ -1,3 +1,17 @@
 [user]
 	email = lexokan@gmail.com
 	name = Alex Kan
+	username = akan72
+
+[core]
+	editor = nvim
+
+[diff]
+	tool = vimdiff
+
+[pager]
+	branch = cat
+
+[web]
+	browser = google-chrome
+
