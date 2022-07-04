@@ -72,9 +72,16 @@ set updatetime=100
 " Turn on sign column by default
 set signcolumn=yes
 
-" Highlight current line
-set cursorline
-:highlight Cursorline cterm=bold ctermbg=black
+" Keep around buffers
+set hidden
+
+" Undodir
+set undodir=~/.vim/undodir
+set undofile
+
+" Turn on automatic scrolling
+set scrolloff=8
+
 
 " Automatically delete all trailing whitespace on save
 autocmd BufWritePre * %s/\s\+$//e
@@ -195,10 +202,10 @@ nmap <leader>gs :vertical belowright G<CR>
 autocmd FileType fugitive nnoremap <buffer>q :q<CR>
 
 " Open a vertical diffsplit, close NERDTree and remove gray foldcolumn bar
-nmap <leader>gd :NERDTreeClose<CR>:Gdiffsplit<CR>:set foldcolumn=0<CR>
+nmap <leader>gd :NERDTreeClose<CR>:Gdiffsplit<CR>:set foldcolumn=0<CR>:wincmd l<CR>
 
 " Close diff buffer and switch to working directory version of a file
-nnoremap <Leader>gD :diffoff!<CR><C-W>h:bd<CR>:NERDTreeToggle<CR>:wincmd l<CR>
+nnoremap <Leader>gD :diffoff!<CR><C-W>h:bd<CR>
 
 " Choose LHS file when resolving a merge conflict
 nmap <leader>gf :diffget //3<CR>
@@ -237,6 +244,10 @@ autocmd filetype nerdtree setlocal signcolumn=no
 " Vim polyglot
 " Prevent space highlighting
 let g:python_highlight_space_errors = 0
+
+" Highlight current line
+set cursorline
+:highlight Cursorline cterm=bold ctermbg=black
 
 " fzf
 nnoremap <silent> <C-p> :FZF<CR>
