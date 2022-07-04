@@ -16,9 +16,9 @@ alias vi=nvim
 alias vim=nvim
 
 # Docker
-alias d=docker
-alias dc=docker-compose
-alias docker_rmi_dangling="docker rmi $(docker images -qa -f 'dangling=true')"
+alias d='docker'
+alias dc='docker compose'
+alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true')'
 
 # python
 alias python='python3.9'
@@ -65,10 +65,6 @@ alias kuc='kubectl config'
 
 # ---
 # Applications
-
-# flask
-export FLASK_APP=src/app/__init__.py
-export FLASK_ENV=development
 
 # nvm
 export NVM_DIR="$HOME/.nvm"
