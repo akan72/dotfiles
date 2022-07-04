@@ -72,6 +72,10 @@ set updatetime=100
 " Turn on sign column by default
 set signcolumn=yes
 
+" Highlight current line
+set cursorline
+:highlight Cursorline cterm=bold ctermbg=black
+
 " Automatically delete all trailing whitespace on save
 autocmd BufWritePre * %s/\s\+$//e
 
