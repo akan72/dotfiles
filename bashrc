@@ -46,6 +46,8 @@ alias gg='git grep'
 alias glo='git log'
 alias gl='git pull'
 alias gp='git push'
+alias gdm='git diff master'
+alias gdnm='git diff --name-only master'
 
 # hg
 alias hs='hg status'
