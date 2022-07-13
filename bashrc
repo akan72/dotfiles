@@ -79,3 +79,10 @@ export PATH="$HOME/opt/anaconda3/bin:$PATH"
 # sops
 export PATH="$PATH:~/Downloads/sops-3.7.2"
 
+# Homebrew
+# Intel Path
+export PATH="/usr/local/bin:${PATH}"
+
+# ARM/M1 Path
+export PATH="/opt/homebrew/bin:${PATH}"
+
