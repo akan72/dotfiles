@@ -31,3 +31,5 @@
 [web]
 	browser = google-chrome
 
+[push]
+	autoSetupRemote = true
