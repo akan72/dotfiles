@@ -14,8 +14,8 @@ WORKDIR /$workdir
 
 COPY . .
 
-RUN pip3 install jupyter --no-cache-dir
-RUN pip3 install -r requirements.txt --no-cache-dir
+RUN pip3 install jupyter
+RUN pip3 install -r requirements.txt
 
 ENV PYTHONPATH "${PYTHONPATH}:/${workdir}"
 
