@@ -18,6 +18,7 @@ alias vim=nvim
 # Docker
 alias d='docker'
 alias dc='docker compose'
+alias dcup='docker compose up'
 alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true')'
 
 # python
