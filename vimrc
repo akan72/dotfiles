@@ -106,6 +106,7 @@ Plug 'tiagofumo/vim-nerdtree-syntax-highlight'
 Plug 'ryanoasis/vim-devicons'
 Plug 'vim-airline/vim-airline'
 Plug 'sheerun/vim-polyglot'
+Plug 'github/copilot.vim'
 
 call plug#end()
 
