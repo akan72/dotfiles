@@ -11,7 +11,7 @@ export LANG='en_US.UTF-8'
 # Aliases
 
 # general
-alias config='/usr/bin/git --git-dir=/Users/lexokan/.cfg/ --work-tree=/Users/lexokan'
+alias config="/usr/bin/git --git-dir=/Users/${USER}/.cfg/ --work-tree=/Users/${USER}"
 alias vi=nvim
 alias vim=nvim
 
@@ -22,8 +22,10 @@ alias dcup='docker compose up'
 alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true')'
 
 # python
-alias python='python3.9'
-alias pip='pip3'
+alias python='python3.10'
+alias python3='python3.10'
+alias pip='python3.10 -m pip'
+alias grepy='grep -r --include \*.py'
 alias jpn='jupyter notebook'
 function ver {
     pip list | grep $1
@@ -73,9 +75,6 @@ alias kuc='kubectl config'
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# anaconda
-export PATH="$HOME/opt/anaconda3/bin:$PATH"
 
 # sops
 export PATH="$PATH:~/Downloads/sops-3.7.2"
