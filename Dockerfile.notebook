@@ -1,0 +1,21 @@
+# Usage:
+#
+# Add Python deps to requirements.txt
+# docker-compose up --build
+#
+
+FROM python:3.10
+
+RUN apt update && apt install libpq-dev git --yes
+
+RUN mkdir -p /scripts
+
+WORKDIR /scripts
+
+COPY . .
+
+RUN pip3 install jupyter
+
+RUN pip3 install -r requirements.txt
+
+ENV PYTHONPATH "${PYTHONPATH}:/scripts"
