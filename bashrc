@@ -19,7 +19,7 @@ alias vim=nvim
 alias d='docker'
 alias dc='docker compose'
 alias dcup='docker compose up'
-alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true')'
+alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true') -f'
 
 # python
 alias python='python3.10'
