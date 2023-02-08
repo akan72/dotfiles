@@ -19,6 +19,7 @@ alias vim=nvim
 alias d='docker'
 alias dc='docker compose'
 alias dcup='docker compose up'
+alias dsp='docker system prune --all --force'
 alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true') -f'
 
 # python
@@ -85,4 +86,7 @@ export PATH="/usr/local/bin:${PATH}"
 
 # ARM/M1 Path
 export PATH="/opt/homebrew/bin:${PATH}"
+
+# dbt
+alias docs="dbt docs generate; dbt docs serve"
 
