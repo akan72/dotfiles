@@ -107,6 +107,7 @@ Plug 'ryanoasis/vim-devicons'
 Plug 'vim-airline/vim-airline'
 Plug 'sheerun/vim-polyglot'
 Plug 'github/copilot.vim'
+Plug 'wellle/context.vim'
 
 call plug#end()
 
@@ -171,6 +172,9 @@ nnoremap <leader>f :NERDTreeToggle<CR>
 let NERDTreeMinimalUI = 1
 let NERDTreeDirArrows = 1
 
+" Open file in Nerdtree
+map <leader>r :NERDTreeFind<CR>
+
 " Highlighting full name with same color as devicon
 let g:NERDTreeFileExtensionHighlightFullName = 1
 let g:NERDTreeExactMatchHighlightFullName = 1
@@ -179,8 +183,11 @@ let g:NERDTreePatternMatchHighlightFullName = 1
 " Automatically close nerdtree if it's the last buffer
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 
-" Close all buffers when running :q in NERDTree
-autocmd FileType nerdtree nnoremap <buffer>:q :qa
+" Automatically open nerdtree on start but move to main pane
+autocmd VimEnter * NERDTree | wincmd l
+
+" Close and save all buffers when running :q in NERDTree
+autocmd FileType nerdtree nnoremap <buffer>:q :wqa
 
 " Devicons
 if exists("g:loaded_webdevicons")
@@ -205,8 +212,9 @@ autocmd FileType fugitive nnoremap <buffer>q :q<CR>
 " Open a vertical diffsplit, close NERDTree and remove gray foldcolumn bar
 nmap <leader>gd :NERDTreeClose<CR>:Gdiffsplit<CR>:set foldcolumn=0<CR>:wincmd l<CR>
 
-" Close diff buffer and switch to working directory version of a file
-nnoremap <Leader>gD :diffoff!<CR><C-W>h:bd<CR>
+" Close diff buffer and switch to working directory version of a file.
+" Return back to original state with NERDTree open but with cursor in main pane.
+nnoremap <Leader>gD :diffoff!<CR><C-W>h:bd<CR>:NERDTreeToggle<CR>:wincmd l<CR>
 
 " Choose LHS file when resolving a merge conflict
 nmap <leader>gf :diffget //3<CR>
@@ -256,3 +264,5 @@ nnoremap <silent> <C-p> :FZF<CR>
 let g:fzf_layout = {'window': { 'width': 0.8, 'height': 0.8 } }
 let $FZF_DEFAULT_OPS='--reverse'
 
+" Context
+" let g:context_max_height = 5
