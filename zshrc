@@ -26,17 +26,24 @@ COMPLETION_WAITING_DOTS="false"
 
 # Plugins
 plugins=(
-    git
-    zsh-autosuggestions
+  git
+  zsh-autosuggestions
 )
 
+bindkey -e
+bindkey "^[begin" backward-word
+bindkey "^[end" forward-word
+
+bindkey "^[endline" end-of-line
+bindkey "^[beginline" beginning-of-line
 
 source $ZSH/oh-my-zsh.sh
 
 # Preferred editor for local and remote sessions
- if [[ -n $SSH_CONNECTION ]]; then
-   export EDITOR='vim'
- else
-   export EDITOR='nvim'
- fi
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
 
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
