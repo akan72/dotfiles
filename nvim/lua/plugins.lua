@@ -18,6 +18,14 @@ packer.startup(function()
         "iamcco/markdown-preview.nvim",
         run = function() vim.fn["mkdp#util#install"]() end,
     })
+    use "lukas-reineke/indent-blankline.nvim"
+    use {
+        'nvim-treesitter/nvim-treesitter',
+        run = function()
+            local ts_update = require('nvim-treesitter.install').update({ with_sync = true })
+            ts_update()
+        end,
+    }
   end
 )
 
@@ -39,3 +47,9 @@ require("nvim-tree").setup({
     dotfiles = true,
   },
 })
+require("indent_blankline").setup {
+    -- Turn on context by default
+    show_current_context = true,
+    show_current_context_start = true,
+}
+
