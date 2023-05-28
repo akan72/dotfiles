@@ -16,12 +16,7 @@ return require('packer').startup(function(use)
 			'nvim-tree/nvim-web-devicons', -- optional, for file icons
 		},
 		config = function()
-			require("nvim-tree").setup {
-				sort_by = "name",
-				view = {
-					adaptive_size = true,
-				}
-			}
+			require("akan72.plugins.nvim-tree")
 		end
 	}
 
@@ -35,12 +30,7 @@ return require('packer').startup(function(use)
 	use {
 		"lukas-reineke/indent-blankline.nvim",
 		config = function()
-			require("indent_blankline").setup {
-				show_indent_first_level = false,
-				-- Turn on context by default
-				show_curroffent_context = true,
-				show_current_context_start = true,
-			}
+			require("akan72.plugins.indent_blankline")
 		end
 	}
 
@@ -52,18 +42,7 @@ return require('packer').startup(function(use)
 			ts_update()
 		end,
 		config = function()
-			require("nvim-treesitter").setup {
-				ensure_installed = {
-					"lua",
-					"python",
-					"rust",
-					"sql",
-					"vim",
-				},
-				highlight = {
-					enable = true
-				},
-			}
+			require("akan72.plugins.nvim-treesitter")
 		end
 	}
 
