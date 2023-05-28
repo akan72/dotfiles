@@ -13,10 +13,15 @@
 - Alfred: Set the default shortcut to `cmd + space`
 - Alfred Clipboard history: enable text + image + file lists
 - Terminal: set default theme to Dark Background
-- Install ohmyzsh
+- Install [ohmyzsh](https://github.com/ohmyzsh/ohmyzsh)
 - Install zsh plugins
+    - [git](https://github.com/ohmyzsh/ohmyzsh/tree/master/plugins/git)
+    - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions/blob/master/INSTALL.md)
 - Install [nerd-fonts](https://github.com/ryanoasis/nerd-fonts)
-- Install brew
-- brew install tmux
-- Install tmux plugin manager (tpm)
+    - `brew tap homebrew/cask-fonts`
+    - `brew cask install font-hack-nerd-font`
+- Install [Homebrew](https://brew.sh/)
+- `brew install tmux`
+- Install tmux plugin manager [tpm](https://github.com/tmux-plugins/tpm)
 - Install plugins with `<prefix>I`
+- Install [Packer](https://github.com/wbthomason/packer.nvim#quickstart)
