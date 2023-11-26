@@ -48,7 +48,8 @@ alias glo='git log'
 alias gl='git pull'
 alias gp='git push'
 alias gdm='git diff master'
-alias gdnm='git diff --name-only master'
+alias gdnm='git diff --name-only origin/master'
+alias gcap='git checkout master && git pull'
 
 # hg
 alias hs='hg status'
@@ -87,3 +88,7 @@ export PATH="/opt/homebrew/bin:${PATH}"
 # dbt
 alias docs="dbt docs generate; dbt docs serve"
 
+# rust
+alias cb="cargo build"
+alias cr="cargo run"
+alias ct="cargo test"
