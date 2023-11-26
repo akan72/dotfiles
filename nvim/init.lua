@@ -1,1 +1,1 @@
-require("akan72")
+require("config")
