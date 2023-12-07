@@ -19,6 +19,7 @@
     - [zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions/blob/master/INSTALL.md)
 - Install [Homebrew](https://brew.sh/)
 - Install all packages via `brew bundle`
+- Install Hack Nerd Font ([v2.3.3](https://github.com/ryanoasis/nerd-fonts/releases/tag/v2.3.3))
 - Install tmux plugin manager [tpm](https://github.com/tmux-plugins/tpm)
 - Install plugins with `<prefix>I`
 - Install [Packer](https://github.com/wbthomason/packer.nvim#quickstart)

@@ -12,13 +12,17 @@ return require('packer').startup(function(use)
         commit = 'ea0cc3c',
     }
 
+    -- Devicons
+    -- Required by nvim-tree, lualine, and bufferline
+    use {
+        'nvim-tree/nvim-web-devicons',
+        tag = 'nerd-v2-compat',
+    }
+
     -- Nvim file tree
     use {
         'nvim-tree/nvim-tree.lua',
         commit = '5e4475d',
-        requires = {
-            'nvim-tree/nvim-web-devicons', -- optional, for file icons
-        },
         config = function()
             require("config.plugins.nvim-tree")
         end
@@ -114,7 +118,6 @@ return require('packer').startup(function(use)
     use {
         'nvim-lualine/lualine.nvim',
         commit = '2248ef2',
-        requires = { 'nvim-tree/nvim-web-devicons', opt = true },
         config = function()
             require("config.plugins.lualine")
         end
@@ -130,7 +133,6 @@ return require('packer').startup(function(use)
     use {
         'akinsho/bufferline.nvim',
         tag = "v4.4.0",
-        requires = 'nvim-tree/nvim-web-devicons',
         config = function ()
             require("config.plugins.bufferline")
         end
