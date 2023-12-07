@@ -10,12 +10,14 @@ function sym () {
   src="$DOTFILES/$1"
   dest="$PREFIX/$2"
 
+  # Save existing dotfiles
   if [ -e "$dest" ]; then
     newdest="$BACKUPS/$(basename $dest)-$(date +%s)"
     mv "$dest" "$newdest"
     echo "> Moved $dest to $newdest"
   fi
 
+  # Symlink new dotfiles
   ln -s "$src" "$dest"
 }
 
@@ -24,7 +26,6 @@ if [ ! -e "$DOTFILES" ]; then
   exit 1
 fi
 
-mkdir -p "$PREFIX"
 mkdir -p "$BACKUPS/vim_backups"
 
 sym bashrc              .bashrc

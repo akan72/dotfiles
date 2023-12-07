@@ -45,3 +45,6 @@ cd into the `dotfiles` directory, and then run:
 ./assimilate.sh
 ```
 
+### Tmux Plugin Manager
+- Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
+- Install tmux packages with `prefix + I`
