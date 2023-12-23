@@ -1,4 +1,4 @@
--- Map <leader> to space
+    -- Map <leader> to space
 vim.g.mapleader = " "
 vim.g.localleader = " "
 
@@ -47,3 +47,11 @@ map("x", "<leader>p", "\"dP")
 
 -- Make Q a noop
 map("n", "Q", "<nop>")
+
+-- Comment with 'ctrl + /' in both normal and insert modes
+local function comment(mode)
+    map(mode, "<C-_>", function() require('Comment.api').toggle.linewise.current() end, { noremap = true, silent = true })
+end
+
+comment("n")
+comment("i")
