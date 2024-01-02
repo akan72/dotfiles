@@ -137,4 +137,13 @@ return require('packer').startup(function(use)
             require("config.plugins.bufferline")
         end
     }
+
+    -- Comments
+    -- add this to your lua/plugins.lua, lua/plugins/init.lua,  or the file you keep your other plugins:
+    use {
+        'numToStr/Comment.nvim',
+        config = function()
+            require('Comment').setup()
+        end
+    }
 end)

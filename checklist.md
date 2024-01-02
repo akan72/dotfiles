@@ -22,4 +22,4 @@
 - Install Hack Nerd Font ([v2.3.3](https://github.com/ryanoasis/nerd-fonts/releases/tag/v2.3.3))
 - Install tmux plugin manager [tpm](https://github.com/tmux-plugins/tpm). Run `tmux source tmux.conf`.
 - Install plugins with `<prefix>I`
-- Install [Packer](https://github.com/wbthomason/packer.nvim#quickstart)
+- Install [Packer](https://github.com/wbthomason/packer.nvim#quickstart) and run `PackerSync`.

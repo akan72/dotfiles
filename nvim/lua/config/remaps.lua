@@ -47,3 +47,20 @@ map("x", "<leader>p", "\"dP")
 
 -- Make Q a noop
 map("n", "Q", "<nop>")
+
+-- Comment with 'ctrl + /' in both normal and insert modes
+local function comment(mode)
+    map(mode, "<C-_>", function() require('Comment.api').toggle.linewise.current() end, { noremap = true, silent = true })
+end
+
+comment("n")
+comment("i")
+
+local esc = vim.api.nvim_replace_termcodes(
+    '<ESC>', true, false, true
+)
+
+map('v', '<C-_>', function()
+    vim.api.nvim_feedkeys(esc, 'nx', false)
+    require('Comment.api').toggle.linewise(vim.fn.visualmode())
+end)
