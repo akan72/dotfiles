@@ -33,10 +33,8 @@ sym bash_profile        .bash_profile
 sym gitconfig           .gitconfig
 sym tmux.conf           .tmux.conf
 sym zshrc               .zshrc
-sym vimrc               .vimrc
 sym nvim                .config/nvim
 sym hammerspoon         .hammerspoon
 sym code_settings.json  .vscode/settings.json
 
 echo "> Assimilation successful!"
-

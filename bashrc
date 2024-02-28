@@ -14,6 +14,7 @@ export LANG='en_US.UTF-8'
 alias config="/usr/bin/git --git-dir=/Users/${USER}/.cfg/ --work-tree=/Users/${USER}"
 alias vi=nvim
 alias vim=nvim
+alias ls="exa -al"
 
 # Docker
 alias d='docker'
@@ -42,13 +43,15 @@ alias ga='git add'
 alias gb='git branch'
 alias gc='git commit'
 alias gck='git checkout'
+alias gckb='git checkout -b'
 alias gd='git diff'
 alias gg='git grep'
 alias glo='git log'
 alias gl='git pull'
 alias gp='git push'
 alias gdm='git diff master'
-alias gdnm='git diff --name-only master'
+alias gdnm='git diff --name-only origin/master'
+alias gcap='git checkout master && git pull'
 
 # hg
 alias hs='hg status'
@@ -87,3 +90,7 @@ export PATH="/opt/homebrew/bin:${PATH}"
 # dbt
 alias docs="dbt docs generate; dbt docs serve"
 
+# rust
+alias cb="cargo build"
+alias cr="cargo run"
+alias ct="cargo test"
