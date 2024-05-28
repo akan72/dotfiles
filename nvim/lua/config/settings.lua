@@ -54,7 +54,7 @@ o.matchtime = 3
 o.diffopt = 'vertical'
 
 -- Set veritcal lines at 80, 125 in Python files according to PEP and Github max file length
-o.colorcolumn = 125
+o.colorcolumn = '125'
 autocmd(
     { "BufNewFile", "BufRead" }, {
         pattern = "*.py",
