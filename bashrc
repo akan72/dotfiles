@@ -24,9 +24,10 @@ alias dsp='docker system prune --all --force'
 alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true') -f'
 
 # python
-alias python='python3.10'
-alias python3='python3.10'
-alias pip='python3.10 -m pip'
+alias python='python3.11'
+alias python3='python3.11'
+alias pip='python3.11 -m pip'
+alias pip3='pip'
 alias grepy='grep -r --include \*.py'
 alias greps='grep -r --include \*.sql'
 alias jpn='jupyter notebook'
@@ -76,6 +77,9 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
+# PYTHONPATH
+export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/3.11/bin"
+
 # sops
 export PATH="$PATH:~/Downloads/sops-3.7.2"
 
@@ -86,6 +90,9 @@ export PATH="/usr/local/bin:${PATH}"
 # ARM/M1 Path
 export PATH="/opt/homebrew/bin:${PATH}"
 
+# Postgres
+export PATH="/opt/homebrew/Cellar/postgresql@14/14.6_1/bin:${PATH}"
+
 # dbt
 alias docs="dbt docs generate; dbt docs serve"
 
@@ -93,3 +100,7 @@ alias docs="dbt docs generate; dbt docs serve"
 alias cb="cargo build"
 alias cr="cargo run"
 alias ct="cargo test"
+. "$HOME/.cargo/env"
+
+# GPG
+export GPG_TTY=$(tty)
