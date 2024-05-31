@@ -14,7 +14,7 @@ export LANG='en_US.UTF-8'
 alias config="/usr/bin/git --git-dir=/Users/${USER}/.cfg/ --work-tree=/Users/${USER}"
 alias vi=nvim
 alias vim=nvim
-alias ls="exa -al"
+alias ls="lsd -al"
 
 # Docker
 alias d='docker'
