@@ -12,9 +12,9 @@ function sym () {
 
   # Save existing dotfiles
   if [ -e "$dest" ]; then
-    newdest="$BACKUPS/$(basename $dest)-$(date +%s)"
-    mv "$dest" "$newdest"
-    echo "> Moved $dest to $newdest"
+    backup="$BACKUPS/$(basename $dest)-$(date +%s)"
+    mv "$dest" "$backup"
+    echo "> Moved $dest to $backup"
   fi
 
   # Symlink new dotfiles
@@ -36,5 +36,7 @@ sym zshrc               .zshrc
 sym nvim                .config/nvim
 sym hammerspoon         .hammerspoon
 sym code_settings.json  .vscode/settings.json
+sym zed/settings.json   .config/zed/settings.json
+sym ghostty/config      Library/Application\ Support/com.mitchellh.ghostty/config
 
 echo "> Assimilation successful!"

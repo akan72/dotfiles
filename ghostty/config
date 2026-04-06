@@ -1,0 +1,18 @@
+window-padding-x = 2
+theme = Gruvbox Material
+term = xterm-256color
+auto-update = off
+copy-on-select = clipboard
+cursor-style = bar
+cursor-style-blink = false
+shell-integration-features = no-cursor
+font-family = Hack Nerd Font Mono Bold
+
+# Send newline to Claude Code using shift + enter
+keybind = shift+enter=text:\n
+
+# Enable desktop notifications
+desktop-notifications = true
+
+# Turn off ligatures
+font-feature = -calt, -liga, -dlig
