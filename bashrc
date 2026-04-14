@@ -119,3 +119,6 @@ complete -C /opt/homebrew/bin/terraform terraform
 
 # Set $XDG_CONFIG_HOME for Zed and Ghostty
 export XDG_CONFIG_HOME="$HOME/dotfiles"
+
+# Claude
+alias claude="$HOME/.local/bin/claude"
