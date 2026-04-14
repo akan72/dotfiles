@@ -52,7 +52,7 @@ alias gpl='git pull'
 alias gp='git push'
 alias gdm='git diff master'
 alias gdnm='git diff --name-only origin/master'
-alias gcap='git checkout master && git pull'
+alias gcap='git checkout main && git pull'
 
 # hg
 alias hs='hg status'
@@ -96,6 +96,9 @@ export PATH="/opt/homebrew/Cellar/postgresql@14/14.6_1/bin:${PATH}"
 
 # dbt
 alias docs="dbt docs generate; dbt docs serve"
+alias dbtb="dbt build"
+alias dbtc="dbt compile"
+alias dbtr="dbt run"
 
 # rust
 alias cb="cargo build"
@@ -103,5 +106,19 @@ alias cr="cargo run"
 alias ct="cargo test"
 . "$HOME/.cargo/env"
 
+# modal
+alias md="modal deploy"
+alias mr="modal run"
+
 # GPG
 export GPG_TTY=$(tty)
+
+# Terraform
+alias tf="terraform"
+complete -C /opt/homebrew/bin/terraform terraform
+
+# Set $XDG_CONFIG_HOME for Zed and Ghostty
+export XDG_CONFIG_HOME="$HOME/dotfiles"
+
+# Claude
+alias claude="$HOME/.local/bin/claude"

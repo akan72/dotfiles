@@ -90,12 +90,6 @@ return require('packer').startup(function(use)
         end
     }
 
-    -- Github Copilot
-    use {
-        'github/copilot.vim',
-        tag = 'v1.12.1',
-    }
-
     -- Gruvbox
     use {
         "ellisonleao/gruvbox.nvim",
@@ -132,7 +126,7 @@ return require('packer').startup(function(use)
     -- bufferline
     use {
         'akinsho/bufferline.nvim',
-        tag = "v4.4.0",
+        tag = "v4.9.1",
         config = function ()
             require("config.plugins.bufferline")
         end

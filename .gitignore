@@ -2,3 +2,6 @@ local
 .DS_Store
 tmux-powerline
 nvim/plugin/
+gh/
+.claude
+.wrangler

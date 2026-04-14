@@ -16,7 +16,7 @@ require('mason').setup({})
 require('mason-lspconfig').setup({
   ensure_installed = {
     'lua_ls',
-    'tsserver',
+    'ts_ls',
     'eslint',
     'jedi_language_server',
     --'pyright',
@@ -29,7 +29,7 @@ require('mason-lspconfig').setup({
 
 -- Configure lua language server for neovim
 -- Fix Undefined global 'vim'
-require('lspconfig').lua_ls.setup({
+vim.lsp.config("lua_ls", {
     settings = {
         Lua = {
             diagnostics = {
@@ -38,6 +38,7 @@ require('lspconfig').lua_ls.setup({
         }
     }
 })
+vim.lsp.enable({"lua_ls"})
 
 -- Suggested config https://github.com/neovim/nvim-lspconfig#suggested-configuration
 -- lspconfig.pyright.setup {}
