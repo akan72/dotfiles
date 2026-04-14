@@ -111,17 +111,3 @@ o.fixendofline = false
 -- Enable mousemovement for highight
 o.mousemoveevent = true
 
--- https://www.reddit.com/r/neovim/comments/1nlypjk/comment/nfc1fhl/
--- https://neovim.io/doc/user/faq.html#faq
-autocmd(
-    { "VimLeave", "VimSuspend" }, {
-        pattern = "*",
-        callback = function()
-          -- vim.cmd([[set guicursor=a:ver100-blinkwait1-blinkoff500-blinkon500]])
-          -- https://github.com/microsoft/terminal/issues/13420#issuecomment-1501102143
-          vim.o.guicursor = ""
-          vim.fn.chansend(vim.v.stderr, "\x1b[ q")
-        end,
-        desc = "Restore terminal cursor",
-    }
-)

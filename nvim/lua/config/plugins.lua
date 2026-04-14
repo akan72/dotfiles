@@ -132,7 +132,7 @@ return require('packer').startup(function(use)
     -- bufferline
     use {
         'akinsho/bufferline.nvim',
-        tag = "v4.4.0",
+        tag = "v4.9.1",
         config = function ()
             require("config.plugins.bufferline")
         end
