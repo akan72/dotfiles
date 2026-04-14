@@ -10,6 +10,9 @@ function sym () {
   src="$DOTFILES/$1"
   dest="$PREFIX/$2"
 
+  # Make dest dir if not exists
+  mkdir -p "$dest"?
+
   # Save existing dotfiles
   if [ -e "$dest" ]; then
     backup="$BACKUPS/$(basename $dest)-$(date +%s)"
@@ -39,4 +42,5 @@ sym code_settings.json  .vscode/settings.json
 sym zed/settings.json   .config/zed/settings.json
 sym ghostty/config      Library/Application\ Support/com.mitchellh.ghostty/config
 
+brew bundle install
 echo "> Assimilation successful!"
