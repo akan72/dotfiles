@@ -90,12 +90,6 @@ return require('packer').startup(function(use)
         end
     }
 
-    -- Github Copilot
-    use {
-        'github/copilot.vim',
-        tag = 'v1.12.1',
-    }
-
     -- Gruvbox
     use {
         "ellisonleao/gruvbox.nvim",
