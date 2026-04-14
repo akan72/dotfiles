@@ -73,3 +73,8 @@ complete -o nospace -C /opt/homebrew/bin/terraform terraform
 fpath+=~/.zfunc; autoload -Uz compinit; compinit
 
 zstyle ':completion:*' menu select
+
+# Send escape sequence for vertical bar for proper cursor reset with nvim + tmux + ghostty
+_reset_cursor() { printf '\e[6 q' }
+precmd_functions+=(_reset_cursor)
+
