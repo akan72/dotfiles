@@ -1,0 +1,14 @@
+[
+  {
+    "context": "Workspace",
+    "bindings": {
+        "ctrl-a h": "workspace::ActivatePaneLeft",
+        "ctrl-a l": "workspace::ActivatePaneRight",
+        "ctrl-a j": "workspace::ActivatePaneDown",
+        "ctrl-a k": "workspace::ActivatePaneUp"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == insert"
+  }
+]
