@@ -44,6 +44,7 @@ sym ghostty/config      Library/Application\ Support/com.mitchellh.ghostty/confi
 sym tmux-powerline/config.sh   .config/tmux-powerline/config.sh
 sym tmux-powerline/themes/theme.sh  .config/tmux-powerline/themes/theme.sh
 sym claude/statusline.sh .claude/statusline.sh
+sym zed/keymap.json     .config/zed/keymap.json
 
 brew bundle install
 echo "> Assimilation successful!"
