@@ -11,7 +11,7 @@ export LANG='en_US.UTF-8'
 # Aliases
 
 # general
-alias config="/usr/bin/git --git-dir=/Users/${USER}/.cfg/ --work-tree=/Users/${USER}"
+alias config="/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME"
 alias vi=nvim
 alias vim=nvim
 alias ls="lsd -al"
@@ -115,7 +115,9 @@ export GPG_TTY=$(tty)
 
 # Terraform
 alias tf="terraform"
-complete -C /opt/homebrew/bin/terraform terraform
+if [ -n "$BASH_VERSION" ]; then
+  complete -C /opt/homebrew/bin/terraform terraform
+fi
 
 # Set $XDG_CONFIG_HOME for Zed and Ghostty
 export XDG_CONFIG_HOME="$HOME/dotfiles"

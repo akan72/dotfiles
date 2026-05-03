@@ -16,7 +16,7 @@ return require('packer').startup(function(use)
     -- Required by nvim-tree, lualine, and bufferline
     use {
         'nvim-tree/nvim-web-devicons',
-        tag = 'nerd-v2-compat',
+        tag = 'nerd-v3.2-compat',
     }
 
     -- Nvim file tree
@@ -38,7 +38,7 @@ return require('packer').startup(function(use)
     -- Syntax highlighting
     use {
         'nvim-treesitter/nvim-treesitter',
-        tag = 'v0.9.1',
+        tag = 'v0.10.0',
         run = function()
             local ts_update = require('nvim-treesitter.install').update({ with_sync = true })
             ts_update()

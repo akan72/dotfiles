@@ -23,8 +23,7 @@ bufferline.setup({
             --bg = '#282828',
         },
         buffer_selected = {
-            --fg = 0,
-            fg = '#282828',
+            fg = '#ebdbb2',
             bg = '#282828',
         },
         info_diagnostic_selected = {
@@ -68,8 +67,8 @@ bufferline.setup({
                 text = function()
                     return vim.fn.getcwd()
                 end,
-                highlight = "Directory",
-                separator = true, -- Default separator character
+                highlight = "BufferLineBuffer",
+                separator = "",  -- slant char, matches separator_style = "slant"
             }
         },
         -- Show close icon on hover
