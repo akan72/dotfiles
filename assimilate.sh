@@ -52,6 +52,10 @@ function clone_pinned () {
   if [ ! -d "$dir" ]; then
     git clone --revision="$sha" "$url" "$dir"
   else
+    # SHA may be missing locally — newer than the last fetch, or absent because
+    # the prior clone was shallow (--revision pulls only that one commit).
+    # Fetch it directly.
+    git -C "$dir" fetch origin "$sha"
     git -C "$dir" checkout "$sha"
   fi
 }
