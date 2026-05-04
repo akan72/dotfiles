@@ -80,7 +80,7 @@ precmd_functions+=(_reset_cursor)
 
 
 # bun completions
-[ -s "/Users/ak/.bun/_bun" ] && source "/Users/ak/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
