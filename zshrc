@@ -56,16 +56,16 @@ export NVM_DIR="$HOME/.nvm"
 alias snowsql=/Applications/SnowSQL.app/Contents/MacOS/snowsql
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/alexkan/Downloads/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/alexkan/Downloads/google-cloud-sdk/path.zsh.inc'; fi
+if [ -f "$HOME/Downloads/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/path.zsh.inc"; fi
 
 # The next line enables shell command completion for gcloud.
-if [ -f '/Users/alexkan/Downloads/google-cloud-sdk/completion.zsh.inc' ]; then . '/Users/alexkan/Downloads/google-cloud-sdk/completion.zsh.inc'; fi
+if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc"; fi
 
 # .zsh syntax highlighting
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-# Added by dbt installer
-export PATH="$PATH:/Users/alexkan/.local/bin"
+# Prepend so pinned overrides in assimilate.sh (e.g. delta) win over brew bottles with ABI drift
+export PATH="$HOME/.local/bin:$PATH"
 
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
@@ -78,3 +78,10 @@ zstyle ':completion:*' menu select
 _reset_cursor() { printf '\e[6 q' }
 precmd_functions+=(_reset_cursor)
 
+
+# bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"

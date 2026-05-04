@@ -111,3 +111,6 @@ o.fixendofline = false
 -- Enable mousemovement for highight
 o.mousemoveevent = true
 
+-- Disable native -- INSERT -- echo; lualine already shows mode
+o.showmode = false
+
