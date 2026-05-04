@@ -64,8 +64,8 @@ if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/D
 # .zsh syntax highlighting
 source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
-# Added by dbt installer
-export PATH="$PATH:$HOME/.local/bin"
+# Prepend so pinned overrides in assimilate.sh (e.g. delta) win over brew bottles with ABI drift
+export PATH="$HOME/.local/bin:$PATH"
 
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
