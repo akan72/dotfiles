@@ -1,9 +1,0 @@
-{
-  "enabledPlugins": {
-    "telegram@claude-plugins-official": true
-  },
-  "skipDangerousModePermissionPrompt": true,
-  "theme": "dark",
-  "editorMode": "vim",
-  "agentPushNotifEnabled": true
-}
