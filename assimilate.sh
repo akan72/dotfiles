@@ -139,6 +139,22 @@ fi
 clone_pinned https://github.com/tmux-plugins/tpm     "$HOME/.tmux/plugins/tpm"            7bdb7ca33c9cc6440a600202b50142f401b6fe21  # v3.1.0
 clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-powerline" 6079ace8d534a01d4d964b8b854b223f72edaf4b  # v3.2.0
 
+# Install neovim on Linux from a pinned upstream tarball (macOS gets it via Brewfile).
+# AL2023 doesn't ship neovim in its default dnf repos. Lands in $HOME/.local so no
+# root needed, and runs before the PackerSync block below so the plugin sync works.
+NVIM_VERSION=0.10.4
+if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && ! command -v nvim >/dev/null; then
+  tmp=$(mktemp -d)
+  curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux64.tar.gz" -o "$tmp/nvim.tar.gz"
+  # TODO: pin SHA256 after first install; compute on the install target with `sha256sum nvim.tar.gz`.
+  mkdir -p "$HOME/.local/share" "$HOME/.local/bin"
+  tar -xzf "$tmp/nvim.tar.gz" -C "$HOME/.local/share"
+  ln -sf "$HOME/.local/share/nvim-linux64/bin/nvim" "$HOME/.local/bin/nvim"
+  rm -rf "$tmp"
+  # Make nvim visible to the rest of this script (PackerSync below)
+  export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # Install Packer (nvim plugin manager) and run PackerSync — only if nvim is available
 if command -v nvim >/dev/null; then
   clone_pinned https://github.com/wbthomason/packer.nvim "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim" ea0cc3c59f67c440c5ff0bbe4fb9420f4350b9a3  # 2023-08-24, matches plugins.lua pin
