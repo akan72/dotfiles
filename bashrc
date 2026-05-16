@@ -103,7 +103,7 @@ alias dbtr="dbt run"
 alias cb="cargo build"
 alias cr="cargo run"
 alias ct="cargo test"
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 # modal
 alias md="modal deploy"
