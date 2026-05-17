@@ -142,7 +142,7 @@ clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-p
 # Install neovim on Linux from a pinned upstream tarball (macOS gets it via Brewfile).
 # AL2023 doesn't ship neovim in its default dnf repos. Lands in $HOME/.local so no
 # root needed, and runs before the PackerSync block below so the plugin sync works.
-NVIM_VERSION=0.10.4
+NVIM_VERSION=0.9.5
 if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && ! command -v nvim >/dev/null; then
   tmp=$(mktemp -d)
   curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux64.tar.gz" -o "$tmp/nvim.tar.gz"
