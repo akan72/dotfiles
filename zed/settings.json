@@ -56,6 +56,10 @@
         "git_status": true
     },
     "file_scan_exclusions": [
+        // Claude Worktrees
+        "**/.claude/worktrees/**",
+        // dbt
+        "**/manifest.json",
         // Scan python generated files
         "**/.ruff_cache",
         "__pycache__",
