@@ -64,10 +64,12 @@ sym nvim                .config/nvim
 sym tmux-powerline/config.sh        .config/tmux-powerline/config.sh
 sym tmux-powerline/themes/theme.sh  .config/tmux-powerline/themes/theme.sh
 sym claude/statusline.sh            .claude/statusline.sh
+sym ssh/config                      .ssh/config
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
 chmod 600 "$HOME/.gitconfig"
-[ -d "$HOME/.ssh" ] && chmod 700 "$HOME/.ssh"
+chmod 700 "$HOME/.ssh"
+chmod 600 "$HOME/.ssh/config"
 
 # bashrc: symlinked on macOS; sourced from a stub on Linux.
 # On the EC2 dev box, user_data appends a secrets/region block to .bashrc after
