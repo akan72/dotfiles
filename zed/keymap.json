@@ -7,8 +7,5 @@
         "ctrl-a j": "workspace::ActivatePaneDown",
         "ctrl-a k": "workspace::ActivatePaneUp"
     }
-  },
-  {
-    "context": "Editor && vim_mode == insert"
   }
 ]
