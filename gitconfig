@@ -2,6 +2,21 @@
 	email = 29241719+akan72@users.noreply.github.com
 	name = Alex Kan
 	username = akan72
+	# SSH signing key (public key path). Upload this key to GitHub as a
+	# *signing* key (Settings > SSH and GPG keys > New SSH key > type "Signing").
+	signingkey = ~/.ssh/id_ed25519.pub
+
+[gpg]
+	# Sign with SSH keys rather than GPG — reuses the SSH key already used for
+	# auth, so there is no separate GPG keyring to manage (works the same on a
+	# remote box, e.g. EC2, as long as the key is present or agent-forwarded).
+	format = ssh
+
+[commit]
+	gpgsign = true
+
+[tag]
+	gpgsign = true
 
 [core]
 	editor = nvim
