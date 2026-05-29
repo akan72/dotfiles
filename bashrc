@@ -1,8 +1,6 @@
 # ----
 # Basics
 
-set -o vi
-
 export LANG='en_US.UTF-8'
 
 # Ask uv to check resolved packages against malicious-package advisories.
