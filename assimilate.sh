@@ -65,6 +65,7 @@ sym tmux-powerline/config.sh        .config/tmux-powerline/config.sh
 sym tmux-powerline/themes/theme.sh  .config/tmux-powerline/themes/theme.sh
 sym claude/statusline.sh            .claude/statusline.sh
 sym ssh/config                      .ssh/config
+sym uv/uv.toml                      .config/uv/uv.toml
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
 chmod 600 "$HOME/.gitconfig"
@@ -95,6 +96,12 @@ if [ "$OS" = "Darwin" ]; then
   # Homebrew 6 requires explicit trust before installing formulae from a tap.
   brew trust hashicorp/tap
   brew bundle install
+fi
+
+# Let uv manage Python when it is available. The rolling release-age window in
+# uv/uv.toml applies to package resolution, while this installs the interpreter.
+if command -v uv >/dev/null 2>&1; then
+  uv python install
 fi
 
 # Install repository security hooks when pre-commit is available (Homebrew
