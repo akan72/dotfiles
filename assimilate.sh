@@ -121,10 +121,7 @@ case "$OS-$ARCH" in
     ;;
   Linux-x86_64)
     DELTA_TARGET=x86_64-unknown-linux-gnu
-    # TODO: pin SHA256 after first install on the EC2 box.
-    # Compute on the install target with `sha256sum delta.tar.gz`, then replace
-    # the empty default below to enable integrity verification.
-    DELTA_SHA256=""
+    DELTA_SHA256=8e695c5f586a8c53d6c3b01be0b4a422ed218bfed2a56191caebe373a1c18ab2
     ;;
   *)
     echo "WARN: no delta build pinned for $OS-$ARCH — skipping delta install" >&2
@@ -158,10 +155,15 @@ clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-p
 # AL2023 doesn't ship neovim in its default dnf repos. Lands in $HOME/.local so no
 # root needed, and runs before the PackerSync block below so the plugin sync works.
 NVIM_VERSION=0.9.5
+NVIM_SHA256=44ee395d9b5f8a14be8ec00d3b8ead34e18fe6461e40c9c8c50e6956d643b6ca
 if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && ! command -v nvim >/dev/null; then
   tmp=$(mktemp -d)
   curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux64.tar.gz" -o "$tmp/nvim.tar.gz"
-  # TODO: pin SHA256 after first install; compute on the install target with `sha256sum nvim.tar.gz`.
+  if command -v sha256sum >/dev/null; then
+    echo "${NVIM_SHA256}  $tmp/nvim.tar.gz" | sha256sum -c -
+  else
+    echo "${NVIM_SHA256}  $tmp/nvim.tar.gz" | shasum -a 256 -c -
+  fi
   mkdir -p "$HOME/.local/share" "$HOME/.local/bin"
   tar -xzf "$tmp/nvim.tar.gz" -C "$HOME/.local/share"
   ln -sf "$HOME/.local/share/nvim-linux64/bin/nvim" "$HOME/.local/bin/nvim"
