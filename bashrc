@@ -3,8 +3,6 @@
 
 set -o vi
 
-export EDITOR='nvim'
-export TERM='xterm-256color'
 export LANG='en_US.UTF-8'
 
 # Ask uv to check resolved packages against malicious-package advisories.
@@ -14,7 +12,6 @@ export UV_MALWARE_CHECK=1
 # Aliases
 
 # general
-alias config="/usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME"
 alias vi=nvim
 alias vim=nvim
 # lsd comes from the Brewfile on macOS; guard so a Linux box without it keeps
@@ -26,7 +23,7 @@ alias d='docker'
 alias dc='docker compose'
 alias dcup='docker compose up'
 alias dsp='docker system prune --all --force'
-alias docker_rmi_dangling='docker rmi $(docker images -qa -f 'dangling=true') -f'
+alias docker_rmi_dangling='docker rmi $(docker images -qa -f "dangling=true") -f'
 
 # python
 alias python='python3.11'
@@ -55,21 +52,9 @@ alias gg='git grep'
 alias gl='git log --reverse -n 10'
 alias gpl='git pull'
 alias gp='git push'
-alias gdm='git diff master'
-alias gdnm='git diff --name-only origin/master'
+alias gdm='git diff main'
+alias gdnm='git diff --name-only origin/main'
 alias gcap='git checkout main && git pull'
-
-# hg
-alias hs='hg status'
-alias hc='hg commit'
-alias ha='hg amend'
-alias hd='hg diff'
-alias hl='hg log'
-alias hu='hg update'
-alias hp='hg prev'
-alias hn='hg next'
-alias ht='hg top'
-alias hb='hg bottom'
 
 # kube
 alias ku='kubectl'
@@ -77,17 +62,6 @@ alias kuc='kubectl config'
 
 # ---
 # Applications
-
-# nvm
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use  # Load nvm without auto-use (auto-use errors with "N/A" when no .nvmrc is set)
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# PYTHONPATH
-export PATH="$PATH:/Library/Frameworks/Python.framework/Versions/3.11/bin"
-
-# sops
-export PATH="$PATH:~/Downloads/sops-3.7.2"
 
 # Homebrew
 # Intel Path
@@ -97,7 +71,7 @@ export PATH="/usr/local/bin:${PATH}"
 export PATH="/opt/homebrew/bin:${PATH}"
 
 # Postgres
-export PATH="/opt/homebrew/Cellar/postgresql@14/14.6_1/bin:${PATH}"
+export PATH="$(brew --prefix postgresql@17)/bin:${PATH}"
 
 # dbt
 alias docs="dbt docs generate; dbt docs serve"
@@ -109,7 +83,6 @@ alias dbtr="dbt run"
 alias cb="cargo build"
 alias cr="cargo run"
 alias ct="cargo test"
-[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 # modal
 alias md="modal deploy"
