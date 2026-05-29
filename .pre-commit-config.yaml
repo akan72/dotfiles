@@ -1,5 +1,9 @@
+# Pre-commit hooks for this dotfiles repo.
+# Install once with: pre-commit install
+# Run against all files: pre-commit run --all-files
 repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
+      # Scans staged changes for secrets before they can be committed.
       - id: gitleaks
