@@ -65,6 +65,10 @@ sym tmux-powerline/config.sh        .config/tmux-powerline/config.sh
 sym tmux-powerline/themes/theme.sh  .config/tmux-powerline/themes/theme.sh
 sym claude/statusline.sh            .claude/statusline.sh
 
+# Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
+chmod 600 "$HOME/.gitconfig"
+[ -d "$HOME/.ssh" ] && chmod 700 "$HOME/.ssh"
+
 # bashrc: symlinked on macOS; sourced from a stub on Linux.
 # On the EC2 dev box, user_data appends a secrets/region block to .bashrc after
 # this script runs. If .bashrc were a symlink into the repo, those appends would
@@ -110,8 +114,8 @@ if [ ! -d "$HOME/.cargo" ]; then
     | sh -s -- -y --no-modify-path --default-toolchain 1.95.0
 fi
 
-# Install git-delta from a pinned GitHub release tarball (sidesteps brew bottle ABI drift).
-# Tarball target and SHA256 are platform-specific.
+# Install git-delta from a pinned GitHub release tarball when available.
+# delta 0.19.2 has no Intel macOS archive, so that platform uses Homebrew.
 DELTA_VERSION=0.19.2
 DELTA_BIN="$HOME/.local/bin/delta"
 
@@ -124,6 +128,12 @@ case "$OS-$ARCH" in
     DELTA_TARGET=x86_64-unknown-linux-gnu
     DELTA_SHA256=8e695c5f586a8c53d6c3b01be0b4a422ed218bfed2a56191caebe373a1c18ab2
     ;;
+  Darwin-x86_64)
+    DELTA_TARGET=""
+    if [ "$("$DELTA_BIN" --version 2>/dev/null | awk '{print $2}')" != "$DELTA_VERSION" ]; then
+      brew install git-delta
+    fi
+    ;;
   *)
     echo "WARN: no delta build pinned for $OS-$ARCH — skipping delta install" >&2
     DELTA_TARGET=""
@@ -133,14 +143,10 @@ esac
 if [ -n "$DELTA_TARGET" ] && { [ ! -x "$DELTA_BIN" ] || [ "$("$DELTA_BIN" --version 2>/dev/null | awk '{print $2}')" != "$DELTA_VERSION" ]; }; then
   tmp=$(mktemp -d)
   curl -fsSL "https://github.com/dandavison/delta/releases/download/${DELTA_VERSION}/delta-${DELTA_VERSION}-${DELTA_TARGET}.tar.gz" -o "$tmp/delta.tar.gz"
-  if [ -n "$DELTA_SHA256" ]; then
-    if command -v sha256sum >/dev/null; then
-      echo "${DELTA_SHA256}  $tmp/delta.tar.gz" | sha256sum -c -
-    else
-      echo "${DELTA_SHA256}  $tmp/delta.tar.gz" | shasum -a 256 -c -
-    fi
+  if command -v sha256sum >/dev/null; then
+    echo "${DELTA_SHA256}  $tmp/delta.tar.gz" | sha256sum -c -
   else
-    echo "WARN: no DELTA_SHA256 pinned for $OS-$ARCH — integrity check skipped" >&2
+    echo "${DELTA_SHA256}  $tmp/delta.tar.gz" | shasum -a 256 -c -
   fi
   mkdir -p "$HOME/.local/bin"
   tar -xzf "$tmp/delta.tar.gz" -C "$tmp"
