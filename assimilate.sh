@@ -257,4 +257,15 @@ if command -v nvim >/dev/null; then
   nvim --headless "+Lazy! restore" +qa || true
 fi
 
+# Turn off Claude Code commit/PR attribution. Appends the "attribution" key only
+# if it isn't already set, so existing local settings are never overridden.
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+mkdir -p "$HOME/.claude"
+if [ ! -f "$CLAUDE_SETTINGS" ]; then
+  printf '{\n  "attribution": { "commit": "", "pr": "" }\n}\n' > "$CLAUDE_SETTINGS"
+elif ! jq -e 'has("attribution")' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+  tmp=$(mktemp)
+  jq '. + {attribution: {commit: "", pr: ""}}' "$CLAUDE_SETTINGS" > "$tmp" && mv "$tmp" "$CLAUDE_SETTINGS"
+fi
+
 echo "> Assimilation successful!"
