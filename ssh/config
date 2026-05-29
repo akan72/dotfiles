@@ -1,0 +1,20 @@
+# SSH client configuration (symlinked to ~/.ssh/config by assimilate.sh)
+
+Host *
+    # Hash hostnames in known_hosts so a leaked file doesn't reveal every
+    # server you've connected to.
+    HashKnownHosts yes
+    # Load a key into the agent on first use so you aren't re-prompted.
+    AddKeysToAgent yes
+    # Only offer keys explicitly configured for a host — don't spray every
+    # loaded key at every server (avoids leaking fingerprints / auth failures).
+    IdentitiesOnly yes
+    # Show an ASCII-art fingerprint on connect to help spot MITM on first use.
+    VisualHostKey yes
+    # Never silently auto-accept unknown host keys.
+    StrictHostKeyChecking ask
+
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
