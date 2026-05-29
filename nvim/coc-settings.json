@@ -1,6 +1,0 @@
-{
-  "suggest.noselect": false,
-  "python.autoComplete.showAdvancedMembers": false,
-  "python.jediEnabled": true,
-  "python.linting.mypyEnabled": true
-}
