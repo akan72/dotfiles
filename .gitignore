@@ -3,7 +3,6 @@ local
 gh/
 .claude
 .wrangler
-
 # Secrets and machine-local tool state
 *.pem
 *.key
