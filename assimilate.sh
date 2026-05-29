@@ -29,15 +29,15 @@ function sym () {
 
 function clone_pinned () {
   url="$1"; dir="$2"; sha="$3"
+  # Fetch only the pinned commit, no full history. Avoids `git clone --revision`
+  # (git >= 2.49) so this works on older git too, e.g. AL2023's 2.40 on stale AMIs.
+  # Fetch-by-SHA relies on the server allowing reachable-SHA1-in-want (GitHub does).
   if [ ! -d "$dir" ]; then
-    git clone --revision="$sha" "$url" "$dir"
-  else
-    # SHA may be missing locally — newer than the last fetch, or absent because
-    # the prior clone was shallow (--revision pulls only that one commit).
-    # Fetch it directly.
-    git -C "$dir" fetch origin "$sha"
-    git -C "$dir" checkout "$sha"
+    git init -q "$dir"
+    git -C "$dir" remote add origin "$url"
   fi
+  git -C "$dir" fetch --depth 1 origin "$sha"
+  git -C "$dir" checkout -q "$sha"
 }
 
 if [ ! -e "$DOTFILES" ]; then
