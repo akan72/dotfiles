@@ -2,15 +2,25 @@
 	email = 29241719+akan72@users.noreply.github.com
 	name = Alex Kan
 	username = akan72
-	# SSH signing key (public key path). Upload this key to GitHub as a
-	# *signing* key (Settings > SSH and GPG keys > New SSH key > type "Signing").
-	signingkey = ~/.ssh/id_ed25519.pub
+	# signingkey intentionally unset — resolved at sign time by
+	# gpg.ssh.defaultKeyCommand below, which pulls the first key from ssh-agent.
+	# Whichever key it picks must be uploaded to GitHub as a *signing* key
+	# (Settings > SSH and GPG keys > New SSH key > type "Signing").
 
 [gpg]
 	# Sign with SSH keys rather than GPG — reuses the SSH key already used for
 	# auth, so there is no separate GPG keyring to manage (works the same on a
 	# remote box, e.g. EC2, as long as the key is present or agent-forwarded).
 	format = ssh
+
+[gpg "ssh"]
+	# Portable across machines: read the first key from whichever ssh-agent
+	# is currently exposed (macOS system agent, 1Password, gpg-agent, etc.)
+	# rather than hardcoding ~/.ssh/id_ed25519.pub. Works with hardware-
+	# resident keys (YubiKey ed25519-sk, 1Password) where there may be no
+	# .pub file on disk. The `key::` prefix is what git's source explicitly
+	# looks for in defaultKeyCommand output.
+	defaultKeyCommand = sh -c 'printf "key::%s\n" "$(ssh-add -L | head -n1)"'
 
 [commit]
 	gpgsign = true
