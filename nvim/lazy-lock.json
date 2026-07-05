@@ -1,0 +1,23 @@
+{
+  "Comment.nvim": { "branch": "master", "commit": "e30b7f2008e52442154b66f7c519bfd2f1e32acb" },
+  "LuaSnip": { "branch": "master", "commit": "0abc8f390b278c3b4aabc4c004ac8a088b65cf24" },
+  "bufferline.nvim": { "branch": "main", "commit": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3" },
+  "cmp-nvim-lsp": { "branch": "main", "commit": "cbc7b02bb99fae35cb42f514762b89b5126651ef" },
+  "gruvbox.nvim": { "branch": "main", "commit": "61b0b3be2f0cfd521667403a0367298144d6c165" },
+  "indent-blankline.nvim": { "branch": "master", "commit": "29be0919b91fb59eca9e90690d76014233392bef" },
+  "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
+  "lsp-zero.nvim": { "branch": "v3.x", "commit": "77550f2f6cbf0959ef1583d845661af075f3442b" },
+  "lualine.nvim": { "branch": "master", "commit": "2248ef254d0a1488a72041cfb45ca9caada6d994" },
+  "markdown-preview.nvim": { "branch": "master", "commit": "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee" },
+  "mason-lspconfig.nvim": { "branch": "main", "commit": "47059d71b42d74b0a1e9f61c1d99d301039c3b5b" },
+  "mason.nvim": { "branch": "main", "commit": "2a6940af80375532e5e9e7c1f2fc6319a1b7a69d" },
+  "nvim-cmp": { "branch": "main", "commit": "a1d504892f2bc56c2e79b65c6faded2fd21f3eca" },
+  "nvim-lspconfig": { "branch": "master", "commit": "d224a1920728ba129880efc700d4a0180ac4ecbb" },
+  "nvim-tree.lua": { "branch": "master", "commit": "5e4475d8bf7a3646164e01d9b65ef68369b17e3c" },
+  "nvim-treesitter": { "branch": "main", "commit": "42fc28ba918343ebfd5565147a42a26580579482" },
+  "nvim-web-devicons": { "branch": "master", "commit": "21417212f640a1dad28a1408f04468819848f5e7" },
+  "plenary.nvim": { "branch": "master", "commit": "74b06c6c75e4eeb3108ec01852001636d85a932b" },
+  "telescope.nvim": { "branch": "master", "commit": "c1a2af0af69e80e14e6b226d3957a064cd080805" },
+  "vim-fugitive": { "branch": "master", "commit": "46eaf8918b347906789df296143117774e827616" },
+  "vim-gitgutter": { "branch": "main", "commit": "fe0e8a2630eef548e4122096e4e2241f42208fe3" }
+}
