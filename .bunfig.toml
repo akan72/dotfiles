@@ -1,0 +1,16 @@
+# Bun global configuration — https://bun.com/docs/runtime/bunfig
+#
+# Lives at the repo root because bun's global config path is
+# $XDG_CONFIG_HOME/.bunfig.toml and $XDG_CONFIG_HOME points at this repo.
+# assimilate.sh also symlinks it to ~/.bunfig.toml for contexts where
+# XDG_CONFIG_HOME isn't exported (bun ignores ~/.bunfig.toml whenever
+# XDG_CONFIG_HOME is set — verified against bun 1.3.12).
+# A project-local bunfig.toml is merged on top, so repos can still override.
+
+[install]
+# Supply-chain hardening: never resolve a package version younger than 7 days
+# (value is in seconds). Same rolling window as uv's exclude-newer — most
+# malicious/compromised uploads are detected and yanked within a week, so
+# resolution just falls back to the newest version that clears the window.
+# Requires bun >= 1.2.22 (older bun ignores unknown bunfig keys).
+minimumReleaseAge = 604800
