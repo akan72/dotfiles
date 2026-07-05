@@ -30,7 +30,11 @@ _prepend_path() {
 
 _prepend_path "/usr/local/bin"                          # Homebrew (Intel)
 _prepend_path "/opt/homebrew/bin"                       # Homebrew (ARM/M1)
-_prepend_path "$(brew --prefix postgresql@17)/bin"      # Postgres
+# Postgres — guarded so shells without Homebrew (e.g. the Linux dev box) don't
+# error on every startup
+if command -v brew >/dev/null 2>&1; then
+  _prepend_path "$(brew --prefix postgresql@17)/bin"
+fi
 _prepend_path "$HOME/.yarn/bin"                         # Yarn global bins
 _prepend_path "$HOME/.config/yarn/global/node_modules/.bin"
 export BUN_INSTALL="$HOME/.bun"
