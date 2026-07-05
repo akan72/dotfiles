@@ -102,7 +102,8 @@ HIST_STAMPS="mm/dd/yyyy"
 COMPLETION_WAITING_DOTS="false"
 
 # Plugins
-# (OMZ git plugin removed — custom git aliases above shadow every alias it provides)
+# (OMZ git plugin removed — it loads after the custom git aliases above and was
+# shadowing them, e.g. its gl='git pull' clobbered gl='git log --reverse -n 10')
 plugins=()
 
 bindkey -e
