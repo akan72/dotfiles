@@ -68,6 +68,9 @@ sym agent-instructions.md           .claude/CLAUDE.md
 sym agent-instructions.md           .codex/AGENTS.md
 sym ssh/config                      .ssh/config
 sym uv/uv.toml                      .config/uv/uv.toml
+# bun reads $XDG_CONFIG_HOME/.bunfig.toml (the repo root) in shells; the
+# symlink covers contexts where XDG_CONFIG_HOME isn't exported.
+sym .bunfig.toml                    .bunfig.toml
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
 chmod 600 "$HOME/.gitconfig"
@@ -85,6 +88,12 @@ else
   if ! grep -Fq 'dotfiles/bashrc' "$PREFIX/.bashrc" 2>/dev/null; then
     echo '[ -f "$HOME/dotfiles/bashrc" ] && . "$HOME/dotfiles/bashrc"' >> "$PREFIX/.bashrc"
   fi
+fi
+
+# npm: refuse package versions younger than 7 days. Append-only because
+# ~/.npmrc may also contain authentication written by `npm login`.
+if ! grep -q '^min-release-age=' "$HOME/.npmrc" 2>/dev/null; then
+  echo 'min-release-age=7' >> "$HOME/.npmrc"
 fi
 
 # macOS-only symlinks and Homebrew (apps/paths don't exist on Linux)
