@@ -46,6 +46,8 @@ sym tmux-powerline/themes/theme.sh  .config/tmux-powerline/themes/theme.sh
 sym claude/statusline.sh .claude/statusline.sh
 sym zed/keymap.json     .config/zed/keymap.json
 
+"$DOTFILES/codex/sync-config.sh"
+
 brew bundle install
 
 function clone_pinned () {

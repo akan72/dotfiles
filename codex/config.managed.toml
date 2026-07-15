@@ -1,0 +1,7 @@
+notify = ["/bin/sh", "-c", "/usr/bin/osascript -e 'display notification \"Turn completed\" with title \"Codex\"' >/dev/null 2>&1"]
+model_reasoning_summary = "concise"
+model_verbosity = "low"
+personality = "pragmatic"
+
+# AGENTS.md is built in; use CLAUDE.md when no AGENTS.md is present.
+project_doc_fallback_filenames = ["CLAUDE.md"]

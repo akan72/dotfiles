@@ -45,6 +45,13 @@ cd into the `dotfiles` directory, and then run:
 ./assimilate.sh
 ```
 
+### Codex configuration
+
+`assimilate.sh` syncs the portable settings from `codex/config.managed.toml`
+into a marked block at the top of `~/.codex/config.toml`. Codex-managed state
+outside that block, such as installed plugins and per-project trust, remains
+local to each machine.
+
 ### Tmux Plugin Manager
 - Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
 - Install tmux packages with `prefix + I`
