@@ -50,6 +50,8 @@ sym zed/keymap.json     .config/zed/keymap.json
 
 brew bundle install
 
+"$DOTFILES/codex/sync-import-preferences.sh"
+
 function clone_pinned () {
   url="$1"; dir="$2"; sha="$3"
   if [ ! -d "$dir" ]; then
