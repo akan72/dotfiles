@@ -34,8 +34,10 @@ jobs:
           sudo apt-get install --yes zsh
       - name: Check shell syntax
         run: |
-          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/verify-assimilate.sh
+          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh
           zsh -n zshrc
+      - name: Test VPS container harness
+        run: scripts/ci/test-vps-container.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null
       - name: Check strict JSON
@@ -135,3 +137,25 @@ jobs:
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
 
           test "$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = "$backup_count"
+
+  vps-install:
+    name: VPS install (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - ubuntu
+          - amazon-linux
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install dotfiles twice in a minimal VPS image
+        env:
+          VPS_TARGET: ${{ matrix.target }}
+        run: scripts/ci/run-vps-container.sh run "$VPS_TARGET"
