@@ -34,7 +34,7 @@ else
   grep -Fq 'dotfiles/bashrc' "$HOME/.bashrc"
 fi
 
-test "$(HOME="$HOME" bash --noprofile --norc -ic 'printf %s "$UV_MALWARE_CHECK"' 2>/dev/null)" = 1
+test "$(HOME="$HOME" bash --noprofile -ic 'printf %s "$UV_MALWARE_CHECK"' 2>/dev/null)" = 1
 test "$(HOME="$HOME" zsh -c 'source "$HOME/.zshrc" >/dev/null 2>&1; printf %s "$UV_MALWARE_CHECK"')" = 1
 test "$("$HOME/.local/bin/delta" --version)" = "delta 0.19.2"
 test -x "$HOME/.cargo/bin/rustc"
