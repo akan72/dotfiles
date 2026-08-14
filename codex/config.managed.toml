@@ -1,3 +1,5 @@
+#:schema https://developers.openai.com/codex/config-schema.json
+
 notify = ["/bin/sh", "-c", "/usr/bin/osascript -e 'display notification \"Turn completed\" with title \"Codex\"' >/dev/null 2>&1"]
 model_reasoning_summary = "concise"
 model_verbosity = "low"
@@ -7,59 +9,3 @@ approvals_reviewer = "auto_review"
 # AGENTS.md is built in; use CLAUDE.md when no AGENTS.md is present.
 project_doc_fallback_filenames = ["CLAUDE.md"]
 project_doc_max_bytes = 196608
-
-[desktop]
-# Portable preferences configured in the Codex desktop UI.
-conversationDetailMode = "STEPS_COMMANDS"
-ambient-suggestions-enabled = false
-appearanceLightCodeThemeId = "gruvbox"
-dock-icon-preference = "codex-system"
-selected-avatar-id = "hoots"
-git-branch-prefix = "akan72/"
-git-pull-request-merge-method = "squash"
-git-pr-instructions = """
-Create pull requests with the simple format
-
-## Summary
-<Describe the context for your change>
-
-## Test Plan
-<Evidence that the PR is working, include screenshots, and the CLI commands that you ran>"""
-git-commit-instructions = "Commit messages should be concise, just one sentence"
-appearanceTheme = "dark"
-appearanceDarkCodeThemeId = "gruvbox"
-usePointerCursors = true
-reduced-motion-preference = "on"
-followUpQueueMode = "queue"
-localeOverride = "en-US"
-worktree-auto-cleanup-enabled = false
-open-link-in-target-preference = "external-browser"
-notifications-turn-mode = "always"
-external-agent-import-sync-enabled = true
-
-[desktop.open-in-target-preferences]
-global = "zed"
-
-[desktop.appearanceLightChromeTheme]
-accent = "#458588"
-contrast = 45
-ink = "#3c3836"
-opaqueWindows = false
-surface = "#282828"
-
-[desktop.appearanceLightChromeTheme.semanticColors]
-diffAdded = "#3c3836"
-diffRemoved = "#cc241d"
-skill = "#b16286"
-
-[desktop.appearanceDarkChromeTheme]
-accent = "#458588"
-contrast = 71
-ink = "#ebdbb2"
-opaqueWindows = false
-surface = "#282828"
-
-[desktop.appearanceDarkChromeTheme.semanticColors]
-diffAdded = "#ebdbb2"
-diffRemoved = "#cc241d"
-skill = "#b16286"

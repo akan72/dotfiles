@@ -47,30 +47,29 @@ cd into the `dotfiles` directory, and then run:
 
 ### Codex configuration
 
-`assimilate.sh` syncs the portable settings from `codex/config.managed.toml`
-into marked blocks in `~/.codex/config.toml`. The managed fragment
-also owns the portable `[desktop]` preferences configured through the Codex UI,
-including the Git branch prefix, PR and commit conventions, appearance, editor
-target, notifications, queue behavior, worktree cleanup, and automatic imports
-from Claude Code. It also lets Codex use `CLAUDE.md` when `AGENTS.md` is absent
-and raises the project-instruction budget for larger repository guides. The
-managed agent preferences also enable automatic review and keep responses terse
-and pragmatic. Changes made in the UI should be mirrored back to the managed
-fragment before the next assimilation.
+`assimilate.sh` uses Codex's documented app-server configuration API to apply
+the portable root settings from `codex/config.managed.toml` to
+`~/.codex/config.toml`. Codex parses and validates the managed TOML itself, and
+`config/batchWrite` preserves settings that are not managed by this repository.
+The checked-in settings enable turn notifications, automatic review, low
+verbosity, concise reasoning summaries, and the pragmatic personality. Codex
+uses `AGENTS.md` natively and falls back to `CLAUDE.md` when it is absent.
 
-Claude import category choices are stored by the desktop app outside
-`config.toml`. After Homebrew installs `jq`, `codex/sync-import-preferences.sh`
-surgically enables the detected Claude Code configuration, instructions,
-skills, commands, subagents, hooks, plugins, and MCP imports while disabling
-chat-session imports. The project-import choice is left unchanged. On a new
-machine, configure Claude Code import once in Codex, then rerun assimilation so
-the detected categories can be updated. Run assimilation with Codex closed so
-the desktop app cannot overwrite the preference file while it is being updated.
+The same sync detects and imports Claude Code instructions, configuration,
+skills, commands, subagents, hooks, plugins, MCP servers, and memory through
+Codex's external-agent import API. Session detection is disabled and any
+`SESSIONS` items are explicitly excluded. This is a supported, one-shot import
+each time assimilation runs; optional continuous import can still be enabled
+once in the Codex UI with session imports left disabled.
 
-Generated and machine-specific state outside the managed block, such as local
-paths, installed plugins, connector authentication, caches, session history,
-and per-project trust, remains local to each machine. Do not check in the full
-`.codex-global-state.json` file or any Codex session database.
+Desktop-only preferences such as the Git branch prefix, PR and commit
+instructions, appearance, editor target, and queue behavior remain local. Codex
+currently treats the `[desktop]` table as opaque app state, so it is deliberately
+not checked in. Generated and machine-specific state such as local paths,
+installed plugins, connector authentication, caches, session history, and
+per-project trust also remains local. Never check in
+`.codex-global-state.json`, Codex session databases, or the complete live
+`config.toml`.
 
 ### Tmux Plugin Manager
 - Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
