@@ -117,28 +117,21 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes zsh
-      - name: Install dotfiles twice in an isolated home
+      - name: Install dotfiles twice on hosted runner
         env:
           HOMEBREW_NO_ANALYTICS: "1"
         run: |
-          test_home="${RUNNER_TEMP}/dotfiles-home"
-          mkdir -p "$test_home"
-          ln -s "$GITHUB_WORKSPACE" "$test_home/dotfiles"
+          # The hosted VM and its home directory are discarded after this job.
+          # Keep the runner's package-manager state while honoring assimilate's
+          # documented requirement that the repository live at $HOME/dotfiles.
+          test ! -e "$HOME/dotfiles"
+          ln -s "$GITHUB_WORKSPACE" "$HOME/dotfiles"
 
-          # GitHub's macOS image has trusted taps for its preinstalled tools.
-          # Preserve only that public tap metadata when isolating HOME.
-          if [ -f "$HOME/.homebrew/trust.json" ]; then
-            mkdir -p "$test_home/.homebrew"
-            cp "$HOME/.homebrew/trust.json" "$test_home/.homebrew/trust.json"
-          fi
-          if [ "$(uname -s)" = Darwin ]; then
-            HOME="$test_home" brew trust aws/tap
-          fi
+          ./assimilate.sh
+          DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
+          backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
 
-          HOME="$test_home" ./assimilate.sh
-          HOME="$test_home" DOTFILES="$GITHUB_WORKSPACE" scripts/ci/verify-assimilate.sh
+          ./assimilate.sh
+          DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
 
-          HOME="$test_home" ./assimilate.sh
-          HOME="$test_home" DOTFILES="$GITHUB_WORKSPACE" scripts/ci/verify-assimilate.sh
-
-          test -z "$(find "$test_home/backups" -mindepth 1 -maxdepth 1 -print -quit)"
+          test "$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = "$backup_count"
