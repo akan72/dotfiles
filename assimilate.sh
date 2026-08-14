@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -ex
+set -euxo pipefail
 
 OS="$(uname -s)"
 ARCH="$(uname -m)"
@@ -103,7 +103,7 @@ clone_pinned https://github.com/ohmyzsh/ohmyzsh "$HOME/.oh-my-zsh" e7aa0c56e6834
 # Install rust via rustup-init.sh pinned to a specific GitHub commit (immutable),
 # with rustc toolchain version locked
 if [ ! -d "$HOME/.cargo" ]; then
-  RUSTUP_SHA=e10ffbdbb807c47fdd208119de99e7baae3e0dfe  # rustup 1.29.0
+  RUSTUP_SHA=28d1352dbcb436d3111c3594b9e1588e94950464  # rustup 1.29.0 tag's commit
   curl --proto '=https' --tlsv1.2 -sSf \
     "https://raw.githubusercontent.com/rust-lang/rustup/$RUSTUP_SHA/rustup-init.sh" \
     | sh -s -- -y --no-modify-path --default-toolchain 1.95.0
@@ -154,11 +154,12 @@ clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-p
 # Install neovim on Linux from a pinned upstream tarball (macOS gets it via Brewfile).
 # AL2023 doesn't ship neovim in its default dnf repos. Lands in $HOME/.local so no
 # root needed, and runs before the PackerSync block below so the plugin sync works.
-NVIM_VERSION=0.9.5
-NVIM_SHA256=44ee395d9b5f8a14be8ec00d3b8ead34e18fe6461e40c9c8c50e6956d643b6ca
-if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && ! command -v nvim >/dev/null; then
+NVIM_VERSION=0.12.4
+NVIM_SHA256=012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628
+NVIM_BIN="$HOME/.local/bin/nvim"
+if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && { [ ! -x "$NVIM_BIN" ] || [ "$("$NVIM_BIN" --version | head -n 1)" != "NVIM v${NVIM_VERSION}" ]; }; then
   tmp=$(mktemp -d)
-  curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux64.tar.gz" -o "$tmp/nvim.tar.gz"
+  curl -fsSL "https://github.com/neovim/neovim/releases/download/v${NVIM_VERSION}/nvim-linux-x86_64.tar.gz" -o "$tmp/nvim.tar.gz"
   if command -v sha256sum >/dev/null; then
     echo "${NVIM_SHA256}  $tmp/nvim.tar.gz" | sha256sum -c -
   else
@@ -166,9 +167,12 @@ if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && ! command -v nvim >/dev/null
   fi
   mkdir -p "$HOME/.local/share" "$HOME/.local/bin"
   tar -xzf "$tmp/nvim.tar.gz" -C "$HOME/.local/share"
-  ln -sf "$HOME/.local/share/nvim-linux64/bin/nvim" "$HOME/.local/bin/nvim"
+  ln -sf "$HOME/.local/share/nvim-linux-x86_64/bin/nvim" "$NVIM_BIN"
   rm -rf "$tmp"
-  # Make nvim visible to the rest of this script (PackerSync below)
+fi
+
+if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && [ -x "$NVIM_BIN" ]; then
+  # Prefer the pinned nvim for PackerSync, even when the host has another version.
   export PATH="$HOME/.local/bin:$PATH"
 fi
 

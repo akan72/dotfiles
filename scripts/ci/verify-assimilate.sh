@@ -3,6 +3,7 @@
 set -euo pipefail
 
 : "${DOTFILES:?DOTFILES must point to the checked-out repository}"
+export PATH="$HOME/.local/bin:$PATH"
 
 assert_link() {
   local source="$DOTFILES/$1"
