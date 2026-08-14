@@ -15,6 +15,7 @@ grep -Fq '28d1352dbcb436d3111c3594b9e1588e94950464' assimilate.sh
 grep -Fq 'NVIM_VERSION=0.12.4' assimilate.sh
 grep -Fq 'set -euxo pipefail' scripts/ci/verify-assimilate.sh
 grep -Fq 'bash --noprofile -ic' scripts/ci/verify-assimilate.sh
+grep -Fq "zsh -ic 'printf" scripts/ci/verify-assimilate.sh
 if grep -Fq -- '--norc' scripts/ci/verify-assimilate.sh; then
   echo "VPS shell verification must not disable .bashrc" >&2
   exit 1
