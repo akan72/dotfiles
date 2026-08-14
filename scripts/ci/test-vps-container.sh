@@ -13,6 +13,8 @@ grep -Fq 'curl-minimal' "$runner"
 grep -Fq 'set -euxo pipefail' assimilate.sh
 grep -Fq '28d1352dbcb436d3111c3594b9e1588e94950464' assimilate.sh
 grep -Fq 'NVIM_VERSION=0.12.4' assimilate.sh
+grep -Fq 'set -euxo pipefail' scripts/ci/verify-assimilate.sh
+grep -Fq 'bash --noprofile --norc -ic' scripts/ci/verify-assimilate.sh
 
 if "$runner" image alpine >/dev/null 2>&1; then
   echo "unsupported VPS target unexpectedly succeeded" >&2
