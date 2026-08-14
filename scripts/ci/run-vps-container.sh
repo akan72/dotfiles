@@ -52,7 +52,7 @@ case "$VPS_TARGET" in
     apt-get install --yes ca-certificates curl findutils git gzip passwd tar zsh
     ;;
   amazon-linux)
-    dnf install --assumeyes ca-certificates curl findutils git gzip shadow-utils tar util-linux zsh
+    dnf install --assumeyes ca-certificates curl-minimal findutils git gzip shadow-utils tar util-linux zsh
     ;;
   *)
     echo "unsupported VPS target: $VPS_TARGET" >&2
