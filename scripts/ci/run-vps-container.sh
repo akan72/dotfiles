@@ -37,7 +37,7 @@ fi
 
 repo_root="$(git rev-parse --show-toplevel)"
 
-docker run --rm \
+docker run --rm --interactive \
   --platform linux/amd64 \
   --env VPS_TARGET="$target" \
   --volume "$repo_root:/workspace:ro" \
