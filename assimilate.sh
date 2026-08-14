@@ -85,6 +85,8 @@ if [ "$OS" = "Darwin" ]; then
   sym zed/keymap.json             .config/zed/keymap.json
   sym ghostty/config              Library/Application\ Support/com.mitchellh.ghostty/config
 
+  # Homebrew 6 requires explicit trust before installing formulae from a tap.
+  brew trust hashicorp/tap
   brew bundle install
 fi
 
