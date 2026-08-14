@@ -67,8 +67,13 @@ autocmd(
 -- Prevent gray sign column from appearing after toggling FileTree and Gdiffsplit
 o.foldcolumn = '0'
 
--- Yank to clipboard with ctrl-c
-o.clipboard = 'unnamed'
+-- Use OSC 52 over SSH; otherwise use the local clipboard provider.
+if vim.env.SSH_CONNECTION then
+    g.clipboard = 'osc52'
+    o.clipboard = 'unnamedplus'
+else
+    o.clipboard = 'unnamed'
+end
 
 -- Disables automatic commenting on newline:
 o.formatoptions = 'cro'
