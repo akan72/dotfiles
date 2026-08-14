@@ -125,6 +125,13 @@ jobs:
           mkdir -p "$test_home"
           ln -s "$GITHUB_WORKSPACE" "$test_home/dotfiles"
 
+          # GitHub's macOS image has trusted taps for its preinstalled tools.
+          # Preserve only that public tap metadata when isolating HOME.
+          if [ -f "$HOME/.homebrew/trust.json" ]; then
+            mkdir -p "$test_home/.homebrew"
+            cp "$HOME/.homebrew/trust.json" "$test_home/.homebrew/trust.json"
+          fi
+
           HOME="$test_home" ./assimilate.sh
           HOME="$test_home" DOTFILES="$GITHUB_WORKSPACE" scripts/ci/verify-assimilate.sh
 
