@@ -53,9 +53,10 @@ also owns the portable `[desktop]` preferences configured through the Codex UI,
 including the Git branch prefix, PR and commit conventions, appearance, editor
 target, notifications, queue behavior, worktree cleanup, and automatic imports
 from Claude Code. It also lets Codex use `CLAUDE.md` when `AGENTS.md` is absent
-and raises the project-instruction budget for larger repository guides. Changes
-made in the UI should be mirrored back to the managed fragment before the next
-assimilation.
+and raises the project-instruction budget for larger repository guides. The
+managed agent preferences also enable automatic review and keep responses terse
+and pragmatic. Changes made in the UI should be mirrored back to the managed
+fragment before the next assimilation.
 
 Claude import category choices are stored by the desktop app outside
 `config.toml`. After Homebrew installs `jq`, `codex/sync-import-preferences.sh`

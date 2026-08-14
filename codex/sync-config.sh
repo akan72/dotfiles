@@ -10,7 +10,7 @@ start_marker="# dotfiles-managed:start"
 end_marker="# dotfiles-managed:end"
 tables_start_marker="# dotfiles-managed-tables:start"
 tables_end_marker="# dotfiles-managed-tables:end"
-managed_keys="notify|model_reasoning_summary|model_verbosity|personality|project_doc_fallback_filenames|project_doc_max_bytes"
+managed_keys="notify|model_reasoning_summary|model_verbosity|personality|approvals_reviewer|project_doc_fallback_filenames|project_doc_max_bytes"
 managed_table_prefixes="desktop"
 
 if [ ! -f "$managed_config" ]; then
