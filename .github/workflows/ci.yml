@@ -131,6 +131,9 @@ jobs:
             mkdir -p "$test_home/.homebrew"
             cp "$HOME/.homebrew/trust.json" "$test_home/.homebrew/trust.json"
           fi
+          if [ "$(uname -s)" = Darwin ]; then
+            HOME="$test_home" brew trust aws/tap
+          fi
 
           HOME="$test_home" ./assimilate.sh
           HOME="$test_home" DOTFILES="$GITHUB_WORKSPACE" scripts/ci/verify-assimilate.sh
