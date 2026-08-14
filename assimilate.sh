@@ -16,9 +16,16 @@ function sym () {
   # Ensure parent directory exists
   mkdir -p "$(dirname "$dest")"
 
+  # An already-correct link is installed. Leaving it alone makes repeated
+  # assimilation safe and avoids filling the backup directory on every run.
+  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
+    return
+  fi
+
   # Save existing dotfiles (also matches dangling symlinks, where -e alone returns false)
   if [ -e "$dest" ] || [ -L "$dest" ]; then
-    backup="$BACKUPS/$(basename $dest)-$(date +%s)"
+    backup="$(mktemp -d "$BACKUPS/$(basename "$dest").XXXXXX")"
+    rmdir "$backup"
     mv "$dest" "$backup"
     echo "> Moved $dest to $backup"
   fi
@@ -79,6 +86,12 @@ if [ "$OS" = "Darwin" ]; then
   sym ghostty/config              Library/Application\ Support/com.mitchellh.ghostty/config
 
   brew bundle install
+fi
+
+# Install repository security hooks when pre-commit is available (Homebrew
+# supplies it on macOS). Linux users can install pre-commit independently.
+if command -v pre-commit >/dev/null 2>&1; then
+  (cd "$DOTFILES" && pre-commit install --allow-missing-config)
 fi
 
 # Install oh-my-zsh (clone repo directly; install.sh is just `git clone` once

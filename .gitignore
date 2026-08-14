@@ -4,3 +4,13 @@ nvim/plugin/
 gh/
 .claude
 .wrangler
+
+# Secrets and machine-local tool state
+*.pem
+*.key
+.env
+.env.*
+credentials.json
+*.secret
+Brewfile.lock.json
+homebrew/
