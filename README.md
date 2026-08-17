@@ -61,10 +61,10 @@ Enable continuous Claude Code import once in the Codex UI and leave session
 imports disabled. Those choices are desktop-local state and are deliberately
 not automated through internal state files or JSON-RPC APIs.
 
-Desktop-only preferences such as the Git branch prefix, PR and commit
-instructions, appearance, editor target, and queue behavior remain local. Codex
-currently treats the `[desktop]` table as opaque app state, so it is deliberately
-not checked in. Generated and machine-specific state such as local paths,
+The portable Git preferences—branch prefix, squash merge method, and PR and
+commit instructions—are managed in the schema-supported `[desktop]` table.
+Other desktop preferences such as appearance, editor target, and queue behavior
+remain local. Generated and machine-specific state such as local paths,
 installed plugins, connector authentication, caches, session history, and
 per-project trust also remains local. Never check in
 `.codex-global-state.json`, Codex session databases, or the complete live

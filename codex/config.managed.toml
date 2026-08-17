@@ -9,3 +9,15 @@ approvals_reviewer = "auto_review"
 # AGENTS.md is built in; use CLAUDE.md when no AGENTS.md is present.
 project_doc_fallback_filenames = ["CLAUDE.md"]
 project_doc_max_bytes = 196608
+
+[desktop]
+git-branch-prefix = "akan72/"
+git-pull-request-merge-method = "squash"
+git-commit-instructions = "Commit messages should be concise, just one sentence"
+git-pr-instructions = """Create pull requests with the simple format
+
+## Summary
+<Describe the context for your change>
+
+## Test Plan
+<Evidence that the PR is working, include screenshots, and the CLI commands that you ran>"""
