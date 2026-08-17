@@ -1,0 +1,11 @@
+model = "keep-me"
+model_verbosity = "high"
+
+[desktop]
+git-branch-prefix = "local/"
+
+[projects."/tmp/example"]
+trust_level = "trusted"
+
+[mcp_servers.local]
+command = "true"

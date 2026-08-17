@@ -3,7 +3,7 @@
 set -ex
 
 PREFIX="$HOME"
-DOTFILES="$PREFIX/dotfiles"
+DOTFILES=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BACKUPS="$PREFIX/backups"
 
 function sym () {
@@ -48,7 +48,7 @@ sym zed/keymap.json     .config/zed/keymap.json
 
 brew bundle install
 
-node "$DOTFILES/codex/sync-config.mjs"
+"$DOTFILES/codex/sync-config.sh"
 
 function clone_pinned () {
   url="$1"; dir="$2"; sha="$3"

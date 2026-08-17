@@ -47,20 +47,19 @@ cd into the `dotfiles` directory, and then run:
 
 ### Codex configuration
 
-`assimilate.sh` uses Codex's documented app-server configuration API to apply
-the portable root settings from `codex/config.managed.toml` to
-`~/.codex/config.toml`. Codex parses and validates the managed TOML itself, and
-`config/batchWrite` preserves settings that are not managed by this repository.
+`assimilate.sh` uses `yq` to structurally merge the portable root settings from
+`codex/config.managed.toml` into `~/.codex/config.toml`. It validates the merged
+file with Codex's strict config loader before replacing the live config
+atomically. Settings outside the managed fragment are preserved, and the first
+existing config is retained as `~/.codex/config.toml.dotfiles-backup`.
+
 The checked-in settings enable turn notifications, automatic review, low
 verbosity, concise reasoning summaries, and the pragmatic personality. Codex
 uses `AGENTS.md` natively and falls back to `CLAUDE.md` when it is absent.
 
-The same sync detects and imports Claude Code instructions, configuration,
-skills, commands, subagents, hooks, plugins, MCP servers, and memory through
-Codex's external-agent import API. Session detection is disabled and any
-`SESSIONS` items are explicitly excluded. This is a supported, one-shot import
-each time assimilation runs; optional continuous import can still be enabled
-once in the Codex UI with session imports left disabled.
+Enable continuous Claude Code import once in the Codex UI and leave session
+imports disabled. Those choices are desktop-local state and are deliberately
+not automated through internal state files or JSON-RPC APIs.
 
 Desktop-only preferences such as the Git branch prefix, PR and commit
 instructions, appearance, editor target, and queue behavior remain local. Codex
