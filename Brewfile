@@ -3,7 +3,7 @@ brew "curl"
 brew "duckdb"
 brew "git"
 brew "gh"
-brew "hashicorp/tap/terraform"
+brew "hashicorp/tap/terraform", trusted: true
 brew "htop"
 brew "jq"
 brew "k9s"
