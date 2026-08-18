@@ -48,6 +48,7 @@ sym zed/keymap.json     .config/zed/keymap.json
 
 brew bundle install
 
+"$DOTFILES/claude/sync-settings.sh"
 "$DOTFILES/codex/sync-config.sh"
 
 function clone_pinned () {

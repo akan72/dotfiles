@@ -70,6 +70,15 @@ per-project trust also remains local. Never check in
 `.codex-global-state.json`, Codex session databases, or the complete live
 `config.toml`.
 
+### Claude Code configuration
+
+`assimilate.sh` uses `jq` to structurally merge the portable settings from
+`claude/settings.managed.json` into `~/.claude/settings.json`. Local settings
+such as permissions, hooks, plugins, and model selection are preserved. The
+managed attribution block disables commit attribution, PR attribution, and
+cloud or Remote Control session links. The first existing settings file is
+retained as `~/.claude/settings.json.dotfiles-backup`.
+
 ### Tmux Plugin Manager
 - Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
 - Install tmux packages with `prefix + I`
