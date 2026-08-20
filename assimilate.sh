@@ -3,7 +3,7 @@
 set -ex
 
 PREFIX="$HOME"
-DOTFILES="$PREFIX/dotfiles"
+DOTFILES=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 BACKUPS="$PREFIX/backups"
 
 function sym () {
