@@ -45,8 +45,10 @@ cd into the `dotfiles` directory, and then run:
 ./assimilate.sh
 ```
 
-The installer shares `agent-instructions.md` with Claude Code and Codex by
-linking it to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`.
+The installer links the version-controlled Claude Code settings to
+`~/.claude/settings.json`. It also shares `agent-instructions.md` with Claude
+Code and Codex by linking it to `~/.claude/CLAUDE.md` and
+`~/.codex/AGENTS.md`.
 
 ### Tmux Plugin Manager
 - Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
