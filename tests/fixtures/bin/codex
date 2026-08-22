@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+
+printf '%s\n' "$*" > "$TEST_CODEX_MARKER"
+exit 1
