@@ -18,9 +18,13 @@
 	# is currently exposed (macOS system agent, 1Password, gpg-agent, etc.)
 	# rather than hardcoding ~/.ssh/id_ed25519.pub. Works with hardware-
 	# resident keys (YubiKey ed25519-sk, 1Password) where there may be no
-	# .pub file on disk. The `key::` prefix is what git's source explicitly
-	# looks for in defaultKeyCommand output.
-	defaultKeyCommand = sh -c 'printf "key::%s\n" "$(ssh-add -L | head -n1)"'
+	# .pub file on disk. git takes the first line of this command's output
+	# as the signing key, so a bare `ssh-add -L` is all that's needed — no
+	# shell wrapper. (The previous printf wrapper broke signing entirely:
+	# git's config parser consumes the quotes and `\n` escapes before the
+	# shell ever sees them, so the key from the command substitution was
+	# *executed* as a command and the output reduced to a bare "key::".)
+	defaultKeyCommand = ssh-add -L
 
 [commit]
 	gpgsign = true
