@@ -237,9 +237,9 @@ if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && [ -x "$NVIM_BIN" ]; then
 fi
 
 # lazy.nvim self-bootstraps (clones itself, pinned in nvim/lua/config/plugins.lua)
-# on first launch. Trigger a headless sync when nvim is available.
+# on first launch. Restore the committed lock state when nvim is available.
 if command -v nvim >/dev/null; then
-  nvim --headless "+Lazy! sync" +qa || true
+  nvim --headless "+Lazy! restore" +qa || true
 fi
 
 echo "> Assimilation successful!"
