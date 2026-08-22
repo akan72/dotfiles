@@ -10,7 +10,7 @@ assert_link() {
   local target="$HOME/$2"
 
   test -L "$target"
-  test "$(readlink "$target")" = "$source"
+  test "$(realpath "$target")" = "$(realpath "$source")"
 }
 
 assert_link bash_profile .bash_profile
@@ -41,7 +41,11 @@ test -x "$HOME/.cargo/bin/rustc"
 test -d "$HOME/.oh-my-zsh/.git"
 test -d "$HOME/.tmux/plugins/tpm/.git"
 test -d "$HOME/.tmux/plugins/tmux-powerline/.git"
-test -d "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim/.git"
+if [ -f "$DOTFILES/nvim/lazy-lock.json" ]; then
+  test -d "$HOME/.local/share/nvim/lazy/lazy.nvim/.git"
+else
+  test -d "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim/.git"
+fi
 
 nvim_log="$(mktemp)"
 if ! HOME="$HOME" nvim --headless -c 'quitall' >"$nvim_log" 2>&1; then

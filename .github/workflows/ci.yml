@@ -42,9 +42,8 @@ jobs:
         run: git config --file gitconfig --list >/dev/null
       - name: Check strict JSON
         run: |
-          jq empty nvim/coc-settings.json
-          jq empty vscode/code_settings.json
-          jq empty zed/keymap.json
+          find nvim -maxdepth 1 -type f -name '*.json' -exec jq empty {} +
+          jq empty vscode/code_settings.json zed/keymap.json
 
   pre-commit:
     name: Pre-commit
