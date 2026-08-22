@@ -89,6 +89,6 @@ session links. The first existing settings file is retained as
 
 ## Headless Mac mini
 
-- [Setup and restart verification](mac-mini-setup-guide.md)
-- [Tailscale SSH architecture](tailscale-ssh.md)
-- [Personal/work GitHub authentication](github-auth.md)
+- [Setup and restart verification](docs/mac-mini-setup-guide.md)
+- [Tailscale SSH architecture](docs/tailscale-ssh.md)
+- [Personal/work GitHub authentication](docs/github-auth.md)
