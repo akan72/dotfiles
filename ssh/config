@@ -1,0 +1,29 @@
+# SSH client configuration (symlinked to ~/.ssh/config by assimilate.sh)
+
+# Machine-local hosts live in ~/.ssh/config.local (not tracked — this repo is
+# public). ssh silently skips a missing Include, and entries there are read
+# first so they take precedence for their hosts.
+Include config.local
+
+Host *
+    # Hash hostnames in known_hosts so a leaked file doesn't reveal every
+    # server you've connected to.
+    HashKnownHosts yes
+    # Store/read key passphrases from the macOS keychain. IgnoreUnknown keeps
+    # Linux ssh (which has no UseKeychain option) from erroring on it.
+    IgnoreUnknown UseKeychain
+    UseKeychain yes
+    # Load a key into the agent on first use so you aren't re-prompted.
+    AddKeysToAgent yes
+    # Only offer keys explicitly configured for a host — don't spray every
+    # loaded key at every server (avoids leaking fingerprints / auth failures).
+    IdentitiesOnly yes
+    # Show an ASCII-art fingerprint on connect to help spot MITM on first use.
+    VisualHostKey yes
+    # Never silently auto-accept unknown host keys.
+    StrictHostKeyChecking ask
+
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
