@@ -1,0 +1,10 @@
+{
+  "model": "keep-me",
+  "attribution": {
+    "commit": "old commit attribution",
+    "pr": "old PR attribution"
+  },
+  "enabledPlugins": {
+    "local": true
+  }
+}
