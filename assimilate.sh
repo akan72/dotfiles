@@ -67,6 +67,7 @@ sym claude/statusline.sh            .claude/statusline.sh
 sym agent-instructions.md           .claude/CLAUDE.md
 sym agent-instructions.md           .codex/AGENTS.md
 sym ssh/config                      .ssh/config
+sym uv/uv.toml                      .config/uv/uv.toml
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
 chmod 600 "$HOME/.gitconfig"
@@ -110,6 +111,12 @@ if command -v yq >/dev/null 2>&1 && command -v codex >/dev/null 2>&1; then
   "$DOTFILES/codex/sync-config.sh"
 else
   echo "WARN: yq or codex is unavailable — skipping Codex settings sync" >&2
+fi
+
+# Let uv manage Python when it is available. The rolling release-age window in
+# uv/uv.toml applies to package resolution, while this installs the interpreter.
+if command -v uv >/dev/null 2>&1; then
+  uv python install
 fi
 
 # Install repository security hooks when pre-commit is available (Homebrew
