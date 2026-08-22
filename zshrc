@@ -62,12 +62,6 @@ export NVM_DIR="$HOME/.nvm"
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 alias snowsql=/Applications/SnowSQL.app/Contents/MacOS/snowsql
 
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f "$HOME/Downloads/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/path.zsh.inc"; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc"; fi
-
 # .zsh syntax highlighting (installed via brew on macOS, may be missing elsewhere)
 if [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
   source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
@@ -94,3 +88,14 @@ precmd_functions+=(_reset_cursor)
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+# Load the Google Cloud SDK installed by assimilate.sh, or an existing SDK.
+_gcloud_sdk_root="$HOME/.local/share/google-cloud-sdk"
+if [ ! -d "$_gcloud_sdk_root" ] && (( $+commands[gcloud] )); then
+  _gcloud_sdk_root="${commands[gcloud]:A:h:h}"
+elif [ ! -d "$_gcloud_sdk_root" ] && [ -d "$HOME/work/dev/google-cloud-sdk" ]; then
+  _gcloud_sdk_root="$HOME/work/dev/google-cloud-sdk"
+fi
+[ -f "$_gcloud_sdk_root/path.zsh.inc" ] && source "$_gcloud_sdk_root/path.zsh.inc"
+[ -f "$_gcloud_sdk_root/completion.zsh.inc" ] && source "$_gcloud_sdk_root/completion.zsh.inc"
+unset _gcloud_sdk_root
