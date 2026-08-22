@@ -3,7 +3,6 @@ local
 gh/
 .claude
 .wrangler
-
 # Secrets and machine-local tool state
 *.pem
 *.key
@@ -12,4 +11,7 @@ gh/
 credentials.json
 *.secret
 Brewfile.lock.json
+
+# XDG_CONFIG_HOME points at this repo, so tools sometimes drop machine-local
+# state here. Homebrew writes its tap trust store (homebrew/trust.json).
 homebrew/
