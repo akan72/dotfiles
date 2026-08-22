@@ -242,15 +242,18 @@ if command -v nvim >/dev/null; then
   nvim --headless "+Lazy! sync" +qa || true
 fi
 
-# Turn off Claude Code commit/PR attribution. Appends the "attribution" key only
-# if it isn't already set, so existing local settings are never overridden.
+# Configure Claude Code defaults. Appends each key only when it is absent, so
+# existing machine-local settings are never overridden.
 CLAUDE_SETTINGS="$HOME/.claude/settings.json"
 mkdir -p "$HOME/.claude"
 if [ ! -f "$CLAUDE_SETTINGS" ]; then
-  printf '{\n  "attribution": { "commit": "", "pr": "" }\n}\n' > "$CLAUDE_SETTINGS"
-elif ! jq -e 'has("attribution")' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+  printf '{\n  "attribution": { "commit": "", "pr": "" },\n  "statusLine": { "type": "command", "command": "~/.claude/statusline.sh", "padding": 0 }\n}\n' > "$CLAUDE_SETTINGS"
+elif ! jq -e 'has("attribution") and has("statusLine")' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
   tmp=$(mktemp)
-  jq '. + {attribution: {commit: "", pr: ""}}' "$CLAUDE_SETTINGS" > "$tmp" && mv "$tmp" "$CLAUDE_SETTINGS"
+  jq '
+    if has("attribution") then . else . + {attribution: {commit: "", pr: ""}} end
+    | if has("statusLine") then . else . + {statusLine: {type: "command", command: "~/.claude/statusline.sh", padding: 0}} end
+  ' "$CLAUDE_SETTINGS" > "$tmp" && mv "$tmp" "$CLAUDE_SETTINGS"
 fi
 
 echo "> Assimilation successful!"
