@@ -68,6 +68,9 @@ sym agent-instructions.md           .claude/CLAUDE.md
 sym agent-instructions.md           .codex/AGENTS.md
 sym ssh/config                      .ssh/config
 sym uv/uv.toml                      .config/uv/uv.toml
+# bun reads $XDG_CONFIG_HOME/.bunfig.toml (the repo root) in shells; the
+# symlink covers contexts where XDG_CONFIG_HOME isn't exported.
+sym .bunfig.toml                    .bunfig.toml
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).
 chmod 600 "$HOME/.gitconfig"
@@ -85,6 +88,12 @@ else
   if ! grep -Fq 'dotfiles/bashrc' "$PREFIX/.bashrc" 2>/dev/null; then
     echo '[ -f "$HOME/dotfiles/bashrc" ] && . "$HOME/dotfiles/bashrc"' >> "$PREFIX/.bashrc"
   fi
+fi
+
+# npm: refuse package versions younger than 7 days. Append-only because
+# ~/.npmrc may also contain authentication written by `npm login`.
+if ! grep -q '^min-release-age=' "$HOME/.npmrc" 2>/dev/null; then
+  echo 'min-release-age=7' >> "$HOME/.npmrc"
 fi
 
 # macOS-only symlinks and Homebrew (apps/paths don't exist on Linux)
@@ -255,6 +264,20 @@ fi
 # on first launch. Restore the committed lock state when nvim is available.
 if command -v nvim >/dev/null; then
   nvim --headless "+Lazy! restore" +qa || true
+fi
+
+# Configure Claude Code defaults. Appends each key only when it is absent, so
+# existing machine-local settings are never overridden.
+CLAUDE_SETTINGS="$HOME/.claude/settings.json"
+mkdir -p "$HOME/.claude"
+if [ ! -f "$CLAUDE_SETTINGS" ]; then
+  printf '{\n  "attribution": { "commit": "", "pr": "" },\n  "statusLine": { "type": "command", "command": "~/.claude/statusline.sh", "padding": 0 }\n}\n' > "$CLAUDE_SETTINGS"
+elif ! jq -e 'has("attribution") and has("statusLine")' "$CLAUDE_SETTINGS" >/dev/null 2>&1; then
+  tmp=$(mktemp)
+  jq '
+    if has("attribution") then . else . + {attribution: {commit: "", pr: ""}} end
+    | if has("statusLine") then . else . + {statusLine: {type: "command", command: "~/.claude/statusline.sh", padding: 0}} end
+  ' "$CLAUDE_SETTINGS" > "$tmp" && mv "$tmp" "$CLAUDE_SETTINGS"
 fi
 
 echo "> Assimilation successful!"
