@@ -213,7 +213,7 @@ clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-p
 
 # Install neovim on Linux from a pinned upstream tarball (macOS gets it via Brewfile).
 # AL2023 doesn't ship neovim in its default dnf repos. Lands in $HOME/.local so no
-# root needed, and runs before the PackerSync block below so the plugin sync works.
+# root needed, and runs before the lazy.nvim sync below so plugin setup works.
 NVIM_VERSION=0.12.4
 NVIM_SHA256=012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628
 NVIM_BIN="$HOME/.local/bin/nvim"
@@ -232,15 +232,14 @@ if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && { [ ! -x "$NVIM_BIN" ] || [ 
 fi
 
 if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && [ -x "$NVIM_BIN" ]; then
-  # Prefer the pinned nvim for PackerSync, even when the host has another version.
+  # Prefer the pinned nvim for plugin sync, even when the host has another version.
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Install Packer (nvim plugin manager) and run PackerSync — only if nvim is available
+# lazy.nvim self-bootstraps (clones itself, pinned in nvim/lua/config/plugins.lua)
+# on first launch. Restore the committed lock state when nvim is available.
 if command -v nvim >/dev/null; then
-  clone_pinned https://github.com/wbthomason/packer.nvim "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim" ea0cc3c59f67c440c5ff0bbe4fb9420f4350b9a3  # 2023-08-24, matches plugins.lua pin
-
-  nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync' || true
+  nvim --headless "+Lazy! restore" +qa || true
 fi
 
 echo "> Assimilation successful!"
