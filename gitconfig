@@ -20,7 +20,15 @@
 	# resident keys (YubiKey ed25519-sk, 1Password) where there may be no
 	# .pub file on disk. The `key::` prefix is what git's source explicitly
 	# looks for in defaultKeyCommand output.
-	defaultKeyCommand = sh -c 'printf "key::%s\n" "$(ssh-add -L | head -n1)"'
+	#
+	# Deliberately free of double quotes: git's config parser consumes `"` and
+	# expands `\n` in values, so a shell-quoted `"$(...)"` written here reaches
+	# sh UNQUOTED. That mattered — `ssh-add -L` prints "The agent has no
+	# identities." on *stdout* (not stderr) with an empty agent, and word
+	# splitting then ran `The` as a command. The grep filter keeps only real
+	# key lines, so an empty agent yields empty output and git fails cleanly
+	# with "user.signingKey needs to be set" instead of signing garbage.
+	defaultKeyCommand = sh -c 'ssh-add -L 2>/dev/null | grep -m1 -e ^ssh- -e ^sk- -e ^ecdsa- | sed -e s/^/key::/'
 
 [commit]
 	gpgsign = true
@@ -62,3 +70,9 @@
 
 [pull]
     rebase = false
+
+[include]
+	# Machine-local overrides (credential helper, signing key). Kept out of the
+	# repo so per-host secrets/paths never propagate to other machines. Git
+	# silently ignores this if the file is absent, so it is safe to share.
+	path = ~/.gitconfig.local

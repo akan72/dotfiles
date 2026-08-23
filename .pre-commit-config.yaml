@@ -1,0 +1,8 @@
+# Pre-commit hooks for this public dotfiles repository.
+# Install once with: pre-commit install
+# Run against all files with: pre-commit run --all-files
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
