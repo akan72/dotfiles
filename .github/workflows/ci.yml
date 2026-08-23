@@ -34,10 +34,12 @@ jobs:
           sudo apt-get install --yes zsh
       - name: Check shell syntax
         run: |
-          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh
+          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh tests/*.sh
           zsh -n zshrc
       - name: Test VPS container harness
-        run: scripts/ci/test-vps-container.sh
+        run: |
+          scripts/ci/test-vps-container.sh
+          bash tests/clone-pinned.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null
       - name: Check strict JSON
@@ -128,14 +130,27 @@ jobs:
           test ! -e "$HOME/dotfiles"
           ln -s "$GITHUB_WORKSPACE" "$HOME/dotfiles"
 
+          first_started=$SECONDS
           ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
+          first_seconds=$((SECONDS - first_started))
           backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
 
-          ./assimilate.sh
+          second_started=$SECONDS
+          ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
+          second_seconds=$((SECONDS - second_started))
 
           test "$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" = "$backup_count"
+
+          {
+            echo "### Install timing (${{ matrix.os }})"
+            echo
+            echo "| Pass | Seconds |"
+            echo "| --- | ---: |"
+            echo "| Clean install | $first_seconds |"
+            echo "| Idempotency | $second_seconds |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   vps-install:
     name: VPS install (${{ matrix.target }})

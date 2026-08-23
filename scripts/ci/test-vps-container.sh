@@ -13,6 +13,11 @@ grep -Fq 'curl-minimal' "$runner"
 grep -Fq 'set -euxo pipefail' assimilate.sh
 grep -Fq '28d1352dbcb436d3111c3594b9e1588e94950464' assimilate.sh
 grep -Fq 'NVIM_VERSION=0.12.4' assimilate.sh
+grep -Fq 'current_sha="$(git -C "$dir" rev-parse --verify HEAD 2>/dev/null || true)"' assimilate.sh
+grep -Fq 'brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"' assimilate.sh
+grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC' assimilate.sh
+grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' "$runner"
+grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' .github/workflows/ci.yml
 grep -Fq 'set -euxo pipefail' scripts/ci/verify-assimilate.sh
 grep -Fq "bash --noprofile -ic 'test \"\$UV_MALWARE_CHECK\" = 1'" scripts/ci/verify-assimilate.sh
 grep -Fq "zsh -ic 'test \"\$UV_MALWARE_CHECK\" = 1'" scripts/ci/verify-assimilate.sh

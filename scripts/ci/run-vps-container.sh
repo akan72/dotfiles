@@ -71,12 +71,18 @@ runuser --user dotfiles -- env \
     set -euo pipefail
     cd "$HOME/dotfiles"
 
+    first_started=$SECONDS
     ./assimilate.sh
     DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
+    first_seconds=$((SECONDS - first_started))
     backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d " ")"
 
-    ./assimilate.sh
+    second_started=$SECONDS
+    ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh
     DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
+    second_seconds=$((SECONDS - second_started))
     test "$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d " ")" = "$backup_count"
+
+    echo "> Install timing: clean=${first_seconds}s idempotency=${second_seconds}s"
   '
 CONTAINER

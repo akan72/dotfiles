@@ -36,6 +36,17 @@ function sym () {
 
 function clone_pinned () {
   url="$1"; dir="$2"; sha="$3"
+  current_sha=""
+  if [ -d "$dir/.git" ]; then
+    current_sha="$(git -C "$dir" rev-parse --verify HEAD 2>/dev/null || true)"
+  fi
+
+  # The requested content is already installed. In particular, this avoids
+  # repeating four network fetches during CI's second idempotency pass.
+  if [ "$current_sha" = "$sha" ]; then
+    return
+  fi
+
   # Fetch only the pinned commit, no full history. Avoids `git clone --revision`
   # (git >= 2.49) so this works on older git too, e.g. AL2023's 2.40 on stale AMIs.
   # Fetch-by-SHA relies on the server allowing reachable-SHA1-in-want (GitHub does).
@@ -88,8 +99,12 @@ if [ "$OS" = "Darwin" ]; then
   sym ghostty/config              Library/Application\ Support/com.mitchellh.ghostty/config
 
   # Homebrew 6 requires explicit trust before installing formulae from a tap.
-  brew trust hashicorp/tap
-  brew bundle install
+  # Skip bundle resolution when everything is already present, which makes the
+  # second CI install substantially cheaper without caching runner state.
+  if ! brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"; then
+    brew trust hashicorp/tap
+    brew bundle install --no-upgrade --file="$DOTFILES/Brewfile"
+  fi
 fi
 
 # Sync portable agent settings after Homebrew has supplied jq, yq, and Codex on
@@ -191,11 +206,15 @@ if [ "$OS" = "Linux" ] && [ "$ARCH" = "x86_64" ] && [ -x "$NVIM_BIN" ]; then
   export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# Install Packer (nvim plugin manager) and run PackerSync — only if nvim is available
+# Install Packer (nvim plugin manager) and run PackerSync — only if nvim is available.
+# CI skips only this update operation on its second pass; the verification that
+# follows still starts Neovim and checks the installed plugin manager.
 if command -v nvim >/dev/null; then
   clone_pinned https://github.com/wbthomason/packer.nvim "$HOME/.local/share/nvim/site/pack/packer/start/packer.nvim" ea0cc3c59f67c440c5ff0bbe4fb9420f4350b9a3  # 2023-08-24, matches plugins.lua pin
 
-  nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync' || true
+  if [ "${ASSIMILATE_SKIP_PLUGIN_SYNC:-0}" != 1 ]; then
+    nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync' || true
+  fi
 fi
 
 echo "> Assimilation successful!"
