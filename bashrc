@@ -124,3 +124,8 @@ export XDG_CONFIG_HOME="$HOME/dotfiles"
 
 # Claude
 alias claude="$HOME/.local/bin/claude"
+
+# gh CLI config lives in dotfiles (gh/ is gitignored — hosts.yml holds a token);
+# exported for every shell, including non-interactive ones, so gh auth resolves
+# consistently. See docs/github-auth.md "GitHub CLI authentication".
+export GH_CONFIG_DIR="$HOME/dotfiles/gh"
