@@ -7,6 +7,9 @@ export EDITOR='nvim'
 export TERM='xterm-256color'
 export LANG='en_US.UTF-8'
 
+# Ask uv to check resolved packages against malicious-package advisories.
+export UV_MALWARE_CHECK=1
+
 # ----
 # Aliases
 
