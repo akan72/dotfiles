@@ -86,3 +86,9 @@ session links. The first existing settings file is retained as
 ### Tmux Plugin Manager
 - Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
 - Install tmux packages with `prefix + I`
+
+## Headless Mac mini
+
+- [Setup and restart verification](docs/mac-mini-setup-guide.md)
+- [Tailscale SSH architecture](docs/tailscale-ssh.md)
+- [Personal/work GitHub authentication](docs/github-auth.md)
