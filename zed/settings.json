@@ -1,4 +1,7 @@
 {
+    "project_panel": {
+        "dock": "left"
+    },
     "cursor_blink": false,
     "terminal": {
         "cursor_shape": "bar"
