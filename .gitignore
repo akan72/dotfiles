@@ -1,17 +1,28 @@
 local
 .DS_Store
 gh/
-.claude
-.wrangler
-# Secrets and machine-local tool state
-*.pem
-*.key
-.env
-.env.*
-credentials.json
-*.secret
+.claude/
+.codex/
+.wrangler/
+# XDG_CONFIG_HOME points at this repo; Homebrew stores per-machine tap trust here.
+homebrew/
 Brewfile.lock.json
 
-# XDG_CONFIG_HOME points at this repo, so tools sometimes drop machine-local
-# state here. Homebrew writes its tap trust store (homebrew/trust.json).
-homebrew/
+# Secrets and machine-local authentication
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.secret
+credentials.json
+auth.json
+token.txt
+*-credentials
+*credential-input*
+.gitconfig.local
+gitconfig.local
+CLAUDE.local.md
+AGENTS.override.md
+.codex-global-state.json

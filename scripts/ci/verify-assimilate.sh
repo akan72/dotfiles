@@ -34,8 +34,9 @@ else
   grep -Fq 'dotfiles/bashrc' "$HOME/.bashrc"
 fi
 
-HOME="$HOME" bash --noprofile -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
-HOME="$HOME" zsh -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
+# Require each shell to set this itself, even when CI exports it globally.
+env -u UV_MALWARE_CHECK HOME="$HOME" bash --noprofile -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
+env -u UV_MALWARE_CHECK HOME="$HOME" zsh -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
 test "$("$HOME/.local/bin/delta" --version)" = "delta 0.19.2"
 test -x "$HOME/.cargo/bin/rustc"
 test -d "$HOME/.oh-my-zsh/.git"
