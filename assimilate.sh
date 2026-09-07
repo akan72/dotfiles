@@ -36,6 +36,17 @@ function sym () {
 
 function clone_pinned () {
   url="$1"; dir="$2"; sha="$3"
+  current_sha=""
+  if [ -d "$dir/.git" ]; then
+    current_sha="$(git -C "$dir" rev-parse --verify HEAD 2>/dev/null || true)"
+  fi
+
+  # The requested content is already installed. In particular, this avoids
+  # repeating four network fetches during CI's second idempotency pass.
+  if [ "$current_sha" = "$sha" ]; then
+    return
+  fi
+
   # Fetch only the pinned commit, no full history. Avoids `git clone --revision`
   # (git >= 2.49) so this works on older git too, e.g. AL2023's 2.40 on stale AMIs.
   # Fetch-by-SHA relies on the server allowing reachable-SHA1-in-want (GitHub does).
@@ -93,8 +104,12 @@ if [ "$OS" = "Darwin" ]; then
   sym ghostty/config              Library/Application\ Support/com.mitchellh.ghostty/config
 
   # Homebrew 6 requires explicit trust before installing formulae from a tap.
-  brew trust hashicorp/tap
-  brew bundle install
+  # Skip bundle resolution when everything is already present, which makes the
+  # second CI install substantially cheaper without caching runner state.
+  if ! brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"; then
+    brew trust hashicorp/tap
+    brew bundle install --no-upgrade --file="$DOTFILES/Brewfile"
+  fi
 fi
 
 # Sync portable agent settings after Homebrew has supplied jq, yq, and Codex on
@@ -245,7 +260,9 @@ fi
 # lazy.nvim self-bootstraps (clones itself, pinned in nvim/lua/config/plugins.lua)
 # on first launch. Restore the committed lock state when nvim is available.
 if command -v nvim >/dev/null; then
-  nvim --headless "+Lazy! restore" +qa || true
+  if [ "${ASSIMILATE_SKIP_PLUGIN_SYNC:-0}" != 1 ]; then
+    nvim --headless "+Lazy! restore" +qa
+  fi
 fi
 
 echo "> Assimilation successful!"
