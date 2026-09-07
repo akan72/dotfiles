@@ -67,6 +67,7 @@ mkdir -p "$BACKUPS/vim_backups"
 
 # Shared symlinks (work on macOS and Linux)
 sym bash_profile        .bash_profile
+sym shared.sh           .shared.sh
 sym gitconfig           .gitconfig
 sym tmux.conf           .tmux.conf
 sym zshrc               .zshrc
