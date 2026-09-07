@@ -3,6 +3,7 @@
 # The shared aliases/exports below are inlined here; a follow-up extracts them to shared.sh.
 
 export LANG='en_US.UTF-8'
+export UV_MALWARE_CHECK=1
 export XDG_CONFIG_HOME="$HOME/dotfiles"
 export GPG_TTY=$(tty)
 
@@ -10,12 +11,14 @@ export GPG_TTY=$(tty)
 export PATH="/usr/local/bin:${PATH}"
 export PATH="/opt/homebrew/bin:${PATH}"
 # Postgres
-export PATH="$(brew --prefix postgresql@17)/bin:${PATH}"
+if command -v brew >/dev/null 2>&1; then
+  export PATH="$(brew --prefix postgresql@17)/bin:${PATH}"
+fi
 
 # Aliases — general
 alias vi=nvim
 alias vim=nvim
-alias ls="lsd -al"
+command -v lsd >/dev/null 2>&1 && alias ls="lsd -al"
 alias claude="$HOME/.local/bin/claude"
 
 # Aliases — Docker
