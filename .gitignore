@@ -4,6 +4,7 @@ gh/
 .claude/
 .codex/
 .wrangler/
+# XDG_CONFIG_HOME points at this repo; Homebrew stores per-machine tap trust here.
 homebrew/
 Brewfile.lock.json
 
