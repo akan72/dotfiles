@@ -177,6 +177,50 @@ if [ -n "$DELTA_TARGET" ] && { [ ! -x "$DELTA_BIN" ] || [ "$("$DELTA_BIN" --vers
   rm -rf "$tmp"
 fi
 
+# Install a pinned Google Cloud CLI archive without modifying shell profiles.
+# zshrc sources the SDK's path and completion files from this location.
+GCLOUD_VERSION=577.0.0
+GCLOUD_DIR="$HOME/.local/share/google-cloud-sdk"
+
+if ! command -v gcloud >/dev/null 2>&1 && [ ! -x "$GCLOUD_DIR/bin/gcloud" ]; then
+  case "$OS-$ARCH" in
+    Darwin-arm64)
+      GCLOUD_TARGET=darwin-arm
+      GCLOUD_SHA256=5ed8f9176eca367c6849fea10fde8e27d9a7d00a221c67f895c3020b8cf45a42
+      ;;
+    Darwin-x86_64)
+      GCLOUD_TARGET=darwin-x86_64
+      GCLOUD_SHA256=6e54ae17d744fc8ca12ac69886c880bd2b164141179f6a8a9d3acc53e6b5d3e8
+      ;;
+    Linux-aarch64|Linux-arm64)
+      GCLOUD_TARGET=linux-arm
+      GCLOUD_SHA256=dbac26bdf80d72b5d13538e3a215dcbfe2781edfd2d69723effbeef3839cffb8
+      ;;
+    Linux-x86_64)
+      GCLOUD_TARGET=linux-x86_64
+      GCLOUD_SHA256=0b32d330446ce7b0f57f253e7efab4636c18fb1f87a3ac31c6c3f2a2a697525e
+      ;;
+    *)
+      echo "WARN: no Google Cloud CLI archive pinned for $OS-$ARCH — skipping installation" >&2
+      GCLOUD_TARGET=""
+      ;;
+  esac
+
+  if [ -n "$GCLOUD_TARGET" ]; then
+    tmp=$(mktemp -d)
+    GCLOUD_ARCHIVE="google-cloud-cli-${GCLOUD_VERSION}-${GCLOUD_TARGET}.tar.gz"
+    curl -fsSL "https://storage.googleapis.com/cloud-sdk-release/$GCLOUD_ARCHIVE" -o "$tmp/$GCLOUD_ARCHIVE"
+    if command -v sha256sum >/dev/null; then
+      echo "${GCLOUD_SHA256}  $tmp/$GCLOUD_ARCHIVE" | sha256sum -c -
+    else
+      echo "${GCLOUD_SHA256}  $tmp/$GCLOUD_ARCHIVE" | shasum -a 256 -c -
+    fi
+    mkdir -p "$HOME/.local/share"
+    tar -xzf "$tmp/$GCLOUD_ARCHIVE" -C "$HOME/.local/share"
+    rm -rf "$tmp"
+  fi
+fi
+
 # Install tmux plugin manager and plugins declared in tmux.conf
 clone_pinned https://github.com/tmux-plugins/tpm     "$HOME/.tmux/plugins/tpm"            7bdb7ca33c9cc6440a600202b50142f401b6fe21  # v3.1.0
 clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-powerline" 6079ace8d534a01d4d964b8b854b223f72edaf4b  # v3.2.0
