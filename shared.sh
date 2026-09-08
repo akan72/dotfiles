@@ -12,6 +12,8 @@ export GPG_TTY=$(tty)
 export UV_MALWARE_CHECK=1
 # $XDG_CONFIG_HOME drives Zed and Ghostty config discovery
 export XDG_CONFIG_HOME="$HOME/dotfiles"
+# Keep gh authentication outside the checkout, independently of XDG_CONFIG_HOME.
+export GH_CONFIG_DIR="$HOME/.config/gh"
 
 # ----
 # PATH

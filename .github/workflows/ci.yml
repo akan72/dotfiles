@@ -40,6 +40,7 @@ jobs:
         run: |
           scripts/ci/test-vps-container.sh
           bash tests/clone-pinned.sh
+          sh tests/gh-auth-refresh.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null
       - name: Check strict JSON
