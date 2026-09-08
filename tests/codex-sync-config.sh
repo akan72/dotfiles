@@ -53,11 +53,27 @@ test "$(stat -f '%Lp' "$config")" = "600"
 test -f "$backup"
 test "$(shasum -a 256 "$backup" | awk '{print $1}')" = "$original_hash"
 
+pet_dest="$codex_home/pets/tumble"
+cmp "$repo_root/codex/pets/tumble/pet.json" "$pet_dest/pet.json"
+cmp "$repo_root/codex/pets/tumble/spritesheet.webp" "$pet_dest/spritesheet.webp"
+
+# Re-sync restores the managed pet while preserving other pets and extra files.
+mkdir -p "$codex_home/pets/custom"
+cp "$pet_dest/pet.json" "$codex_home/pets/custom/pet.json"
+cp "$pet_dest/pet.json" "$pet_dest/local-notes.json"
+cp "$config" "$pet_dest/pet.json"
+cp "$config" "$pet_dest/spritesheet.webp"
+
 first_hash=$(shasum -a 256 "$config" | awk '{print $1}')
 CODEX_HOME="$codex_home" "$repo_root/codex/sync-config.sh"
 second_hash=$(shasum -a 256 "$config" | awk '{print $1}')
 test "$first_hash" = "$second_hash"
 test "$(shasum -a 256 "$backup" | awk '{print $1}')" = "$original_hash"
+
+cmp "$repo_root/codex/pets/tumble/pet.json" "$pet_dest/pet.json"
+cmp "$repo_root/codex/pets/tumble/spritesheet.webp" "$pet_dest/spritesheet.webp"
+cmp "$repo_root/codex/pets/tumble/pet.json" "$codex_home/pets/custom/pet.json"
+cmp "$repo_root/codex/pets/tumble/pet.json" "$pet_dest/local-notes.json"
 
 invalid_hash=$(shasum -a 256 "$invalid_home/config.toml" | awk '{print $1}')
 set +e
@@ -66,5 +82,6 @@ status=$?
 set -e
 test "$status" -ne 0
 test "$(shasum -a 256 "$invalid_home/config.toml" | awk '{print $1}')" = "$invalid_hash"
+test ! -e "$invalid_home/pets"
 
-echo "Codex config sync preserves local settings and applies managed values"
+echo "Codex config sync preserves local settings, applies managed values, and installs Tumble"

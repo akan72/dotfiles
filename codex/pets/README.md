@@ -6,7 +6,12 @@ intermediate images are not required to restore the pet.
 
 ## Install on another machine
 
-From the root of this repository, copy the package into your Codex home:
+Running `./assimilate.sh` installs Tumble when it syncs Codex settings (requires
+`yq` and `codex`). You can also run `./codex/sync-config.sh` directly. Both use
+`${CODEX_HOME:-$HOME/.codex}/pets/tumble` and refresh the two packaged files on
+each successful config sync, preserving other pets and additional local files.
+
+For a manual install, run these commands from the root of this repository:
 
 ```sh
 pet_dest="${CODEX_HOME:-$HOME/.codex}/pets/tumble"

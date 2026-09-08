@@ -56,4 +56,10 @@ fi
 mv "$tmp_config" "$dest_config"
 tmp_config=
 
+pet_dest="$codex_home/pets/tumble"
+mkdir -p "$pet_dest"
+cp "$script_dir/pets/tumble/pet.json" "$pet_dest/pet.json"
+cp "$script_dir/pets/tumble/spritesheet.webp" "$pet_dest/spritesheet.webp"
+
 echo "> Synced managed Codex settings to $dest_config"
+echo "> Installed Tumble Codex pet to $pet_dest"
