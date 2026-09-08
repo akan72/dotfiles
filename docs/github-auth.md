@@ -327,6 +327,33 @@ design above, because it can replace the intended Git helper routing. A fine-gra
 token can also appear to fail during a GitHub service incident; check GitHub Status
 before changing a token that was configured correctly.
 
+### Refresh the gh login from a credential store
+
+`gh` configuration lives outside this repository at `$HOME/.config/gh`.
+`GH_CONFIG_DIR` is exported in `shared.sh`, sourced by both bashrc and zshrc,
+so the repository's `XDG_CONFIG_HOME` does not redirect authentication into
+the checkout. The refresh script sets the same directory itself, including
+when invoked over SSH without shell startup files.
+
+Jobs that do not load shared shell configuration should explicitly set
+`GH_CONFIG_DIR="$HOME/.config/gh"` when invoking `gh`. On an existing mini,
+run the refresh script once to configure this location; it does not migrate
+or delete the old repository-local login. Git's credential routing is unchanged.
+
+When `gh auth status` reports an invalid or expired token, a human runs:
+
+```sh
+~/dotfiles/scripts/gh-auth-refresh.sh                                 # personal store (default)
+~/dotfiles/scripts/gh-auth-refresh.sh ~/.config/git/work-credentials  # work store
+```
+
+The script pipes the PAT from the selected Git credential store into
+`gh auth login --with-token` without displaying it, so `gh` reuses the same PAT
+as Git's HTTPS remotes. Rotating a PAT therefore means: update the credential
+store (see "Store the PATs"), then run the refresh script. This remains a
+human-run step — agents must not invoke it or read the store (see "Agent
+access boundary").
+
 ## Restart verification
 
 After restarting the machine, verify both access and signing again:
