@@ -7,6 +7,9 @@
 # Usage: gh-auth-refresh.sh [store-file]   (default: personal credentials)
 set -eu
 
+# Match shared.sh even over SSH or in jobs that do not load shell startup files.
+export GH_CONFIG_DIR="$HOME/.config/gh"
+
 STORE="${1:-$HOME/.config/git/personal-credentials}"
 [ -r "$STORE" ] || { echo "error: cannot read $STORE" >&2; exit 1; }
 

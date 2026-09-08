@@ -329,11 +329,16 @@ before changing a token that was configured correctly.
 
 ### Refresh the gh login from a credential store
 
-`gh` configuration lives in this repository's `gh/` directory, which is
-gitignored because `hosts.yml` holds the CLI token. `GH_CONFIG_DIR` is exported
-in `bashrc` (sourced by both bash and zsh startup) so interactive and
-non-interactive shells — including agent harness shells — resolve the same
-login instead of falling back to a stale `~/.config/gh`.
+`gh` configuration lives outside this repository at `$HOME/.config/gh`.
+`GH_CONFIG_DIR` is exported in `shared.sh`, sourced by both bashrc and zshrc,
+so the repository's `XDG_CONFIG_HOME` does not redirect authentication into
+the checkout. The refresh script sets the same directory itself, including
+when invoked over SSH without shell startup files.
+
+Jobs that do not load shared shell configuration should explicitly set
+`GH_CONFIG_DIR="$HOME/.config/gh"` when invoking `gh`. On an existing mini,
+run the refresh script once to configure this location; it does not migrate
+or delete the old repository-local login. Git's credential routing is unchanged.
 
 When `gh auth status` reports an invalid or expired token, a human runs:
 

@@ -1,6 +1,6 @@
 require("nvim-treesitter").setup {
 	ensure_installed = {
-		"help",
+		"vimdoc",
 		"lua",
 		"javascript",
 		"python",

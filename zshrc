@@ -1,5 +1,6 @@
 # Basics
-source ~/.bashrc
+# Shared config (aliases, exports, consolidated PATH) used by both bash and zsh
+[ -f "$HOME/.shared.sh" ] && . "$HOME/.shared.sh"
 
 export ZSH="$HOME/.oh-my-zsh"
 export UPDATE_ZSH_DAYS=13
@@ -25,9 +26,9 @@ HIST_STAMPS="mm/dd/yyyy"
 COMPLETION_WAITING_DOTS="false"
 
 # Plugins
-plugins=(
-  git
-)
+# (OMZ git plugin removed — it loads after the custom git aliases above and was
+# shadowing them, e.g. its gl='git pull' clobbered gl='git log --reverse -n 10')
+plugins=()
 
 bindkey -e
 bindkey "^[begin" backward-word
@@ -46,27 +47,24 @@ else
   export EDITOR='nvim'
 fi
 
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+# zsh-autosuggestions (installed via brew on macOS, may be missing elsewhere)
+if command -v brew >/dev/null 2>&1; then
+  _zsh_autosug="$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+  [ -f "$_zsh_autosug" ] && source "$_zsh_autosug"
+  unset _zsh_autosug
+fi
 
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use  # Load nvm without auto-use (auto-use errors with "N/A" when no .nvmrc is set)
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
-. "$HOME/.cargo/env"
+[ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 alias snowsql=/Applications/SnowSQL.app/Contents/MacOS/snowsql
 
-# The next line updates PATH for the Google Cloud SDK.
-if [ -f "$HOME/Downloads/google-cloud-sdk/path.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/path.zsh.inc"; fi
-
-# The next line enables shell command completion for gcloud.
-if [ -f "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc" ]; then . "$HOME/Downloads/google-cloud-sdk/completion.zsh.inc"; fi
-
-# .zsh syntax highlighting
-source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-# Prepend so pinned overrides in assimilate.sh (e.g. delta) win over brew bottles with ABI drift
-export PATH="$HOME/.local/bin:$PATH"
+# .zsh syntax highlighting (installed via brew on macOS, may be missing elsewhere)
+if [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
 
 autoload -U +X bashcompinit && bashcompinit
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
@@ -80,9 +78,16 @@ _reset_cursor() { printf '\e[6 q' }
 precmd_functions+=(_reset_cursor)
 
 
-# bun completions
+# bun completions ($BUN_INSTALL and its PATH entry live in shared.sh)
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
+# Load the Google Cloud SDK installed by assimilate.sh, or an existing SDK.
+_gcloud_sdk_root="$HOME/.local/share/google-cloud-sdk"
+if [ ! -d "$_gcloud_sdk_root" ] && (( $+commands[gcloud] )); then
+  _gcloud_sdk_root="${commands[gcloud]:A:h:h}"
+elif [ ! -d "$_gcloud_sdk_root" ] && [ -d "$HOME/work/dev/google-cloud-sdk" ]; then
+  _gcloud_sdk_root="$HOME/work/dev/google-cloud-sdk"
+fi
+[ -f "$_gcloud_sdk_root/path.zsh.inc" ] && source "$_gcloud_sdk_root/path.zsh.inc"
+[ -f "$_gcloud_sdk_root/completion.zsh.inc" ] && source "$_gcloud_sdk_root/completion.zsh.inc"
+unset _gcloud_sdk_root

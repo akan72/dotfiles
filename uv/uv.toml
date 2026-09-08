@@ -1,0 +1,16 @@
+# uv configuration — https://docs.astral.sh/uv/reference/settings/
+#
+# Symlinked to ~/.config/uv/uv.toml by assimilate.sh (and also discovered via
+# $XDG_CONFIG_HOME, which points at this repo). Applies to every uv invocation:
+# uv lock / uv sync / uv pip install / uv run.
+
+# Supply-chain hardening: never resolve a package release younger than 7 days.
+# This is a *rolling* window (a duration, not a fixed date) that moves with the
+# clock — most malicious/compromised uploads are detected and yanked within a
+# week, so waiting buys time without much practical cost.
+exclude-newer = "7 days"
+
+# Let uv own Python version management: prefer uv-managed CPython interpreters
+# over system/pyenv ones. Install versions with `uv python install <ver>` and
+# pin per-project with a `.python-version` file.
+python-preference = "managed"
