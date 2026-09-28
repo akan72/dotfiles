@@ -18,16 +18,23 @@ export GH_CONFIG_DIR="$HOME/.config/gh"
 # ----
 # PATH
 #
-# Single consolidated block with a dedup helper. Prepending through this guard
-# keeps PATH from ballooning with duplicates in nested shells (e.g. tmux), where
-# the rc files are re-sourced. Last prepend wins (ends up first on PATH), so
+# Single consolidated block with a dedup helper. Move existing entries to the
+# front so inherited PATH order cannot override priority in nested shells
+# (e.g. tmux), where the rc files are re-sourced. Last prepend wins, so
 # pinned tools in ~/.local/bin take priority over brew bottles with ABI drift.
 
 _prepend_path() {
-  case ":$PATH:" in
-    *":$1:"*) ;;          # already present — skip
-    *) PATH="$1:$PATH" ;;
-  esac
+  _prepend_path_remaining=":$PATH:"
+  while :; do
+    case "$_prepend_path_remaining" in
+      *":$1:"*)
+        _prepend_path_remaining="${_prepend_path_remaining%%":$1:"*}:${_prepend_path_remaining#*":$1:"}"
+        ;;
+      *) break ;;
+    esac
+  done
+  PATH="$1${_prepend_path_remaining%:}"
+  unset _prepend_path_remaining
 }
 
 _prepend_path "/usr/local/bin"                          # Homebrew (Intel)
