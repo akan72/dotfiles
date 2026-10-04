@@ -1,5 +1,12 @@
 window-padding-x = 2
-window-padding-y = 2,0
+window-padding-y = 0
+# Resize regular macOS windows in whole cells to avoid an unused bottom strip.
+window-step-resize = true
+# Native tab chrome changes the available height after initial grid sizing.
+macos-titlebar-style = hidden
+# Start on an exact grid; saved or maximized pixel-sized frames can leave a remainder.
+window-width = 120
+window-height = 32
 # Keep sub-cell padding neutral so Powerline backgrounds end with their glyphs.
 # Ghostty 1.2.3 needs a fresh terminal when switching from extend-always.
 window-padding-color = background
@@ -11,6 +18,8 @@ cursor-style = bar
 cursor-style-blink = false
 shell-integration-features = no-cursor
 font-family = Hack Nerd Font Mono Bold
+# Keep new windows at the same readable size as the verified terminal.
+font-size = 18
 
 # Send newline to Claude Code using shift + enter
 keybind = shift+enter=text:\n
