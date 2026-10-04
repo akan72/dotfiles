@@ -7,6 +7,8 @@ macos-titlebar-style = hidden
 # Start on an exact grid; saved or maximized pixel-sized frames can leave a remainder.
 window-width = 120
 window-height = 32
+# Do not restore pixel-sized window frames that bypass the initial grid fit.
+window-save-state = never
 # Keep sub-cell padding neutral so Powerline backgrounds end with their glyphs.
 # Ghostty 1.2.3 needs a fresh terminal when switching from extend-always.
 window-padding-color = background
