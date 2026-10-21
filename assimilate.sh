@@ -125,18 +125,12 @@ function nvim_checkouts () {
   while IFS=$'\t' read -r name commit; do
     case "$name" in
       Comment.nvim) origin=numToStr/Comment.nvim ;;
-      LuaSnip) origin=L3MON4D3/LuaSnip ;;
       bufferline.nvim) origin=akinsho/bufferline.nvim ;;
-      cmp-nvim-lsp) origin=hrsh7th/cmp-nvim-lsp ;;
       gruvbox.nvim) origin=ellisonleao/gruvbox.nvim ;;
       indent-blankline.nvim) origin=lukas-reineke/indent-blankline.nvim ;;
       lazy.nvim) origin=folke/lazy.nvim ;;
-      lsp-zero.nvim) origin=VonHeikemen/lsp-zero.nvim ;;
       lualine.nvim) origin=nvim-lualine/lualine.nvim ;;
       markdown-preview.nvim) continue ;; # Disabled until release artifacts are reviewed.
-      mason-lspconfig.nvim) origin=williamboman/mason-lspconfig.nvim ;;
-      mason.nvim) origin=williamboman/mason.nvim ;;
-      nvim-cmp) origin=hrsh7th/nvim-cmp ;;
       nvim-lspconfig) origin=neovim/nvim-lspconfig ;;
       nvim-tree.lua) origin=nvim-tree/nvim-tree.lua ;;
       nvim-treesitter) origin=nvim-treesitter/nvim-treesitter ;;

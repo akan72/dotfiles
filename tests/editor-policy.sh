@@ -60,6 +60,17 @@ local verify, checked = policy.verify, 0
 policy.verify = function() checked = checked + 1 end
 bad(function() policy.verify_all(config, fixture .. '-data') end)
 assert(checked == 0, 'Incomplete lock must fail before visiting downloaded checkouts')
+-- Legacy executable state must fail before touching any downloaded checkout.
+local legacy = fixture .. '-legacy-config'
+local data = fixture .. '-legacy-data'
+vim.fn.mkdir(legacy .. '/plugin', 'p')
+vim.fn.writefile({ 'error("legacy loader must never execute")' }, legacy .. '/plugin/packer_compiled.lua')
+bad(function() policy.verify_all(legacy, data) end)
+assert(checked == 0)
+vim.fn.delete(legacy .. '/plugin/packer_compiled.lua')
+vim.fn.mkdir(data .. '/site/pack/packer/start', 'p')
+bad(function() policy.verify_all(legacy, data) end)
+assert(checked == 0)
 policy.verify = verify
 -- The pinned Treesitter release exposes configs.setup, not the top-level setup.
 local ts
@@ -82,9 +93,13 @@ for control in ['missing = false', 'local_spec = false', 'checker = { enabled = 
     assert control in s, control
 assert 'vim.go.loadplugins = false' in (r/'nvim/init.lua').read_text()
 lsp=(r/'nvim/lua/config/plugins/lsp.lua').read_text()
-for control in ['registry_cache = { refresh = false }', 'check_outdated_packages_on_open = false', 'auto_managed = false', 'ensure_installed = {}']:
+for control in ['vim.lsp.config(name, config)', 'vim.lsp.enable(name)', 'vim.lsp.completion.enable', 'vim.snippet.active', 'vim.snippet.jump', "RUSTUP_AUTO_INSTALL = '0'", "CARGO_NET_OFFLINE = 'true'"]:
     assert control in lsp, control
-assert not any('handlers =' in line for line in lsp.splitlines() if not line.lstrip().startswith('--'))
+for removed in ['lsp-zero', 'mason-lspconfig', "require('mason')", "require('cmp')", "require('luasnip')"]:
+    assert removed not in s and removed not in lsp, removed
+lock=__import__('json').loads((r/'nvim/lazy-lock.json').read_text())
+for removed in ['lsp-zero.nvim', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-cmp', 'cmp-nvim-lsp', 'LuaSnip']:
+    assert removed not in lock, removed
 zsh=(r/'zshrc').read_text()
 assert 'DISABLE_AUTO_UPDATE="true"' in zsh
 assert 'export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"' in zsh
