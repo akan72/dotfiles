@@ -34,12 +34,18 @@ jobs:
           sudo apt-get install --yes zsh
       - name: Check shell syntax
         run: |
-          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh tests/*.sh
-          zsh -n zshrc
+          for file in assimilate.sh bashrc bash_profile shared.sh claude/statusline.sh scripts/ci/*.sh scripts/security/*.sh tests/*.sh; do
+            bash -n "$file"
+          done
+          zsh -f -n zshrc
       - name: Test VPS container harness
         run: |
           scripts/ci/test-vps-container.sh
           bash tests/clone-pinned.sh
+          bash tests/security-scans.sh
+          bash tests/npm-age.sh
+          bash tests/artifact-integrity.sh
+          python3 -I -S -B tests/source-snapshot.py
           sh tests/gh-auth-refresh.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null
@@ -60,9 +66,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Install pre-commit
-        run: python3 -m pip install --user pre-commit==4.6.2
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/pre-commit"
+          "$RUNNER_TEMP/pre-commit/bin/python" -m pip --isolated install --index-url https://pypi.org/simple \
+            --require-hashes --only-binary=:all: --no-deps \
+            -r scripts/security/requirements-pre-commit-linux-py312.txt
+          "$RUNNER_TEMP/pre-commit/bin/python" -m pip check
       - name: Run repository hooks
-        run: python3 -m pre_commit run --all-files --show-diff-on-failure
+        run: '"$RUNNER_TEMP/pre-commit/bin/python" -m pre_commit run --all-files --show-diff-on-failure'
 
   actions-security:
     name: Actions security
@@ -78,7 +89,12 @@ jobs:
       - name: Validate workflows with actionlint
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Audit workflows with zizmor
-        run: pipx run zizmor==1.29.0 .
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/zizmor"
+          "$RUNNER_TEMP/zizmor/bin/python" -m pip --isolated install --index-url https://pypi.org/simple \
+            --require-hashes --only-binary=:all: --no-deps \
+            -r scripts/security/requirements-zizmor-linux.txt
+          "$RUNNER_TEMP/zizmor/bin/zizmor" --offline --strict-collection --no-config .
 
   secret-history:
     name: Secret history
@@ -97,7 +113,7 @@ jobs:
           GOBIN: ${{ runner.temp }}/bin
         run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
       - name: Scan Git history
-        run: '"${RUNNER_TEMP}/bin/gitleaks" git --redact --verbose'
+        run: '"${RUNNER_TEMP}/bin/gitleaks" git --redact=100 --no-banner --no-color'
 
   install:
     name: Install (${{ matrix.os }})
@@ -132,13 +148,13 @@ jobs:
           ln -s "$GITHUB_WORKSPACE" "$HOME/dotfiles"
 
           first_started=$SECONDS
-          ./assimilate.sh
+          DOTFILES_DISPOSABLE_CI=1 scripts/ci/anonymous-github.sh ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           first_seconds=$((SECONDS - first_started))
           backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
 
           second_started=$SECONDS
-          ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh
+          DOTFILES_DISPOSABLE_CI=1 ASSIMILATE_SKIP_PLUGIN_SYNC=1 scripts/ci/anonymous-github.sh ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           second_seconds=$((SECONDS - second_started))
 

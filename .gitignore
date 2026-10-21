@@ -4,7 +4,7 @@ gh/
 .claude/
 .codex/
 .wrangler/
-# XDG_CONFIG_HOME points at this repo; Homebrew stores per-machine tap trust here.
+# Keep legacy machine-local Homebrew state excluded after XDG separation.
 homebrew/
 Brewfile.lock.json
 
@@ -26,3 +26,7 @@ gitconfig.local
 CLAUDE.local.md
 AGENTS.override.md
 .codex-global-state.json
+
+# Local tooling artifacts
+.playwright-mcp/
+nvim/plugin/packer_compiled.lua

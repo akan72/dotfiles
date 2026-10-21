@@ -2,8 +2,8 @@
 
 set -eu
 
-test_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-repo_root=$(CDPATH= cd -- "$test_dir/.." && pwd)
+test_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH='' cd -- "$test_dir/.." && pwd)
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/claude-sync.XXXXXX")
 claude_home="$test_root/claude-home"
 invalid_home="$test_root/invalid-home"
@@ -29,6 +29,7 @@ test "$(jq -r '.attribution.pr' "$settings")" = ""
 test "$(jq -r '.attribution.sessionUrl' "$settings")" = "false"
 test "$(jq -r '.outputStyle' "$settings")" = "Concise"
 test "$(jq -r '.statusLine.type' "$settings")" = "command"
+# shellcheck disable=SC2088 # Assert the literal JSON command string, whose tilde Claude expands later.
 test "$(jq -r '.statusLine.command' "$settings")" = "~/.claude/statusline.sh"
 test "$(jq -r '.statusLine.padding' "$settings")" = "0"
 test "$(jq -r '.model' "$settings")" = "keep-me"
