@@ -81,10 +81,11 @@
   },
   {
     "name": "virtualenv",
-    "version": "21.14.7",
-    "url": "https://files.pythonhosted.org/packages/52/5b/799c3e5b8e04d5fa1c9b61a4c1f5079603e747205c7311b92abd30283df5/virtualenv-21.14.7-py3-none-any.whl",
-    "sha256": "3769219a308c5d2f093e7729621ad12a6346b5767a7ec4338414e2a0fb0c526b",
-    "published": "2026-10-12T01:27:29.370747Z",
-    "filename": "virtualenv-21.14.7-py3-none-any.whl"
+    "version": "21.14.9",
+    "url": "https://files.pythonhosted.org/packages/64/e5/9a3918219745e8bdd64fe0fd9a2d7ce4fffde9268fbc791634b7d4779de9/virtualenv-21.14.9-py3-none-any.whl",
+    "sha256": "ac51744da66ae56ff814b087d65096c94de698ec520adc624b108b679655809b",
+    "published": "2026-10-17T16:09:40.584722Z",
+    "filename": "virtualenv-21.14.9-py3-none-any.whl",
+    "security_exception": "Three virtualenv advisories published 2026-10-21; exact patched wheel only."
   }
 ]
