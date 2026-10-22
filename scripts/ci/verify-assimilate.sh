@@ -13,6 +13,8 @@ assert_link() {
   test "$(realpath "$target")" = "$(realpath "$source")"
 }
 
+assert_link .bunfig.toml .bunfig.toml
+assert_link .bunfig.toml .config/.bunfig.toml
 assert_link bash_profile .bash_profile
 assert_link gitconfig .gitconfig
 assert_link tmux.conf .tmux.conf
@@ -62,6 +64,12 @@ if grep -Fq 'Error detected while processing' "$nvim_log"; then
   exit 1
 fi
 rm -f "$nvim_log"
+
+if command -v bun >/dev/null 2>&1; then
+  python3 -I -S -B "$DOTFILES/tests/bun-age.py"
+else
+  printf 'Bun not installed; native release-age fixture skipped.\n'
+fi
 
 case "${ASSIMILATE_SOURCE_MODE:-git}" in
   archive) python3 "$DOTFILES/scripts/security/source-snapshot.py" --verify "$DOTFILES" ;;

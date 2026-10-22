@@ -5,8 +5,9 @@ import datetime as dt
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import re
+import runpy
 import shutil
 import stat
 import subprocess
@@ -19,7 +20,7 @@ SOURCE_SUFFIXES = {".sh", ".bash", ".zsh", ".py", ".lua", ".toml", ".yaml", ".ym
 SOURCE_NAMES = {"assimilate.sh", "bashrc", "bash_profile", "zshrc", "zprofile", "shared.sh",
                 "Brewfile", "Dockerfile", "Makefile", "gitconfig", ".gitignore", ".npmrc",
                 "go.sum", "go.mod", "config"}
-AUTH = re.compile(r"(^|[._/-])(credentials?|auth|tokens?|secrets?|private[-_]?key)([._/-]|$)", re.I)
+validate_source_path = runpy.run_path(str(Path(__file__).with_name("source-paths.py")))["validate_source_path"]
 LOCK_NAMES = {"package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock",
               "bun.lock", "bun.lockb", "uv.lock", "poetry.lock", "Cargo.lock", "go.sum",
               "Gemfile.lock", "composer.lock", "packages.lock.json"}
@@ -56,13 +57,12 @@ def source_paths(repo):
 def snapshot(repo, target):
     selected, omitted = [], []
     for name in source_paths(repo):
-        part = PurePosixPath(name)
-        if part.is_absolute() or ".." in part.parts or ".git" in part.parts:
-            omitted.append({"path": name, "reason": "unsafe path"})
-            continue
-        # Identify authentication files by name before stat/open; never inspect contents.
-        if AUTH.search(name) or part.name in {".npmrc", ".pypirc", ".netrc", "pip.conf"} or part.name.startswith(".env") or part.suffix.lower() in {".pem", ".key", ".p12", ".pfx"}:
-            omitted.append({"path": name, "reason": "authentication filename"})
+        # Use exactly the export policy, before stat/open of any selected file.
+        try:
+            part = validate_source_path(name)
+        except SystemExit as error:
+            reason = "unsafe path" if str(error) == "unsafe source path" else "authentication filename"
+            omitted.append({"path": name, "reason": reason})
             continue
         if part.suffix not in SOURCE_SUFFIXES and part.name not in SOURCE_NAMES and not part.name.startswith("Dockerfile"):
             omitted.append({"path": name, "reason": "outside source allowlist"})

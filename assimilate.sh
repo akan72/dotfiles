@@ -196,8 +196,9 @@ sym agent-instructions.md           .claude/CLAUDE.md
 sym agent-instructions.md           .codex/AGENTS.md
 sym ssh/config                      .ssh/config
 sym uv/uv.toml                      .config/uv/uv.toml
-# Bun reads this explicit user configuration; application state stays outside the repo.
+# Keep both Bun discovery modes: absolute XDG takes precedence over HOME.
 sym .bunfig.toml                    .bunfig.toml
+sym .bunfig.toml                    .config/.bunfig.toml
 sym ghostty/config                 .config/ghostty/config
 
 # Lock down sensitive symlink targets (chmod follows the symlink to the repo file).

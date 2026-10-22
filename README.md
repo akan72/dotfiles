@@ -100,7 +100,10 @@ npm requires supported minimum-release-age semantics (npm >=11.19). The selected
 key is checked and raised to seven days while a stricter numeric setting is
 preserved. Authentication configuration is never dumped. Project/environment
 settings can override policy, so run `scripts/security/npm-age.sh` in each install
-context. uv and Bun retain their committed seven-day age settings. Existing
+context. Bun is linked at both `~/.config/.bunfig.toml` (the shared XDG default) and
+`~/.bunfig.toml` (the HOME fallback). Verify its native resolver with
+`python3 -I -S tests/bun-age.py`; this uses only inert loopback fixtures.
+uv and Bun retain their committed seven-day age settings. Existing
 lockfiles, Git dependencies, native updaters and Homebrew do not inherit those
 registry cooldowns. For an urgent security fix, document the exact release and
 vendor advisory, verify its artifact, make a one-command/version-specific exception,

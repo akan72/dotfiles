@@ -8,6 +8,8 @@ test_home=$(mktemp -d "${TMPDIR:-/tmp}/assimilate-path.XXXXXX")
 test_home=$(CDPATH='' cd -- "$test_home" && pwd -P)
 codex_marker="$test_home/codex-called"
 mkdir "$test_home/bin"
+mkdir "$test_home/.config"
+printf 'existing Bun fixture policy\n' > "$test_home/.config/.bunfig.toml"
 cat > "$test_home/bin/brew" <<'BREW'
 #!/usr/bin/env sh
 if [ -n "${TEST_BREW_LOG:-}" ] && [ "${1:-}" = bundle ]; then
@@ -45,6 +47,10 @@ fi
 test "$(readlink "$test_home/.claude/CLAUDE.md")" = "$repo_root/agent-instructions.md"
 test "$(readlink "$test_home/.codex/AGENTS.md")" = "$repo_root/agent-instructions.md"
 test "$(readlink "$test_home/.claude/statusline.sh")" = "$repo_root/claude/statusline.sh"
+test "$(readlink "$test_home/.bunfig.toml")" = "$repo_root/.bunfig.toml"
+test "$(readlink "$test_home/.config/.bunfig.toml")" = "$repo_root/.bunfig.toml"
+bun_backup=$(find "$test_home/backups" -type f -name '.bunfig.toml.*')
+test "$(cat "$bun_backup")" = 'existing Bun fixture policy'
 test -f "$test_home/.claude/settings.json"
 test ! -L "$test_home/.claude/settings.json"
 test "$(jq -r '.outputStyle' "$test_home/.claude/settings.json")" = "Concise"
@@ -69,6 +75,8 @@ HOME="$test_home" PATH="$test_home/bin:$test_dir/fixtures/bin:$PATH" \
 verbose_status=$?
 set -e
 test "$verbose_status" = 1
+test "$(find "$test_home/backups" -type f -name '.bunfig.toml.*')" = "$bun_backup"
+test "$(readlink "$test_home/.config/.bunfig.toml")" = "$repo_root/.bunfig.toml"
 if [ "$(uname -s)" = Darwin ]; then grep -Fq 'FIXTURE_HOMEBREW_ROUTINE_NOISE' "$test_home/verbose.log"; fi
 # The read-only mode creates logs but never links configuration or calls package managers.
 mkdir "$test_home/check-home"
