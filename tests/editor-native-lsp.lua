@@ -1,6 +1,7 @@
 -- Run after the real init. Real-server checks are explicit; the native UI fixture is offline.
 local root = vim.env.DOTFILES_LSP_TEST_ROOT or vim.fn.tempname()
 vim.fn.mkdir(root, 'p', 448)
+root = assert(vim.uv.fs_realpath(root), 'Fixture root must exist')
 local results = {}
 local function record(name) table.insert(results, name); print('PASS: ' .. name) end
 local function wait(label, predicate, timeout)
