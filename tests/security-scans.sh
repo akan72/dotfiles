@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+from unittest import mock
 import shutil
 import subprocess
 import sys
@@ -17,6 +18,18 @@ spec = importlib.util.spec_from_file_location('scan_source', scanner)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 versions = {t['name']: t['version'] for t in json.loads(scanner.with_name('scanners.lock.json').read_text())['tools']}
+# Filename checks precede all filesystem reads, even for tracked sensitive paths.
+with tempfile.TemporaryDirectory(prefix='sensitive-path-fixture-') as directory:
+    root = Path(directory)
+    names = ['.aws/config', '.ssh/config', '.config/gh/hosts.yml',
+             'nested/auth/settings.json', '.azure/settings.json',
+             'keys/server.pem.bak', 'keys/id_ed25519.backup',
+             '.yarnrc.yml', 'pip.ini', 'nested/mytoken.txt']
+    with mock.patch.object(module, 'source_paths', return_value=names), \
+         mock.patch.object(module, 'read_regular', side_effect=AssertionError('sensitive read')):
+        selected, omitted = module.snapshot(root, root / 'snapshot')
+    assert not selected and len(omitted) == len(names), (selected, omitted)
+    assert all(item['reason'] == 'authentication filename' for item in omitted), omitted
 with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
     base = Path(directory)
     repo = base / 'repo with spaces'
@@ -131,6 +144,12 @@ if os.environ.get('SECURITY_TEST_REAL_GITLEAKS') == '1':
         summary = json.loads((base / 'result/summary.json').read_text())
         assert hardened.returncode != 0
         assert any(c['name'] == 'gitleaks' and c['state'] == 'findings' for c in summary['checks'])
-    print('PASS: actual Gitleaks cannot suppress fixture using repository config or inline allow comment')
+        subprocess.run(['git', '-C', str(repo), '-c', 'user.name=Fixture',
+                        '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false',
+                        'commit', '-qm', 'inert suppression fixture'], check=True)
+        history = scanner.with_name('scan-history.sh')
+        result = subprocess.run(['bash', str(history), str(repo)], capture_output=True)
+        assert result.returncode == 1, 'History scanner must detect the fictional value despite repository and inline allows'
+    print('PASS: actual source/history Gitleaks cannot suppress fixture using repository config or inline allow comment')
 print('PASS: private scope, dirty source, authentication/untracked exclusion, symlinks, independent checks, findings, errors and missing scanners/database')
 PY

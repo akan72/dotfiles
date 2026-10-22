@@ -8,7 +8,7 @@ scripts/security/scan-local.sh "$HOME/dotfiles"
 
 The final line gives a private output directory and state counts. Exit 0 means all applicable checks passed. Any finding, missing/changed scanner, missing/stale OSV database or tool error returns nonzero. Read `summary.json` for per-check status and coverage. Scanner diagnostic text is never printed by the wrapper; Gitleaks uses a private configuration extending built-in rules, an empty private ignore file, and disables inline allow comments; its JSON report uses full redaction; other scanners' JSON diagnostics stay private and may contain source context. Do not publish those raw reports. Reports and the temporary source snapshot remain mode 0700/0600; delete the output directory after review if you do not need it.
 
-This command reads current **tracked source**, including tracked edits. It excludes untracked/ignored files, Git history, filenames associated with credentials, `.npmrc`, `.env*`, private keys, binary formats and symlinks. The private snapshot is never sourced, built or installed. A skipped symlink/deleted tracked source is marked incomplete. Other omissions are recorded by path and reason. An authentication filename exclusion can also omit source such as `gh-auth-refresh.sh`; review that code separately without reading its credential files. A source allowlist is a scope boundary, not a complete filesystem or malware audit.
+This command reads current **tracked source**, including tracked edits. It excludes untracked/ignored files, Git history, filenames associated with credentials, `.npmrc`, `.env*`, private keys, binary formats and symlinks. The private snapshot is never sourced, built or installed. A skipped symlink/deleted tracked source is marked incomplete. Other omissions are recorded by path and reason. Sensitive directory and filename exclusions are shared with the source exporter and applied before files are read; review omissions by path and reason. A source allowlist is a scope boundary, not a complete filesystem or malware audit.
 
 Checks run independently: Gitleaks for secret patterns; zizmor offline with configuration and inline suppressions disabled for Actions; ShellCheck without external sources or user configuration for recognized sh/bash sources; `zsh -n` for zsh; OSV offline for supported tracked lockfiles and requirements. No dependency installation, project build, plugin load, package resolution, Git fetch, fix or online scanner request is performed. ShellCheck does not understand zsh. zizmor online audits and Git history are outside this command's scope. Gitleaks' maintenance-only status and pattern coverage do not make it a malware detector.
 
@@ -18,7 +18,7 @@ Checks run independently: Gitleaks for secret patterns; zizmor offline with conf
 
 The baseline uses Gitleaks 8.30.1, ShellCheck 0.11.0, OSV-Scanner 2.7.0 and zizmor 1.29.0. zizmor's three approved wheel hashes are recorded; its release metadata declares no Python dependencies. Use uv with an existing managed Python, `--no-python-downloads --no-build --no-index --no-deps`, and the locally SHA-256-verified wheel. Do not bootstrap scanners using unversioned `npx`, `pipx run`, curl-to-shell or quarantine deletion. Socket is optional; its Free Mac binary is unsigned, telemetry is mandatory, and unknown/unscanned/cached releases have gaps. It is not installed automatically.
 
-CI installs pre-commit in an isolated environment from `requirements-pre-commit-linux-py312.txt`, a complete eleven-package wheel hash lock for Ubuntu 24.04 x86_64/Python 3.12. Corresponding official PyPI publication times, filenames and hashes are in the metadata JSON. Every artifact was older than seven days when reviewed on 2026-10-21. `--require-hashes --only-binary=:all: --no-deps` prevents fallback source builds and unlisted dependency resolution; `pip check` verifies the installed dependency graph. CI's separate zizmor wheel lock also uses hash enforcement. Updating a top-level version alone is insufficient. Existing full checkout action pins, read-only job permissions and disabled persisted Git credentials are retained.
+CI installs pre-commit in an isolated environment from `requirements-pre-commit-linux-py312.txt`, a complete eleven-package wheel hash lock for Ubuntu 24.04 x86_64/Python 3.12. Corresponding official PyPI publication times, filenames and hashes are in the metadata JSON. Artifacts passed the seven-day review on 2026-10-21 except the exact virtualenv 21.14.9 patched wheel, documented as an urgent security exception in the lock and metadata. `--require-hashes --only-binary=:all: --no-deps` prevents fallback source builds and unlisted dependency resolution; `pip check` verifies the installed dependency graph. CI's separate zizmor wheel lock also uses hash enforcement. Updating a top-level version alone is insufficient. Existing full checkout action pins, read-only job permissions and disabled persisted Git credentials are retained.
 
 ## Offline vulnerability database
 
@@ -81,3 +81,18 @@ version selection and isolated tools rather than recreating legacy global graphs
 `tests/clone-pinned.sh` covers local checkout integrity and disposable CI routing.
 `tests/source-snapshot.py` covers HEAD/working exports, omitted local state,
 manifests and sensitive-path guards; there is no second snapshot fixture suite.
+
+## Audit follow-up: discovery and scanner policy
+
+Bun's global policy must exist at `$XDG_CONFIG_HOME/.bunfig.toml` when XDG is
+absolute; assimilation installs both this shared-shell location and the HOME
+fallback. `tests/bun-age.py` checks native Bun resolution against two inert local
+release ages with scripts disabled; no public registry or vendor package runs.
+
+`source-paths.py` is the common pre-read exclusion policy for source exports and
+private scans, including authentication directories and key backups. The history
+CI step uses `scan-history.sh` with explicit default rules and empty ignore state;
+repository config, fingerprint lists and inline allow comments cannot suppress it.
+Run `SECURITY_TEST_REAL_GITLEAKS=1 bash tests/security-scans.sh` for the actual
+source/history suppression regression using a fictional value, plus the ordinary
+stubbed scanner-error and sensitive-name fixtures.
