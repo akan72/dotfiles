@@ -1,17 +1,17 @@
 window-padding-x = 2
 window-padding-y = 0
-# Resize regular macOS windows in whole cells to avoid an unused bottom strip.
+# Resize regular macOS windows in whole cells to minimize unused bottom space.
 window-step-resize = true
-# Native tab chrome changes the available height after initial grid sizing.
-macos-titlebar-style = hidden
-# Start on an exact grid; saved or maximized pixel-sized frames can leave a remainder.
+# Show the standard macOS title bar and window controls.
+macos-titlebar-style = native
+# Size regular windows in cells; fullscreen may leave partial-row padding.
 window-width = 120
 window-height = 32
 # Do not restore pixel-sized window frames that bypass the initial grid fit.
 window-save-state = never
-# Keep sub-cell padding neutral so Powerline backgrounds end with their glyphs.
-# Ghostty 1.2.3 needs a fresh terminal when switching from extend-always.
-window-padding-color = background
+# Preserve Powerline edges; do not use extend-always, which causes color bleed.
+# Accept neutral sub-cell padding when fullscreen cannot fit an exact row grid.
+window-padding-color = extend
 theme = Gruvbox Material
 term = xterm-256color
 auto-update = off
