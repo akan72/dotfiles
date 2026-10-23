@@ -22,29 +22,37 @@ CI installs pre-commit in an isolated environment from `requirements-pre-commit-
 
 ## Offline vulnerability database
 
-OSV database refresh is a separate, explicitly online operation. It downloads public ecosystem databases, not your source or dependency list. For this repository's requirements, PyPI is required. Add ecosystems for other projects rather than stamping a partial database complete. Example for PyPI:
+OSV database refresh is a separate, explicitly online operation. It downloads public ecosystem databases, not your source or dependency list. This repository's Python and Node locks require both PyPI and npm. Add ecosystems for other projects rather than stamping a partial database complete:
 
 ```sh
-umask 077
-db="$HOME/.cache/dotfiles-osv"
-mkdir -p "$db/osv-scalibr/PyPI"
-curl --fail --location --proto '=https' --tlsv1.2 \
-  https://osv-vulnerabilities.storage.googleapis.com/PyPI/all.zip \
-  --output "$db/osv-scalibr/PyPI/all.zip.new"
-python3 - "$db" <<'PY'
+(
+  set -eu
+  umask 077
+  db="$HOME/.cache/dotfiles-osv"
+  for ecosystem in PyPI npm; do
+    mkdir -p "$db/osv-scalibr/$ecosystem"
+    curl --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+      "https://osv-vulnerabilities.storage.googleapis.com/$ecosystem/all.zip" \
+      --output "$db/osv-scalibr/$ecosystem/all.zip.new"
+  done
+  python3 -I -S - "$db" <<'OSV_REFRESH'
 import hashlib, json, os, pathlib, sys, time, zipfile
 root = pathlib.Path(sys.argv[1])
-pending = root / 'osv-scalibr/PyPI/all.zip.new'
-with zipfile.ZipFile(pending) as archive:
-    if not archive.namelist() or archive.testzip() is not None:
-        raise SystemExit('Invalid database archive; freshness was not updated')
-target = pending.with_suffix('')
-os.replace(pending, target)
-receipt = {'completed_unix': time.time(), 'ecosystems': ['PyPI'],
-           'sha256': {'PyPI': hashlib.sha256(target.read_bytes()).hexdigest()}}
+pending = {name: root / 'osv-scalibr' / name / 'all.zip.new' for name in ['PyPI', 'npm']}
+for path in pending.values():
+    with zipfile.ZipFile(path) as archive:
+        if not archive.namelist() or archive.testzip() is not None:
+            raise SystemExit('Invalid database archive; freshness was not updated')
+hashes = {}
+for name, path in pending.items():
+    target = path.with_suffix('')
+    os.replace(path, target)
+    hashes[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+receipt = {'completed_unix': time.time(), 'ecosystems': ['PyPI', 'npm'], 'sha256': hashes}
 (root / 'refreshed-at.json').write_text(json.dumps(receipt) + '\n')
-PY
-scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db "$db"
+OSV_REFRESH
+  scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db "$db"
+)
 ```
 
 The wrapper accepts an explicit refresh receipt no older than seven days; use `--max-db-age-hours 24` during an incident. The receipt records a completed download, not an upstream signature or completeness guarantee. OSV itself returns an error if a necessary database is missing. The scan uses `--offline`, not `--offline-vulnerabilities`, because the latter can permit other online features. Known advisories do not identify all malicious new packages. Review full transitive lockfiles and package installation scripts as well.

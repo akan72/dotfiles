@@ -79,6 +79,10 @@ missing artifacts fail with no unchecked installer fallback. Intel delta is a
 separately reviewed Homebrew install. Rust toolchain downloads remain a distinct
 upstream-trust boundary from the checksum-pinned rustup initializer.
 
+Neovim 0.12+ uses native LSP/completion/snippets with externally managed servers.
+See [reviewed editor setup](docs/editor-security.md#explicit-external-server-setup)
+for locked uv/npm environments, Lua/Rust ownership and exact replication commands.
+
 Existing plugin checkouts require the approved origin (GitHub permits its optional
 `.git` suffix), full commit, correct
 repository root, and no tracked, untracked or ignored changes. Neovim alone allows

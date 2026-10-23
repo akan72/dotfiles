@@ -1,3 +1,5 @@
+if vim.fn.has('nvim-0.12') ~= 1 then error('Neovim 0.12 or newer is required; run the reviewed setup outside Neovim') end
+
 -- Only reviewed plugin code is loaded explicitly by lazy.nvim.
 vim.go.loadplugins = false
 
