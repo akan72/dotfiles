@@ -4,7 +4,7 @@
   "minimum_age_days": 7,
   "source": "https://api.github.com/repos/SocketDev/sfw-free/releases/tags/v1.15.4",
   "signature": "Publisher documents unsigned binaries; SHA256 values are GitHub release asset digests, not a signature or malware verdict.",
-  "telemetry": "Mandatory machine identifier, package identifiers, latency/errors and GitHub organization. Use explicitly for public dependencies; do not wrap private projects automatically.",
+  "telemetry": "Mandatory machine identifier, package identifiers, latency/errors and GitHub organization. Shared shell aliases wrap npm, bun and uv when the guarded launcher is installed, as explicitly requested. Custom/private registries are unsupported.",
   "artifacts": {
     "arm64": {
       "url": "https://github.com/SocketDev/sfw-free/releases/download/v1.15.4/sfw-free-macos-arm64",

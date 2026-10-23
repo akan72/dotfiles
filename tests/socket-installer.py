@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import struct
 import stat
+import shutil
 import subprocess
 import tempfile
 import types
@@ -183,6 +184,48 @@ class Installer(unittest.TestCase):
             return info
         with mock.patch.object(installer.os,'fstat',side_effect=changed_mode):
             with self.assertRaises(ValueError):installer.read_regular(path)
+
+
+class ShellAliases(unittest.TestCase):
+    def test_interactive_routing_and_absent_socket(self):
+        # Full shared config, inert launcher, no Socket/vendor binary or package request.
+        with tempfile.TemporaryDirectory(prefix='socket aliases-') as directory:
+            root = Path(directory).resolve()
+            for present in (True, False):
+                home = root / ('enabled' if present else 'absent')
+                home.mkdir()
+                if present:
+                    launcher = home / '.local/bin/sfw'
+                    launcher.parent.mkdir(parents=True)
+                    launcher.write_text('#!/bin/sh\nprintf "%s\\0" "$@" > "$TEST_SOCKET_ARGV"\nexit 37\n')
+                    launcher.chmod(0o700)
+                for shell in ('bash', 'zsh'):
+                    executable = shutil.which(shell)
+                    self.assertIsNotNone(executable, 'Both Bash and Zsh are fixture prerequisites')
+                    for manager in ('npm', 'bun', 'uv'):
+                        with self.subTest(socket=present, shell=shell, manager=manager):
+                            log = root / 'argv'
+                            environment = {'HOME': str(home), 'PATH': '/usr/bin:/bin',
+                                           'TEST_SOCKET_ARGV': str(log), 'MANAGER': manager,
+                                           'PRESENT': 'yes' if present else 'no'}
+                            script = '''brew() { printf '/inert-brew-prefix\\n'; }
+. "$1"
+. "$1"
+if [ "$PRESENT" = no ]; then
+    alias "$MANAGER" >/dev/null 2>&1 && exit 90
+    exit 0
+fi
+eval "$MANAGER 'argument with spaces' '' '--value=literal'"
+status_code=$?
+[ "$status_code" = 37 ] || exit 91
+'''
+                            flags = ['--noprofile', '--norc', '-ic'] if shell == 'bash' else ['-f', '-ic']
+                            result = subprocess.run([executable, *flags, script, 'fixture', str(ROOT / 'shared.sh')],
+                                                    cwd=root, env=environment, capture_output=True, text=True, timeout=30)
+                            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                            if present:
+                                self.assertEqual(log.read_bytes().split(b'\0'),
+                                                 [manager.encode(), b'argument with spaces', b'', b'--value=literal', b''])
 
 
 

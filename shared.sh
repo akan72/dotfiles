@@ -65,6 +65,17 @@ _prepend_path "$HOME/.local/bin"                        # pinned tools (delta, c
 export PATH
 
 # ----
+# Socket Firewall: interactive package-manager commands use the guarded launcher.
+# Socket Free sends mandatory telemetry; custom/private registries are unsupported.
+# Aliases do not alter executable files or wrap scripts/absolute-path invocations.
+# Bun is not officially guaranteed by Socket; keep its own age/lock/script controls.
+if [ -x "$HOME/.local/bin/sfw" ]; then
+  alias npm='"$HOME/.local/bin/sfw" npm'
+  alias bun='"$HOME/.local/bin/sfw" bun'
+  alias uv='"$HOME/.local/bin/sfw" uv'
+fi
+
+# ----
 # Aliases
 
 # general
