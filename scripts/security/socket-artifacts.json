@@ -1,0 +1,21 @@
+{
+  "version": "1.15.4",
+  "published_at": "2026-10-01T11:00:57Z",
+  "minimum_age_days": 7,
+  "source": "https://api.github.com/repos/SocketDev/sfw-free/releases/tags/v1.15.4",
+  "signature": "Publisher documents unsigned binaries; SHA256 values are GitHub release asset digests, not a signature or malware verdict.",
+  "telemetry": "Mandatory machine identifier, package identifiers, latency/errors and GitHub organization. Shared shell aliases wrap npm, bun and uv when the guarded launcher is installed, as explicitly requested. Custom/private registries are unsupported.",
+  "artifacts": {
+    "arm64": {
+      "url": "https://github.com/SocketDev/sfw-free/releases/download/v1.15.4/sfw-free-macos-arm64",
+      "sha256": "1b705ea7c399727ee41aa93f63e0469d2c3787c50e1dd8842cb8ff5ceec9eb99"
+    },
+    "x86_64": {
+      "url": "https://github.com/SocketDev/sfw-free/releases/download/v1.15.4/sfw-free-macos-x86_64",
+      "sha256": "b19f96f0dd3ebc4ecc7111dbc43cc2b095f37bf759273c0bd9c0c4784ea24731"
+    }
+  },
+  "ca_sha256": "f356a97fb33148de963979b5b164c0b8de13c5bfe0ffe913ef68208d6364a419",
+  "ca_source": "Reviewed incident-patched Homebrew ca-certificates 2026-10-20 public PEM; use /opt/homebrew/etc/ca-certificates/cert.pem or /usr/local/etc/ca-certificates/cert.pem",
+  "embedded_runtime": "Node 24.21.0; bundled roots include incident-excluded emSign ECC G3. Guarded launcher disables bundled trust and uses the pinned clean PEM snapshot."
+}

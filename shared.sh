@@ -1,3 +1,4 @@
+# shellcheck shell=sh
 # shared.sh — configuration common to both bash and zsh.
 #
 # Sourced from both bashrc and zshrc (via ~/.shared.sh, symlinked by assimilate.sh)
@@ -8,10 +9,22 @@
 # Exports
 
 export LANG='en_US.UTF-8'
-export GPG_TTY=$(tty)
+GPG_TTY=$(tty 2>/dev/null) || GPG_TTY=''
+export GPG_TTY
 export UV_MALWARE_CHECK=1
-# $XDG_CONFIG_HOME drives Zed and Ghostty config discovery
-export XDG_CONFIG_HOME="$HOME/dotfiles"
+# macOS's OpenSSL PEM can lag the Homebrew CA bundle used by uv-managed Python.
+# Keep an explicitly selected CA path; otherwise use the maintained public bundle.
+if [ "$(uname -s)" = Darwin ] && [ "${SSL_CERT_FILE+x}" != x ]; then
+  for _public_ca in /opt/homebrew/etc/ca-certificates/cert.pem /usr/local/etc/ca-certificates/cert.pem; do
+    if [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
+      export SSL_CERT_FILE="$_public_ca"
+      break
+    fi
+  done
+  unset _public_ca
+fi
+# Keep machine-local application state outside the synchronized checkout.
+export XDG_CONFIG_HOME="$HOME/.config"
 # Keep gh authentication outside the checkout, independently of XDG_CONFIG_HOME.
 export GH_CONFIG_DIR="$HOME/.config/gh"
 
@@ -52,12 +65,24 @@ _prepend_path "$HOME/.local/bin"                        # pinned tools (delta, c
 export PATH
 
 # ----
+# Socket Firewall: interactive package-manager commands use the guarded launcher.
+# Socket Free sends mandatory telemetry; custom/private registries are unsupported.
+# Aliases do not alter executable files or wrap scripts/absolute-path invocations.
+# Bun is not officially guaranteed by Socket; keep its own age/lock/script controls.
+if [ -x "$HOME/.local/bin/sfw" ]; then
+  alias npm='"$HOME/.local/bin/sfw" npm'
+  alias bun='"$HOME/.local/bin/sfw" bun'
+  alias uv='"$HOME/.local/bin/sfw" uv'
+fi
+
+# ----
 # Aliases
 
 # general
 alias vi=nvim
 alias vim=nvim
 command -v lsd >/dev/null 2>&1 && alias ls="lsd -al"
+# shellcheck disable=SC2139 # Resolve this explicit trusted HOME path when sourced.
 alias claude="$HOME/.local/bin/claude"
 
 # Docker
@@ -68,9 +93,9 @@ alias dsp='docker system prune --all --force'
 alias docker_rmi_dangling='docker rmi $(docker images -qa -f "dangling=true") -f'
 
 # python
-alias python='python3.11'
-alias python3='python3.11'
-alias pip='python3.11 -m pip'
+# python and python3 resolve to uv's ~/.local/bin executables.
+alias pip='uv pip'
+alias pip3='uv pip'
 alias pip3='pip'
 alias grepy='grep -r --include \*.py'
 alias greps='grep -r --include \*.sql'

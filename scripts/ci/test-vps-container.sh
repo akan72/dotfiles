@@ -10,17 +10,16 @@ test "$("$runner" image amazon-linux)" = "amazonlinux:2023@sha256:694092ae18877e
 grep -Fq -- '--interactive' "$runner"
 grep -Fq 'curl-minimal' "$runner"
 
-grep -Fq 'set -euxo pipefail' assimilate.sh
-grep -Fq '28d1352dbcb436d3111c3594b9e1588e94950464' assimilate.sh
-grep -Fq 'NVIM_VERSION=0.12.4' assimilate.sh
-grep -Fq 'current_sha="$(git -C "$dir" rev-parse --verify HEAD 2>/dev/null || true)"' assimilate.sh
+grep -Fq 'scripts/security/install-artifact.sh' assimilate.sh
+grep -Fq 'scripts/security/check-clone.sh' assimilate.sh
+# shellcheck disable=SC2016 # Match literal installer source.
 grep -Fq 'brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' "$runner"
-grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' .github/workflows/ci.yml
-grep -Fq 'set -euxo pipefail' scripts/ci/verify-assimilate.sh
-grep -Fq "bash --noprofile -ic 'test \"\$UV_MALWARE_CHECK\" = 1'" scripts/ci/verify-assimilate.sh
-grep -Fq "zsh -ic 'test \"\$UV_MALWARE_CHECK\" = 1'" scripts/ci/verify-assimilate.sh
+grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 scripts/ci/anonymous-github.sh ./assimilate.sh' .github/workflows/ci.yml
+grep -Fq 'scripts/ci/anonymous-github.sh bash' "$runner"
+grep -Fq 'ASSIMILATE_SOURCE_MODE=archive' "$runner"
+grep -Fq 'source-snapshot.py' "$runner"
 if grep -Fq -- '--norc' scripts/ci/verify-assimilate.sh; then
   echo "VPS shell verification must not disable .bashrc" >&2
   exit 1

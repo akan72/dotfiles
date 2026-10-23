@@ -1,0 +1,15 @@
+# Ubuntu 24.04 x86_64 / Python 3.12; all wheels reviewed 2026-10-21.
+# Install with --require-hashes --only-binary=:all: --no-deps; do not hand-edit hashes.
+cfgv==3.5.0 --hash=sha256:a8dc6b26ad22ff227d2634a65cb388215ce6cc96bbcc5cfde7641ae87e8dacc0
+distlib==0.4.3 --hash=sha256:4b0ce306c966eb73bc3a7b6abad017c556dadd92c44701562cd528ac7fde4d5b
+filelock==4.1.2 --hash=sha256:4d5dc2a1d64d6b48a5f0540814000986fd62ebd3ac9ccbb1d07d669e075db9bb
+identify==2.6.20 --hash=sha256:6a16b69b93187244e0548cbfd25b3e4a6f9a7a2ad784625c3bec2b8d27b81aaa
+nodeenv==1.11.0 --hash=sha256:edaa16e6c14d7cf395d75d4bbd5a26390f4dc06501a33b4e76282b02cc688a25
+packaging==26.3 --hash=sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c
+platformdirs==4.13.0 --hash=sha256:3dbcf4cd708f21cf876c4eaa90e58412bc4f033d87143f41b1493ff77c25b7e1
+pre-commit==4.6.2 --hash=sha256:e2dde9a75d3bce11bd3831c26d134df00a2803c1d818be6a0383c3dcda25dc4e
+python-discovery==1.6.2 --hash=sha256:f0c697f95a3aaec4174a6e5e58f5885e25768684bafc76f1afde384709ebdcf2
+pyyaml==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc
+# Exact security exception to the seven-day cooldown: GHSA-43mp-35q3-x3fq,
+# GHSA-c978-59m8-c77v and GHSA-cw65-gx24-rc82; fixed wheel published 2026-10-17.
+virtualenv==21.14.9 --hash=sha256:ac51744da66ae56ff814b087d65096c94de698ec520adc624b108b679655809b

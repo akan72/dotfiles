@@ -2,7 +2,7 @@
 
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 managed_config="$script_dir/config.managed.toml"
 codex_home=${CODEX_HOME:-"$HOME/.codex"}
 dest_config="$codex_home/config.toml"

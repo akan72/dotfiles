@@ -34,12 +34,19 @@ jobs:
           sudo apt-get install --yes zsh
       - name: Check shell syntax
         run: |
-          bash -n assimilate.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh tests/*.sh
-          zsh -n zshrc
+          for file in assimilate.sh bashrc bash_profile shared.sh claude/statusline.sh scripts/ci/*.sh scripts/security/*.sh tests/*.sh; do
+            bash -n "$file"
+          done
+          zsh -f -n zshrc
       - name: Test VPS container harness
         run: |
           scripts/ci/test-vps-container.sh
           bash tests/clone-pinned.sh
+          bash tests/security-scans.sh
+          bash tests/npm-age.sh
+          bash tests/artifact-integrity.sh
+          python3 -I -S -B tests/source-snapshot.py
+          python3 -I -S -B tests/socket-installer.py
           sh tests/gh-auth-refresh.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null
@@ -60,9 +67,14 @@ jobs:
         with:
           persist-credentials: false
       - name: Install pre-commit
-        run: python3 -m pip install --user pre-commit==4.6.2
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/pre-commit"
+          "$RUNNER_TEMP/pre-commit/bin/python" -m pip --isolated install --index-url https://pypi.org/simple \
+            --require-hashes --only-binary=:all: --no-deps \
+            -r scripts/security/requirements-pre-commit-linux-py312.txt
+          "$RUNNER_TEMP/pre-commit/bin/python" -m pip check
       - name: Run repository hooks
-        run: python3 -m pre_commit run --all-files --show-diff-on-failure
+        run: '"$RUNNER_TEMP/pre-commit/bin/python" -m pre_commit run --all-files --show-diff-on-failure'
 
   actions-security:
     name: Actions security
@@ -78,7 +90,12 @@ jobs:
       - name: Validate workflows with actionlint
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
       - name: Audit workflows with zizmor
-        run: pipx run zizmor==1.29.0 .
+        run: |
+          python3.12 -m venv "$RUNNER_TEMP/zizmor"
+          "$RUNNER_TEMP/zizmor/bin/python" -m pip --isolated install --index-url https://pypi.org/simple \
+            --require-hashes --only-binary=:all: --no-deps \
+            -r scripts/security/requirements-zizmor-linux.txt
+          "$RUNNER_TEMP/zizmor/bin/zizmor" --offline --strict-collection --no-config .
 
   secret-history:
     name: Secret history
@@ -97,7 +114,7 @@ jobs:
           GOBIN: ${{ runner.temp }}/bin
         run: go install github.com/zricethezav/gitleaks/v8@v8.30.1
       - name: Scan Git history
-        run: '"${RUNNER_TEMP}/bin/gitleaks" git --redact --verbose'
+        run: 'PATH="${RUNNER_TEMP}/bin:$PATH" bash scripts/security/scan-history.sh'
 
   install:
     name: Install (${{ matrix.os }})
@@ -121,6 +138,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes zsh
+      - name: Provide pinned npm with release-age support
+        if: runner.os == 'Linux'
+        run: |
+          npm_stage="$RUNNER_TEMP/npm-11.19.0"
+          mkdir -p "$npm_stage/bin"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+            https://registry.npmjs.org/npm/-/npm-11.19.0.tgz -o "$npm_stage/npm.tgz"
+          printf '%s  %s\n' 31e9770f7dc71119a58509353b27917557aaf0ac9b5ef1a0465ee7d8ec67ae75 "$npm_stage/npm.tgz" | sha256sum -c -
+          tar -xzf "$npm_stage/npm.tgz" -C "$npm_stage"
+          ln -s ../package/bin/npm-cli.js "$npm_stage/bin/npm"
+          test "$("$npm_stage/bin/npm" --version)" = 11.19.0
+          printf '%s\n' "$npm_stage/bin" >> "$GITHUB_PATH"
       - name: Install dotfiles twice on hosted runner
         env:
           HOMEBREW_NO_ANALYTICS: "1"
@@ -132,13 +161,13 @@ jobs:
           ln -s "$GITHUB_WORKSPACE" "$HOME/dotfiles"
 
           first_started=$SECONDS
-          ./assimilate.sh
+          DOTFILES_DISPOSABLE_CI=1 scripts/ci/anonymous-github.sh ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           first_seconds=$((SECONDS - first_started))
           backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
 
           second_started=$SECONDS
-          ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh
+          DOTFILES_DISPOSABLE_CI=1 ASSIMILATE_SKIP_PLUGIN_SYNC=1 scripts/ci/anonymous-github.sh ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           second_seconds=$((SECONDS - second_started))
 

@@ -11,20 +11,15 @@ lsp_zero.set_server_config({
   end,
 })
 
--- Install language servers
-require('mason').setup({})
+-- Existing reviewed servers only; opening a buffer must not install or refresh packages.
+require('mason').setup({
+  registry_cache = { refresh = false },
+  ui = { check_outdated_packages_on_open = false },
+  firewall = { enabled = false, auto_managed = false },
+})
 require('mason-lspconfig').setup({
-  ensure_installed = {
-    'lua_ls',
-    'ts_ls',
-    'eslint',
-    'jedi_language_server',
-    --'pyright',
-    'rust_analyzer',
-  },
-  handlers = {
-    lsp_zero.default_setup,
-  },
+  ensure_installed = {},
+  automatic_enable = { 'lua_ls', 'ts_ls', 'eslint', 'jedi_language_server', 'rust_analyzer' },
 })
 
 -- Configure lua language server for neovim

@@ -3,33 +3,26 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
--- Bootstrap lazy.nvim (pinned to a stable tag; it self-installs on first launch,
--- so no separate clone step is needed in assimilate.sh).
+-- Verify downloaded code before adding it to the runtime path. No startup downloads.
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
-if not (vim.uv or vim.loop).fs_stat(lazypath) then
-    local out = vim.fn.system({
-        "git", "clone", "--filter=blob:none",
-        "--branch=v11.17.5",
-        "https://github.com/folke/lazy.nvim.git",
-        lazypath,
-    })
-    if vim.v.shell_error ~= 0 then
-        error("Error cloning lazy.nvim:\n" .. out)
-    end
-end
+require("config.trusted-bootstrap").verify_all()
+-- lazy.setup requires loadplugins=true, then disables native loading itself.
+-- Keep arbitrary native packages outside packpath during this handoff.
+vim.go.packpath = vim.env.VIMRUNTIME
+vim.go.loadplugins = true
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
     -- Devicons — required by nvim-tree, lualine, and bufferline
     {
         'nvim-tree/nvim-web-devicons',
-        tag = 'nerd-v3.2-compat',
+        commit = '21417212f640a1dad28a1408f04468819848f5e7',
     },
 
     -- Nvim file tree
     {
         'nvim-tree/nvim-tree.lua',
-        commit = '5e4475d',
+        commit = '5e4475d8bf7a3646164e01d9b65ef68369b17e3c',
         dependencies = { 'nvim-tree/nvim-web-devicons' },
         config = function()
             require("config.plugins.nvim-tree")
@@ -39,19 +32,15 @@ require("lazy").setup({
     -- Markdown preview (load only for markdown files)
     {
         "iamcco/markdown-preview.nvim",
-        commit = 'a923f5f',
+        commit = 'a923f5fc5ba36a3b17e289dc35dc17f66d0548ee',
         ft = "markdown",
-        build = function() vim.fn["mkdp#util#install"]() end,
+        enabled = false, -- Release binaries need independently reviewed hashes.
     },
 
     -- Syntax highlighting
     {
         'nvim-treesitter/nvim-treesitter',
-        tag = 'v0.10.0',
-        build = function()
-            local ts_update = require('nvim-treesitter.install').update({ with_sync = true })
-            ts_update()
-        end,
+        commit = '42fc28ba918343ebfd5565147a42a26580579482',
         config = function()
             require("config.plugins.nvim-treesitter")
         end,
@@ -60,7 +49,7 @@ require("lazy").setup({
     -- Fuzzyfinder (load on its keys / :Telescope)
     {
         'nvim-telescope/telescope.nvim',
-        tag = '0.1.1',
+        commit = 'c1a2af0af69e80e14e6b226d3957a064cd080805',
         dependencies = { 'nvim-lua/plenary.nvim' },
         cmd = 'Telescope',
         keys = { '<C-p>', '<leader>pf', '<leader>ps', '<leader>vh' },
@@ -72,7 +61,7 @@ require("lazy").setup({
     -- Git (load on :Git / <leader>gs)
     {
         'tpope/vim-fugitive',
-        commit = '46eaf89',
+        commit = '46eaf8918b347906789df296143117774e827616',
         cmd = { 'Git', 'G' },
         keys = { { '<leader>gs', '<cmd>Git<cr>', desc = 'Git status' } },
         config = function()
@@ -83,16 +72,13 @@ require("lazy").setup({
     -- LSP
     {
         'VonHeikemen/lsp-zero.nvim',
-        branch = 'v3.x',
+        commit = '77550f2f6cbf0959ef1583d845661af075f3442b',
         dependencies = {
             -- LSP Support
             { 'neovim/nvim-lspconfig' }, -- Required
             {
                 -- Optional
                 'williamboman/mason.nvim',
-                build = function()
-                    pcall(vim.cmd, 'MasonUpdate')
-                end,
             },
             { 'williamboman/mason-lspconfig.nvim' }, -- Optional
 
@@ -109,7 +95,7 @@ require("lazy").setup({
     -- Gruvbox (colorscheme — load first, before other UI plugins)
     {
         "ellisonleao/gruvbox.nvim",
-        tag = '2.0.0',
+        commit = '61b0b3be2f0cfd521667403a0367298144d6c165',
         priority = 1000,
         lazy = false,
         config = function()
@@ -120,7 +106,7 @@ require("lazy").setup({
     -- GitGutter
     {
         'airblade/vim-gitgutter',
-        commit = 'fe0e8a2',
+        commit = 'fe0e8a2630eef548e4122096e4e2241f42208fe3',
         config = function()
             require("config.plugins.gitgutter")
         end,
@@ -129,7 +115,7 @@ require("lazy").setup({
     -- Lualine
     {
         'nvim-lualine/lualine.nvim',
-        commit = '2248ef2',
+        commit = '2248ef254d0a1488a72041cfb45ca9caada6d994',
         dependencies = { 'nvim-tree/nvim-web-devicons' },
         config = function()
             require("config.plugins.lualine")
@@ -139,13 +125,13 @@ require("lazy").setup({
     -- Vertical indent lines
     {
         "lukas-reineke/indent-blankline.nvim",
-        tag = 'v3.3.7',
+        commit = '29be0919b91fb59eca9e90690d76014233392bef',
     },
 
     -- bufferline
     {
         'akinsho/bufferline.nvim',
-        tag = "v4.9.1",
+        commit = '655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3',
         dependencies = { 'nvim-tree/nvim-web-devicons' },
         config = function()
             require("config.plugins.bufferline")
@@ -159,4 +145,11 @@ require("lazy").setup({
             require('Comment').setup()
         end,
     },
+}, {
+    local_spec = false,
+    install = { missing = false },
+    checker = { enabled = false },
+    change_detection = { enabled = false },
+    rocks = { enabled = false },
+    pkg = { enabled = false },
 })

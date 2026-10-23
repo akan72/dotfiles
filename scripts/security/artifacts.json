@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "note": "Literal reviewed archive digests pin bytes; no upstream malware/provenance guarantee. Migrated hashes retain existing repository values.",
+  "artifacts": {
+    "delta/0.19.2/Darwin-arm64": {
+      "version": "0.19.2",
+      "url": "https://github.com/dandavison/delta/releases/download/0.19.2/delta-0.19.2-aarch64-apple-darwin.tar.gz",
+      "sha256": "9be36612a5a13e9e386dc498fb8e50dc87c72ee42b63db0ea05b32f99a72a69a",
+      "kind": "file-tar",
+      "destination": ".local/bin/delta",
+      "reviewed": "2026-10-21",
+      "archive_root": "delta-0.19.2-aarch64-apple-darwin"
+    },
+    "delta/0.19.2/Linux-x86_64": {
+      "version": "0.19.2",
+      "url": "https://github.com/dandavison/delta/releases/download/0.19.2/delta-0.19.2-x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "8e695c5f586a8c53d6c3b01be0b4a422ed218bfed2a56191caebe373a1c18ab2",
+      "kind": "file-tar",
+      "destination": ".local/bin/delta",
+      "reviewed": "2026-10-21",
+      "archive_root": "delta-0.19.2-x86_64-unknown-linux-gnu"
+    },
+    "gcloud/577.0.0/Darwin-arm64": {
+      "version": "577.0.0",
+      "url": "https://storage.googleapis.com/cloud-sdk-release/google-cloud-cli-577.0.0-darwin-arm.tar.gz",
+      "sha256": "5ed8f9176eca367c6849fea10fde8e27d9a7d00a221c67f895c3020b8cf45a42",
+      "kind": "tree-tar",
+      "destination": ".local/share/google-cloud-sdk",
+      "reviewed": "2026-10-21",
+      "archive_root": "google-cloud-sdk"
+    },
+    "gcloud/577.0.0/Darwin-x86_64": {
+      "version": "577.0.0",
+      "url": "https://storage.googleapis.com/cloud-sdk-release/google-cloud-cli-577.0.0-darwin-x86_64.tar.gz",
+      "sha256": "6e54ae17d744fc8ca12ac69886c880bd2b164141179f6a8a9d3acc53e6b5d3e8",
+      "kind": "tree-tar",
+      "destination": ".local/share/google-cloud-sdk",
+      "reviewed": "2026-10-21",
+      "archive_root": "google-cloud-sdk"
+    },
+    "gcloud/577.0.0/Linux-aarch64": {
+      "version": "577.0.0",
+      "url": "https://storage.googleapis.com/cloud-sdk-release/google-cloud-cli-577.0.0-linux-arm.tar.gz",
+      "sha256": "dbac26bdf80d72b5d13538e3a215dcbfe2781edfd2d69723effbeef3839cffb8",
+      "kind": "tree-tar",
+      "destination": ".local/share/google-cloud-sdk",
+      "reviewed": "2026-10-21",
+      "archive_root": "google-cloud-sdk"
+    },
+    "gcloud/577.0.0/Linux-x86_64": {
+      "version": "577.0.0",
+      "url": "https://storage.googleapis.com/cloud-sdk-release/google-cloud-cli-577.0.0-linux-x86_64.tar.gz",
+      "sha256": "0b32d330446ce7b0f57f253e7efab4636c18fb1f87a3ac31c6c3f2a2a697525e",
+      "kind": "tree-tar",
+      "destination": ".local/share/google-cloud-sdk",
+      "reviewed": "2026-10-21",
+      "archive_root": "google-cloud-sdk"
+    },
+    "nvim/0.12.4/Linux-x86_64": {
+      "version": "0.12.4",
+      "url": "https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-x86_64.tar.gz",
+      "sha256": "012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628",
+      "kind": "tree-tar",
+      "destination": ".local/share/nvim-linux-x86_64",
+      "reviewed": "2026-10-21",
+      "archive_root": "nvim-linux-x86_64"
+    },
+    "rustup-init/1.29.2/Darwin-arm64": {
+      "version": "1.29.2",
+      "url": "https://static.rust-lang.org/rustup/archive/1.29.2/aarch64-apple-darwin/rustup-init",
+      "sha256": "f7c7e11eb2e07f006e532a8aaac77b32f4527d305ac386c0c633ca6133d35ca9",
+      "kind": "rustup-init",
+      "destination": ".local/share/dotfiles-security/rustup-init-1.29.2",
+      "reviewed": "2026-10-21"
+    },
+    "rustup-init/1.29.2/Darwin-x86_64": {
+      "version": "1.29.2",
+      "url": "https://static.rust-lang.org/rustup/archive/1.29.2/x86_64-apple-darwin/rustup-init",
+      "sha256": "b9610730ddeef52765723847866fd1e3540b2bf7d5ab0c324aa143a5edf25ba0",
+      "kind": "rustup-init",
+      "destination": ".local/share/dotfiles-security/rustup-init-1.29.2",
+      "reviewed": "2026-10-21"
+    },
+    "rustup-init/1.29.2/Linux-x86_64": {
+      "version": "1.29.2",
+      "url": "https://static.rust-lang.org/rustup/archive/1.29.2/x86_64-unknown-linux-gnu/rustup-init",
+      "sha256": "5be191e8c70a5007074254cb74d78dbfdd25cd5a61c27de7b8e5410122ec24f4",
+      "kind": "rustup-init",
+      "destination": ".local/share/dotfiles-security/rustup-init-1.29.2",
+      "reviewed": "2026-10-21"
+    }
+  }
+}

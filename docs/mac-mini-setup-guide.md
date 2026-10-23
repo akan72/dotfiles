@@ -110,14 +110,25 @@ If the normal installer is unavailable, download the matching Command Line Tools
 package from Apple's developer downloads site. Do not delete an existing toolchain
 unless its installation is known to be corrupt.
 
-Install Homebrew and add it to the Apple Silicon login-shell path:
+Follow the [reviewed bootstrap policy](../README.md#installation) for Homebrew and
+standalone uv. Review the official installer release and its downstream downloads
+before running a saved verified installer. This guide intentionally provides no
+mutable HEAD/curl-to-shell shortcut. After a reviewed Homebrew installation:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 brew doctor
 ```
+
+Add that `shellenv` statement once to the Mini's login profile if it is absent.
+
+Laptop defaults: keep FileVault on and automatic login off. Any earlier headless
+Mini exception in this guide is an explicit availability/security tradeoff, never a
+laptop setup default. A locked FileVault startup prevents that same Mac's Tailscale
+daemon from running, so Tailscale SSH alone cannot unlock a cold boot. Arrange
+physical recovery or Apple's supported FileVault Remote Login recovery path and
+test it separately before relying on unattended restarts. Do not enable an extra
+network service merely to satisfy this guide without reviewing exposure.
 
 ## 3. Configure Tailscale SSH
 
@@ -190,12 +201,19 @@ identifier to the public dotfiles repository.
 
 ## 5. Install development agents
 
-Install the required runtime and CLIs:
+Use the reviewed Node runtime and checksum-verified standalone uv from the
+[bootstrap policy](../README.md#reviewed-release-policy). Keep Homebrew's required
+Python dependency copies, but use uv for your Python. Before any npm install:
 
 ```sh
-brew install node python
-npm install -g @openai/codex @anthropic-ai/claude-code
+cd "$HOME/dotfiles"
+scripts/security/npm-age.sh
+npm config get ignore-scripts
 ```
+
+Select exact reviewed agent CLI versions and document any required lifecycle-script
+approval. Do not run unversioned global installs; minimum age alone does not prove
+package safety. Review each agent's native auto-update setting independently.
 
 Verify from a login shell, because desktop SSH integrations launch the remote user's
 login shell:

@@ -1,21 +1,19 @@
-# Usage:
-#
-# Add Python deps to requirements.txt
-# docker-compose up --build
-#
-
-FROM python:3.10
-
-RUN apt update && apt install libpq-dev git --yes
-
-RUN mkdir -p /scripts
-
+# Official multiarch Python 3.12.15 image, reviewed 2026-10-21.
+FROM python:3.12.15-slim-bookworm@sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+# Emergency CA patch: signed Debian security metadata + exact patched package.
+# https://security-tracker.debian.org/tracker/source-package/ca-certificates
+COPY filter-ca-bundle.py /tmp/filter-ca-bundle.py
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends ca-certificates=20250419~deb12u2 \
+    && python /tmp/filter-ca-bundle.py /etc/ssl/certs/ca-certificates.crt --check \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /scripts
-
-COPY . .
-
-RUN pip3 install jupyter
-
-RUN pip3 install -r requirements.txt
-
-ENV PYTHONPATH "${PYTHONPATH}:/scripts"
+COPY requirements.txt /tmp/requirements.txt
+RUN python -m pip install --no-cache-dir --require-hashes --only-binary=:all: -r /tmp/requirements.txt \
+    && python /tmp/filter-ca-bundle.py /usr/local/lib/python3.12/site-packages/certifi/cacert.pem --check
+RUN groupadd --gid 1000 notebook && useradd --uid 1000 --gid notebook --create-home notebook
+USER notebook
+ENV HOME=/home/notebook
