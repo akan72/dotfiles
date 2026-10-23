@@ -88,3 +88,7 @@ repository config, fingerprint lists and inline allow comments cannot suppress i
 Run `SECURITY_TEST_REAL_GITLEAKS=1 bash tests/security-scans.sh` for the actual
 source/history suppression regression using a fictional value, plus the ordinary
 stubbed scanner-error and sensitive-name fixtures.
+
+## Installer implementation
+
+`install-artifact.sh` and `install-socket.sh` are small compatibility launchers for their isolated Python implementations. Artifact validation, inventory and publication live in one module; the Socket launcher bytes and artifact receipts remain compatible with existing installations. Tests retain refusal-before-write/download, pinned bytes and architecture, archive paths/links, offline replay, trust-file tampering and shell routing. Repeated refusal setups use subcases, and the Socket TLS test checks the actual launch environment instead of matching source strings.

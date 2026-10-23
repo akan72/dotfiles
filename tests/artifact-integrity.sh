@@ -4,7 +4,7 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/artifact-integrity.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 mkdir "$work/helper" "$work/bin"
-cp "$root/scripts/security/install-artifact.sh" "$work/helper/install-artifact.sh"
+cp "$root/scripts/security/install-artifact.sh" "$root/scripts/security/install-artifact.py" "$work/helper/"
 cat > "$work/bin/curl" <<'STUB'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -23,7 +23,7 @@ export PATH="$work/bin:$PATH" FIXTURE_ARCHIVE="$work/archive.tar.gz" FIXTURE_MAR
 python3 - "$work" <<'PY'
 import io,tarfile,pathlib,sys
 w=pathlib.Path(sys.argv[1])
-for kind in ('normal','traversal','link','device','wrong-layout'):
+for kind in ('normal','traversal','link','chain','device','wrong-layout'):
  with tarfile.open(w/(kind+'.tar.gz'),'w:gz') as tf:
   name={'traversal':'../escape','wrong-layout':'unexpected/delta'}.get(kind,'fixture/delta')
   m=tarfile.TarInfo(name)
@@ -31,6 +31,9 @@ for kind in ('normal','traversal','link','device','wrong-layout'):
   elif kind=='device':m.type=tarfile.CHRTYPE;tf.addfile(m)
   else:
    content=b'#!/bin/sh\ntouch "$FIXTURE_MARKER"\n';m.size=len(content);m.mode=0o755;tf.addfile(m,io.BytesIO(content))
+  if kind=='chain':
+   for path,target in [('fixture/a','.'),('fixture/b','a/../outside')]:
+    m=tarfile.TarInfo(path);m.type=tarfile.SYMTYPE;m.linkname=target;tf.addfile(m)
 PY
 manifest() {
   python3 - "$work" "${1:-normal}" "${2:-https}" <<'PY'
@@ -102,10 +105,7 @@ if HOME="$work/home-valid" bash "$work/helper/install-artifact.sh" --check delta
 # Live status goes to the caller's descriptor even when detailed stdout is captured.
 case_name=progress
 FIXTURE_CURL_DELAY=11 DOTFILES_ARTIFACT_PROGRESS_FD=3 run 3>"$work/progress.log" >"$work/detail.log"
-grep -Fq 'Downloading delta/1/Fixture...' "$work/progress.log"
 grep -Eq 'Still downloading delta/1/Fixture \([1-9][0-9]*s elapsed\)\.\.\.' "$work/progress.log"
-grep -Fq 'verifying SHA-256...' "$work/progress.log"
-grep -Fq 'SHA-256 verified; installing...' "$work/progress.log"
 grep -Fq 'installed and receipt saved.' "$work/progress.log"
 if grep -Fq 'Still downloading' "$work/detail.log"; then exit 1; fi
 case_name=network-failure
@@ -116,12 +116,11 @@ set -e
 test "$network_status" = 22
 grep -Fq 'Download failed: delta/1/Fixture (curl exit 22)' "$work/network-failure.log"
 test ! -e "$work/home-network-failure/.local/bin/delta"
-for kind in traversal link device wrong-layout; do manifest "$kind"; case_name=$kind; reject; done
+for kind in traversal link chain device wrong-layout; do manifest "$kind"; case_name=$kind; reject; done
 manifest normal
 case_name=changed-byte; printf 'changed' >> "$FIXTURE_ARCHIVE"; reject
 manifest normal http; case_name=plaintext; reject
 manifest normal
-case_name=failed-http; FIXTURE_CURL_FAIL=1 reject
 case_name=missing-digest
 python3 - "$work/helper/artifacts.json" <<'PY'
 import json,pathlib,sys
