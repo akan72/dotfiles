@@ -123,17 +123,17 @@ Only write a freshness receipt after every archive has downloaded and validated:
 ```sh
 (
   set -eu
+  umask 077
   db="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles-security/osv-db"
-  mkdir -p "$db"
-  chmod 700 "$db"
   for ecosystem in PyPI npm; do
+    mkdir -p "$db/osv-scalibr/$ecosystem"
     curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
-      "https://osv-vulnerabilities.storage.googleapis.com/$ecosystem/all.zip" -o "$db/$ecosystem.zip.pending"
+      "https://osv-vulnerabilities.storage.googleapis.com/$ecosystem/all.zip" -o "$db/osv-scalibr/$ecosystem/all.zip.pending"
   done
-  python3 - "$db" <<'PY'
+  python3 -I -S - "$db" <<'PY'
 import hashlib, json, os, pathlib, sys, time, zipfile
 root = pathlib.Path(sys.argv[1])
-pending = {name: root / f'{name}.zip.pending' for name in ['PyPI', 'npm']}
+pending = {name: root / 'osv-scalibr' / name / 'all.zip.pending' for name in ['PyPI', 'npm']}
 for path in pending.values():
     with zipfile.ZipFile(path) as archive:
         if not archive.namelist() or archive.testzip() is not None:
