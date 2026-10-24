@@ -110,7 +110,7 @@ If the normal installer is unavailable, download the matching Command Line Tools
 package from Apple's developer downloads site. Do not delete an existing toolchain
 unless its installation is known to be corrupt.
 
-Follow the [reviewed bootstrap policy](../README.md#installation) for Homebrew and
+Follow the [reviewed bootstrap policy](editor-security.md#bootstrap-and-release-policy) for Homebrew and
 standalone uv. Review the official installer release and its downstream downloads
 before running a saved verified installer. This guide intentionally provides no
 mutable HEAD/curl-to-shell shortcut. After a reviewed Homebrew installation:
@@ -202,7 +202,7 @@ identifier to the public dotfiles repository.
 ## 5. Install development agents
 
 Use the reviewed Node runtime and checksum-verified standalone uv from the
-[bootstrap policy](../README.md#reviewed-release-policy). Keep Homebrew's required
+[bootstrap policy](editor-security.md#package-policy-and-socket). Keep Homebrew's required
 Python dependency copies, but use uv for your Python. Before any npm install:
 
 ```sh
