@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+repo=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/gh-refresh-test.XXXXXX")
 trap 'rm -rf "$test_root"' EXIT HUP INT TERM
 mkdir -p "$test_root/bin" "$test_root/home/.config/git"
@@ -22,6 +22,7 @@ chmod +x "$test_root/bin/gh"
 env -i HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" XDG_CONFIG_HOME="$test_root/home/dotfiles" \
   sh "$repo/scripts/gh-auth-refresh.sh"
 for shell in bash zsh; do
+  # shellcheck disable=SC2016 # The child shell expands its own fixture arguments.
   env -i HOME="$test_root/home" PATH=/usr/bin:/bin \
     "$shell" -c '. "$1/shared.sh"; test "$GH_CONFIG_DIR" = "$HOME/.config/gh"' test "$repo"
 done

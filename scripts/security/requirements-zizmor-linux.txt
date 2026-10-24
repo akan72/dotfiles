@@ -1,0 +1,2 @@
+# zizmor has no Requires-Dist; reviewed PyPI wheel for Linux x86_64.
+zizmor==1.29.0 --hash=sha256:587b99c2e1b34575c6c8565c2bfde415ca8bc0310f5589f19bc948c8dea10a20

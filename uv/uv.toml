@@ -10,7 +10,7 @@
 # week, so waiting buys time without much practical cost.
 exclude-newer = "7 days"
 
-# Let uv own Python version management: prefer uv-managed CPython interpreters
-# over system/pyenv ones. Install versions with `uv python install <ver>` and
+# Let uv own Python version management: require uv-managed CPython interpreters
+# instead of system/pyenv ones. Install versions with `uv python install <ver>` and
 # pin per-project with a `.python-version` file.
-python-preference = "managed"
+python-preference = "only-managed"

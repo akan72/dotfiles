@@ -1,10 +1,9 @@
 # Bun global configuration — https://bun.com/docs/runtime/bunfig
 #
-# Lives at the repo root because bun's global config path is
-# $XDG_CONFIG_HOME/.bunfig.toml and $XDG_CONFIG_HOME points at this repo.
-# assimilate.sh also symlinks it to ~/.bunfig.toml for contexts where
-# XDG_CONFIG_HOME isn't exported (bun ignores ~/.bunfig.toml whenever
-# XDG_CONFIG_HOME is set — verified against bun 1.3.12).
+# assimilate.sh links this file at $HOME/.config/.bunfig.toml for the
+# shared shell's XDG_CONFIG_HOME=$HOME/.config, and at $HOME/.bunfig.toml
+# for contexts without XDG_CONFIG_HOME. Bun uses the absolute XDG path
+# instead of HOME when it is set. Both links point at this one policy.
 # A project-local bunfig.toml is merged on top, so repos can still override.
 
 [install]

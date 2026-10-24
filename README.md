@@ -9,7 +9,7 @@ For my development setup, I use [Neovim](https://neovim.io/) as a text editor, [
 as a terminal replacement (with [tmux](https://github.com/tmux/tmux/wiki), and [Oh My Zsh](https://ohmyz.sh/) as my shell.
 
 I'm also a fan of [Nerd-Fonts](https://github.com/ryanoasis/nerd-fonts) and am currently using [Hack](https://github.com/ryanoasis/nerd-fonts/tree/master/patched-fonts/Hack).
-For my plugin manager I use [vim-plug](https://github.com/junegunn/vim-plug).
+For my plugin manager I use [lazy.nvim](https://github.com/folke/lazy.nvim).
 
 [VSCode](https://code.visualstudio.com/) is my main editor/IDE.
 
@@ -32,18 +32,56 @@ Examples usage of focus switching with `Hyper + <key>`:
 
 ## Installation
 
-This is a fairly minimalistic approach to tracking dotfiles, and enables easy reproduction on other machines.
+Review this checkout and the release manifest before running the setup entry point:
 
-Simply clone the repository:
-
-```shell
-git clone https://github.com/akan72/dotfiles.git
+```sh
+cd "$HOME/dotfiles"
+git status --short
+bash ./assimilate.sh
 ```
 
-cd into the `dotfiles` directory, and then run:
-```shell
-./assimilate.sh
+Setup prints nine named stages and stores detailed command output in private
+`~/.local/state/dotfiles-security/assimilate/run.*/` logs. A failure shows its stage,
+exit status, diagnostic tail and exact log path; `--verbose` prints each stage's
+full captured output. CLI downloads show live tool/version status, ten-second
+elapsed-time updates and checksum/install milestones. Run
+`bash ./assimilate.sh --check` to validate existing checkouts and CLI installations first; this creates logs but changes no configuration or packages.
+Preflight checks pinned artifact metadata, existing installation receipts and hashes,
+destination/launcher conflicts and checkout integrity before linking files or
+invoking Homebrew. Unmanaged delta/gcloud copies are reported together and left
+untouched; missing destinations are ready for later installation. Existing rustup
+is retained under the separate playbook update policy. Homebrew automatic
+updates, dependent upgrades and install cleanup are disabled for the setup's
+bundle commands; first installs still use the reviewed distribution boundary.
+
+### Reviewed release policy
+
+Read the shared [security and maintenance guide](docs/editor-security.md) before
+installing or updating tools. It covers prerequisites, pinned artifacts, checkout
+integrity, Homebrew's rolling-distribution boundary, package cooldowns, Socket,
+local scans and reviewed editor/notebook updates. Use uv for personal Python;
+retain Apple/Homebrew runtimes required by the system and formula dependencies.
+
+### Container installation tests
+
+Default tests export clean tracked HEAD only, never the live checkout or `.git`:
+
+```sh
+scripts/ci/run-vps-container.sh run ubuntu
 ```
+
+For proposed changes, explicitly select the working tracked bytes and each new
+reviewed source file. No commit is created, and untracked files are excluded unless
+named. Sensitive-named new files and symlinks are refused:
+
+```sh
+scripts/ci/run-vps-container.sh run ubuntu --working --include tests/new-check.sh
+```
+
+The shared exporter copies source into a private snapshot without changing the
+Git index/object database. The container verifies its file-hash manifest; host
+tracked content and HEAD are checked again after execution. Registry access and package installs occur only inside the disposable
+container. A readonly mount alone is not a confidentiality control.
 
 The installer shares `agent-instructions.md` with Claude Code and Codex by
 linking it to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`.
@@ -83,9 +121,12 @@ and disables commit attribution, PR attribution, and cloud or Remote Control
 session links. The first existing settings file is retained as
 `~/.claude/settings.json.dotfiles-backup`.
 
-### Tmux Plugin Manager
-- Install Tmux Plugin Manager ([Github](https://github.com/tmux-plugins/tpm#tmux-plugin-manager))
-- Install tmux packages with `prefix + I`
+### Tmux plugins
+
+Assimilation installs only reviewed full commits. Runtime TPM installation/update
+shortcuts are disabled; powerline uses guarded local rendering. Review changed
+commits before changing pins and rerunning bootstrap. See
+[editor security and reversible legacy migration](docs/editor-security.md).
 
 ## Headless Mac mini
 

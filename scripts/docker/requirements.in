@@ -1,0 +1,5 @@
+# Reviewed 2026-10-21; all ordinary releases must predate 2026-10-14.
+# certifi 2026.10.19 is an explicit emergency CA-distrust exception.
+notebook==7.6.3
+pandas==3.0.6
+certifi==2026.10.19

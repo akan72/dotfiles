@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -euo pipefail
 
 : "${DOTFILES:?DOTFILES must point to the checked-out repository}"
 export PATH="$HOME/.local/bin:$PATH"
@@ -13,6 +13,8 @@ assert_link() {
   test "$(realpath "$target")" = "$(realpath "$source")"
 }
 
+assert_link .bunfig.toml .bunfig.toml
+assert_link .bunfig.toml .config/.bunfig.toml
 assert_link bash_profile .bash_profile
 assert_link gitconfig .gitconfig
 assert_link tmux.conf .tmux.conf
@@ -35,7 +37,9 @@ else
 fi
 
 # Require each shell to set this itself, even when CI exports it globally.
+# shellcheck disable=SC2016 # Each child shell must expand its own environment.
 env -u UV_MALWARE_CHECK HOME="$HOME" bash --noprofile -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
+# shellcheck disable=SC2016 # Each child shell must expand its own environment.
 env -u UV_MALWARE_CHECK HOME="$HOME" zsh -ic 'test "$UV_MALWARE_CHECK" = 1' >/dev/null 2>&1
 test "$("$HOME/.local/bin/delta" --version)" = "delta 0.19.2"
 test -x "$HOME/.cargo/bin/rustc"
@@ -49,7 +53,7 @@ else
 fi
 
 nvim_log="$(mktemp)"
-if ! HOME="$HOME" nvim --headless -c 'quitall' >"$nvim_log" 2>&1; then
+if ! HOME="$HOME" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-startup.lua")' >"$nvim_log" 2>&1; then
   cat "$nvim_log" >&2
   rm -f "$nvim_log"
   exit 1
@@ -61,5 +65,18 @@ if grep -Fq 'Error detected while processing' "$nvim_log"; then
 fi
 rm -f "$nvim_log"
 
-git -C "$DOTFILES" diff --exit-code
-git -C "$DOTFILES" diff --cached --exit-code
+if command -v bun >/dev/null 2>&1; then
+  python3 -I -S -B "$DOTFILES/tests/bun-age.py"
+else
+  printf 'Bun not installed; native release-age fixture skipped.\n'
+fi
+
+case "${ASSIMILATE_SOURCE_MODE:-git}" in
+  archive) python3 "$DOTFILES/scripts/security/source-snapshot.py" --verify "$DOTFILES" ;;
+  git)
+    test -d "$DOTFILES/.git"
+    git -c core.fsmonitor=false -c core.hooksPath=/dev/null -C "$DOTFILES" diff --exit-code
+    git -c core.fsmonitor=false -c core.hooksPath=/dev/null -C "$DOTFILES" diff --cached --exit-code
+    ;;
+  *) echo 'unknown assimilation source mode' >&2; exit 1 ;;
+esac
