@@ -69,24 +69,11 @@ require("lazy").setup({
         end,
     },
 
-    -- LSP
+    -- Server definitions; native Neovim owns LSP, completion and snippets.
     {
-        'VonHeikemen/lsp-zero.nvim',
-        commit = '77550f2f6cbf0959ef1583d845661af075f3442b',
-        dependencies = {
-            -- LSP Support
-            { 'neovim/nvim-lspconfig' }, -- Required
-            {
-                -- Optional
-                'williamboman/mason.nvim',
-            },
-            { 'williamboman/mason-lspconfig.nvim' }, -- Optional
-
-            -- Autocompletion
-            { 'hrsh7th/nvim-cmp' },     -- Required
-            { 'hrsh7th/cmp-nvim-lsp' }, -- Required
-            { 'L3MON4D3/LuaSnip' },     -- Required
-        },
+        'neovim/nvim-lspconfig',
+        commit = 'd224a1920728ba129880efc700d4a0180ac4ecbb',
+        lazy = false,
         config = function()
             require("config.plugins.lsp")
         end,

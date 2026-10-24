@@ -1,13 +1,11 @@
 -- Local, read-only checks run before any downloaded Lua. No shell or network.
 local M = {}
 local origins = {
-  ['Comment.nvim'] = 'numToStr/Comment.nvim', ['LuaSnip'] = 'L3MON4D3/LuaSnip',
-  ['bufferline.nvim'] = 'akinsho/bufferline.nvim', ['cmp-nvim-lsp'] = 'hrsh7th/cmp-nvim-lsp',
+  ['Comment.nvim'] = 'numToStr/Comment.nvim', ['bufferline.nvim'] = 'akinsho/bufferline.nvim',
   ['gruvbox.nvim'] = 'ellisonleao/gruvbox.nvim', ['indent-blankline.nvim'] = 'lukas-reineke/indent-blankline.nvim',
-  ['lazy.nvim'] = 'folke/lazy.nvim', ['lsp-zero.nvim'] = 'VonHeikemen/lsp-zero.nvim',
-  ['lualine.nvim'] = 'nvim-lualine/lualine.nvim', ['markdown-preview.nvim'] = 'iamcco/markdown-preview.nvim',
-  ['mason-lspconfig.nvim'] = 'williamboman/mason-lspconfig.nvim', ['mason.nvim'] = 'williamboman/mason.nvim',
-  ['nvim-cmp'] = 'hrsh7th/nvim-cmp', ['nvim-lspconfig'] = 'neovim/nvim-lspconfig',
+  ['lazy.nvim'] = 'folke/lazy.nvim', ['lualine.nvim'] = 'nvim-lualine/lualine.nvim',
+  ['markdown-preview.nvim'] = 'iamcco/markdown-preview.nvim',
+  ['nvim-lspconfig'] = 'neovim/nvim-lspconfig',
   ['nvim-tree.lua'] = 'nvim-tree/nvim-tree.lua', ['nvim-treesitter'] = 'nvim-treesitter/nvim-treesitter',
   ['nvim-web-devicons'] = 'nvim-tree/nvim-web-devicons', ['plenary.nvim'] = 'nvim-lua/plenary.nvim',
   ['telescope.nvim'] = 'nvim-telescope/telescope.nvim', ['vim-fugitive'] = 'tpope/vim-fugitive',

@@ -156,31 +156,207 @@ features may access the network; the runner uses `--offline`.
 
 ## Neovim
 
-Startup verifies every active lock entry before loading plugins: origin, commit,
-clean checkout and the reviewed stage-zero lazy commit. Only a regular,
-non-executable generated `doc/tags` with non-symlink parents is allowed. Packer's
-legacy loader/start directory is refused; use the separate playbook's reversible
-migration rather than deleting/executing an unknown loader.
+Before loading any downloaded plugin, `config.trusted-bootstrap` verifies every
+active entry in `nvim/lazy-lock.json`: canonical HTTPS origin, full commit, normal
+checkout root, and clean tracked, untracked and ignored files. The only generated
+file exception is the exact non-executable regular `doc/tags` help index with a
+non-symlink parent. Unknown Lua, symlink checkouts and other ignored changes fail
+closed. Lazy itself must match the explicitly reviewed stage-zero commit
+`85c7ff3711b730b4030d03144f6db6375044ae82` before it is required. This is a local
+integrity/drift check, not a sandbox against another process running as your user.
 
-Native plugin loading starts disabled; after verification, `packpath` is limited
-to the built-in runtime for lazy setup. Missing-plugin installs, project-local
-specs, rock/package channels, update checking, Mason refresh/server installs and
-Treesitter parser installs stay disabled. Existing parsers/highlighting remain.
-Mason starts only the five configured, already installed server types; receipts
-are inventory, not a complete dependency hash lock. Markdown preview's unverified
-binary installer stays disabled. Review external servers/parsers separately;
-`:Lazy update`, `:MasonUpdate` and `:TSUpdate` are not startup repairs.
+Startup begins with native plugin loading disabled. After all plugin integrity and
+Packer checks pass, it restricts `packpath` to the built-in runtime and enables
+loading for lazy setup. The pinned lazy manager then disables automatic native
+loading again while loading the verified plugins itself.
+
+Startup disables missing-plugin installation, project-local lazy specs, package/rock
+download channels, update checking and Treesitter parser installs. Neovim **0.12 or
+newer** is required. The existing Treesitter release still uses
+`nvim-treesitter.configs.setup`; highlighting remains enabled for existing parsers.
+Markdown preview remains disabled until its separate binary artifacts are reviewed.
+
+### Native LSP, completion and snippets
+
+`nvim-lspconfig` supplies server definitions; native `vim.lsp.config`/`enable`,
+`vim.lsp.completion` and `vim.snippet` provide the editor behavior. The six former
+LSP/completion/installation wrappers are absent from the active specs, lock and
+origin maps. Every remaining active plugin keeps the same reviewed full commit.
+Retired downloaded directories are inactive rollback material, not runtime paths.
+
+Only Jedi, Lua, TypeScript, ESLint and Rust Analyzer are deliberately configured.
+External executables are resolved explicitly, with Mason paths and rustup's
+runtime-downloading proxy refused. A missing optional tool produces one local
+notice; `:LspSetupStatus` shows the exact commands and setup guidance. Opening a
+buffer never repairs a missing tool by installing it.
+
+TypeScript's automatic typings acquisition is disabled. Its fallback tsserver is
+locked TypeScript 5.9.3; an existing trusted project's JavaScript tsserver is honored.
+ESLint similarly honors an installed project ESLint library, with locked ESLint
+10.12.0 as fallback. Their server executables remain external, and the implicit
+`yarn exec` wrapper is disabled. ESLint still executes trusted project lint
+configuration as part of its normal function; these settings are not a project-code
+sandbox. Rust workspace metadata is queried with `cargo --offline`, rustup automatic
+installation is disabled in server processes, and automatic build-script/procedural
+macro execution and check-on-save builds are disabled. Those Rust analysis features
+need a separately deliberate project policy if required.
+
+Native completion uses server trigger characters and explicit **Ctrl-Space**;
+it does not request completions after every letter. **Tab/Shift-Tab** select menu
+items; outside a menu they indent/outdent. **Enter** accepts an explicitly selected
+item; an unselected menu or no menu inserts a newline. Native LSP snippets use
+**Ctrl-f/Ctrl-b** to move forward/backward through placeholders. **Ctrl-j/Ctrl-k**
+scroll the native completion documentation popup, retaining normal key behavior
+when no popup exists. The menu uses native styling with at most five visible items,
+not the former bordered completion windows. Semantic highlighting stays disabled.
+
+Definition/declaration/implementation/type-definition/references remain on
+`gd/gD/gi/go/gr`; hover/signature/line diagnostics on `K/gs/gl`; rename/format/actions
+on `F2/F3/F4`; diagnostics on `[d`/`]d`. Existing user mappings are preserved.
+The commented leader-key examples in the old configuration were not active bindings.
+
+### Explicit external server setup
+
+Complete the Mac security playbook first, including patched Node/Rustup and the
+existing uv-managed Python. Use these dedicated directories only; stop if they
+contain unrelated data. The frozen uv lock and npm integrity lock are public source;
+installed environments stay outside the checkout. Neither command installs a new
+Python runtime or runs package source builds/lifecycle scripts.
 
 ```sh
-python3 -I -S "$HOME/dotfiles/scripts/security/check-editor-state.py"
-bash "$HOME/dotfiles/tests/editor-policy.sh"
-DOTFILES="$HOME/dotfiles" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-startup.lua")'
+export DOTFILES="$HOME/dotfiles"
+export LSP_HOME="$HOME/.local/share/dotfiles-lsp"
+(
+  set -eu
+  for path in "$HOME/.local" "$HOME/.local/share" "$LSP_HOME" "$LSP_HOME/python" "$LSP_HOME/node"; do
+    test ! -L "$path" || { echo "Review symlinked setup path: $path" >&2; exit 1; }
+  done
+  uv python find --managed-python --no-python-downloads 3.12.15
+  UV_MALWARE_CHECK=1 UV_PROJECT_ENVIRONMENT="$LSP_HOME/python" uv --no-config sync \
+    --project "$DOTFILES/nvim/lsp/python" --frozen --no-build \
+    --no-python-downloads --managed-python --python 3.12.15 \
+    --default-index https://pypi.org/simple
+)
 ```
 
-The first command loads only the verifier with `-u NONE --noplugin`; the last
-loads the real init and asserts theme/LSP behavior and disabled download channels.
-To test an existing Python server, set `DOTFILES_EDITOR_EXPECT_PYTHON_LSP=1` and
-`DOTFILES_EDITOR_TEST_FILE` to a fresh absolute temporary `.py` path. No server is installed.
+The Node lock was resolved on 21 October 2026 with npm's seven-day minimum age,
+using TypeScript LS 6.0.2, TypeScript 5.9.3, VSCode extracted servers 4.10.0 and
+ESLint 10.12.0. It contains the complete 111-package dependency graph and integrity
+hashes. No global npm packages are installed. Use the reviewed Node26.12.1 for this
+recorded recipe; review a successor explicitly rather than downgrading an existing
+newer patched runtime.
+
+```sh
+(
+  set -eu
+  test "$(node --version)" = v26.12.1
+  test ! -L "$LSP_HOME/node"
+  mkdir -p "$LSP_HOME/node"
+  cp "$DOTFILES/nvim/lsp/node/package.json" "$DOTFILES/nvim/lsp/node/package-lock.json" "$LSP_HOME/node/"
+  stage="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-lsp-npm.XXXXXX")"
+  trap 'rm -rf "$stage"' EXIT
+  touch "$stage/user.npmrc" "$stage/global.npmrc"
+  export NPM_CONFIG_USERCONFIG="$stage/user.npmrc" NPM_CONFIG_GLOBALCONFIG="$stage/global.npmrc"
+  export NPM_CONFIG_REGISTRY=https://registry.npmjs.org/ NPM_CONFIG_MIN_RELEASE_AGE=7 NPM_CONFIG_IGNORE_SCRIPTS=true
+  bash "$DOTFILES/scripts/security/npm-age.sh"
+  npm ci --prefix "$LSP_HOME/node" --ignore-scripts --min-release-age=7 --no-audit --no-fund
+  npm audit --prefix "$LSP_HOME/node" --omit=dev
+)
+```
+
+Lua uses the explicitly trusted Homebrew rolling-distribution boundary and a
+bottle-only install. The reviewed Apple Silicon bottle was LuaLS3.19.2. The current
+formula has no Intel macOS bottle; do not silently source-build on Intel. Leave Lua
+optional there until a matching official artifact is reviewed. The Rust component
+uses the already installed toolchain's manifest without `rustup update`; it does
+not replace project environments or install a second compiler. The audited Mac
+uses stable1.91.1; the existing bootstrap's reviewed fresh-toolchain target is1.95.0.
+
+```sh
+(
+  set -eu
+  case "$(uname -s)-$(uname -m)" in
+    Darwin-arm64)
+      HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 \
+      HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1 \
+        brew install --force-bottle lua-language-server ;;
+    Darwin-x86_64) echo 'Lua LS optional: review an Intel artifact; no source-build fallback.' ;;
+    *) echo 'Review the matching platform package before installing Lua LS.' ;;
+  esac
+  case "$(uname -m)" in
+    arm64) toolchain=stable-aarch64-apple-darwin ;;
+    x86_64) toolchain=stable-x86_64-apple-darwin ;;
+    *) exit 2 ;;
+  esac
+  case "$(rustup --version 2>/dev/null)" in
+    'rustup 1.29.2 '*) ;;
+    *) echo 'Review/repair Rustup first using the security playbook.' >&2; exit 1 ;;
+  esac
+  case "$(RUSTUP_AUTO_INSTALL=0 rustup run "$toolchain" rustc --version)" in
+    'rustc 1.91.1 '*|'rustc 1.95.0 '*) ;;
+    *) echo 'Review this existing Rust toolchain before adding components.' >&2; exit 1 ;;
+  esac
+  RUSTUP_AUTO_INSTALL=0 rustup component add rust-analyzer rust-src --toolchain "$toolchain"
+  analyzer="$(RUSTUP_AUTO_INSTALL=0 rustup which --toolchain "$toolchain" rust-analyzer)"
+  mkdir -p "$HOME/.local/bin"
+  link_lsp() {
+    target="$1"; name="$2"; dest="$HOME/.local/bin/$name"
+    test -f "$target" && test -x "$target"
+    if test -L "$dest" && test "$(readlink "$dest")" = "$target"; then return; fi
+    if test -e "$dest" || test -L "$dest"; then echo "Review existing launcher: $dest" >&2; return 1; fi
+    ln -s "$target" "$dest"
+  }
+  link_lsp "$LSP_HOME/python/bin/jedi-language-server" jedi-language-server
+  link_lsp "$LSP_HOME/node/node_modules/.bin/typescript-language-server" typescript-language-server
+  link_lsp "$LSP_HOME/node/node_modules/.bin/vscode-eslint-language-server" vscode-eslint-language-server
+  link_lsp "$analyzer" rust-analyzer
+)
+```
+
+Updates are explicit lockfile/package changes followed by these same native package
+manager operations and functional tests. Do not use `:Lazy update`, `:TSUpdate`,
+unversioned `npx`, `uv run` or an installer wrapper to repair startup. The shared
+bootstrap installs only reviewed plugin checkouts; it never launches Neovim to
+fetch software.
+
+### Functional and security validation
+
+```sh
+python3 -I -S "$DOTFILES/scripts/security/check-editor-state.py"
+bash "$DOTFILES/tests/editor-policy.sh"
+DOTFILES="$DOTFILES" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-startup.lua")'
+DOTFILES="$DOTFILES" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-native-lsp.lua")'
+```
+
+The first check loads only the local integrity verifier (`-u NONE --noplugin`).
+The next checks retain dirty/origin/commit/symlink/Packer gates. The two real-init
+checks assert actual theme/native behavior, rather than a clean process exit.
+Hosted/VPS acceptance runs the deterministic native UI test without requiring
+optional external servers. To include all five installed servers, use a fresh
+private fixture directory and deny network on macOS:
+
+```sh
+fixtures="$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-lsp-tests.XXXXXX")"
+DOTFILES="$DOTFILES" DOTFILES_LSP_REAL=1 DOTFILES_LSP_TEST_ROOT="$fixtures" \
+  /usr/bin/sandbox-exec -p '(version 1)(allow default)(deny network*)' \
+  nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-native-lsp.lua")'
+```
+
+The test creates only inert public fixtures: no user project or authentication
+configuration is read. It checks external commands, completion/hover/diagnostics,
+Lua's `vim` global, multi-client completion, actual menu acceptance, snippet
+navigation, documentation scrolling, key fallbacks and missing/Mason-only tools.
+The last missing-server case intentionally prints an optional-tool notice.
+
+## Existing legacy Packer state
+
+Normal startup refuses a legacy Packer loader/start directory before plugin code
+loads. The one-time quarantine/restore utility and its fixtures belong to the
+separate Mac replication kit, not the dotfiles runtime. Close Neovim and follow
+that kit's Packer migration section with an explicit `--repo` path; it plans
+first, checks the reviewed loader hash, refuses custom entries and preserves
+rollback data. Do not delete or execute an unknown generated loader to bypass
+this guard.
 
 ## tmux and shell updates
 

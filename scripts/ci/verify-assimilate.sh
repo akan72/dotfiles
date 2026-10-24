@@ -58,6 +58,11 @@ if ! HOME="$HOME" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/t
   rm -f "$nvim_log"
   exit 1
 fi
+if ! HOME="$HOME" nvim --headless -i NONE -c 'lua dofile(vim.env.DOTFILES .. "/tests/editor-native-lsp.lua")' >>"$nvim_log" 2>&1; then
+  cat "$nvim_log" >&2
+  rm -f "$nvim_log"
+  exit 1
+fi
 if grep -Fq 'Error detected while processing' "$nvim_log"; then
   cat "$nvim_log" >&2
   rm -f "$nvim_log"
