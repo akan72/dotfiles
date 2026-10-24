@@ -2,34 +2,18 @@
 # All scanner processes here are inert stubs; no dependencies are installed.
 set -euo pipefail
 test_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-python3 - "$test_dir/../scripts/security/scan-source.py" <<'PY'
-import importlib.util
+python3 -I -S -B - "$test_dir/../scripts/security/scan-source.py" <<'PY'
 import json
 import os
 from pathlib import Path
-from unittest import mock
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 scanner = Path(sys.argv[1]).resolve()
-spec = importlib.util.spec_from_file_location('scan_source', scanner)
-module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(module)
 versions = {t['name']: t['version'] for t in json.loads(scanner.with_name('scanners.lock.json').read_text())['tools']}
-# Filename checks precede all filesystem reads, even for tracked sensitive paths.
-with tempfile.TemporaryDirectory(prefix='sensitive-path-fixture-') as directory:
-    root = Path(directory)
-    names = ['.aws/config', '.ssh/config', '.config/gh/hosts.yml',
-             'nested/auth/settings.json', '.azure/settings.json',
-             'keys/server.pem.bak', 'keys/id_ed25519.backup',
-             '.yarnrc.yml', 'pip.ini', 'nested/mytoken.txt']
-    with mock.patch.object(module, 'source_paths', return_value=names), \
-         mock.patch.object(module, 'read_regular', side_effect=AssertionError('sensitive read')):
-        selected, omitted = module.snapshot(root, root / 'snapshot')
-    assert not selected and len(omitted) == len(names), (selected, omitted)
-    assert all(item['reason'] == 'authentication filename' for item in omitted), omitted
 with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
     base = Path(directory)
     repo = base / 'repo with spaces'
@@ -38,34 +22,9 @@ with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
     (repo / 'hello.py').write_text('print("tracked original")\n')
     (repo / 'credentials.json').write_text('SYNTHETIC_AUTH_DO_NOT_COPY')
     (repo / '.npmrc').write_text('SYNTHETIC_AUTH_DO_NOT_COPY')
-    (repo / 'deleted.py').write_text('deleted later')
-    subprocess.run(['git', '-C', str(repo), 'add', '--', 'hello.py', 'credentials.json', '.npmrc', 'deleted.py'], check=True)
+    subprocess.run(['git', '-C', str(repo), 'add', '--', 'hello.py', 'credentials.json', '.npmrc'], check=True)
     (repo / 'hello.py').write_text('print("dirty current worktree")\n')
-    (repo / 'deleted.py').unlink()
     (repo / 'untracked.py').write_text('MUST_NOT_COPY')
-    outside = base / 'outside'
-    outside.mkdir()
-    (outside / 'private.py').write_text('MUST_NOT_READ')
-    (repo / 'link.py').symlink_to(outside / 'private.py')
-    subprocess.run(['git', '-C', str(repo), 'add', '--', 'link.py'], check=True)
-    (repo / 'nested').mkdir()
-    (repo / 'nested/private.py').write_text('was source')
-    subprocess.run(['git', '-C', str(repo), 'add', '--', 'nested/private.py'], check=True)
-    (repo / 'nested/private.py').unlink()
-    (repo / 'nested').rmdir()
-    (repo / 'nested').symlink_to(outside)
-    snap = base / 'snapshot'
-    snap.mkdir()
-    selected, omitted = module.snapshot(repo, snap)
-    assert [entry['path'] for entry in selected] == ['hello.py'], selected
-    assert 'dirty current worktree' in (snap / 'hello.py').read_text()
-    assert not (snap / 'credentials.json').exists()
-    assert not (snap / '.npmrc').exists()
-    assert not (snap / 'untracked.py').exists()
-    assert not (snap / 'link.py').exists()
-    assert len(omitted) == 5, omitted
-    # Remove deliberately partial sources before testing successful orchestration.
-    subprocess.run(['git', '-C', str(repo), 'update-index', '--force-remove', '--', 'link.py', 'deleted.py', 'nested/private.py'], check=True)
     (repo / '.github/workflows').mkdir(parents=True)
     (repo / '.github/workflows/test.yml').write_text('name: inert\non: push\njobs: {}\n')
     (repo / 'example.sh').write_text('#!/bin/bash\nprintf "%s\\n" fixture\n')
@@ -94,11 +53,23 @@ with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
         result = subprocess.run([sys.executable, str(scanner), str(repo), '--output', str(output)], env=env, text=True, capture_output=True)
         assert 'SYNTHETIC_VALUE' not in result.stdout + result.stderr
         assert output.stat().st_mode & 0o077 == 0
-        return result, json.loads((output / 'summary.json').read_text())
+        summary = json.loads((output / 'summary.json').read_text())
+        assert 'dirty current worktree' in (output / 'source/hello.py').read_text()
+        assert not (output / 'source/credentials.json').exists()
+        assert not (output / 'source/.npmrc').exists()
+        assert not (output / 'source/untracked.py').exists()
+        assert all(path.stat().st_mode & 0o077 == 0 for path in output.rglob('*'))
+        return result, summary
 
     result, summary = invoke('pass')
     assert result.returncode == 0, (result.stderr, summary)
     assert all(check['state'] == 'pass' for check in summary['checks'])
+    (repo / 'missing.py').write_text('# inert missing source\n')
+    subprocess.run(['git', '-C', str(repo), 'add', '--', 'missing.py'], check=True)
+    (repo / 'missing.py').unlink()
+    result, summary = invoke('partial-scope')
+    assert result.returncode != 0 and any(c['name'] == 'scope' and c['state'] == 'incomplete' for c in summary['checks'])
+    subprocess.run(['git', '-C', str(repo), 'update-index', '--force-remove', '--', 'missing.py'], check=True)
     result, summary = invoke('finding', TEST_GITLEAKS='1', TEST_ZIZMOR='12')
     assert result.returncode != 0
     assert sum(c['state'] == 'findings' for c in summary['checks']) == 2
@@ -111,6 +82,12 @@ with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
     result, summary = invoke('wrong-version')
     assert any(c['name'] == 'gitleaks' and c['state'] == 'incomplete' for c in summary['checks'])
     gitleaks_stub.write_text(original_stub)
+    shellcheck_stub = tools / 'shellcheck'
+    shellcheck_stub.write_text('#!/nonexistent/inert-interpreter\n')
+    result, summary = invoke('unexecutable')
+    assert result.returncode != 0
+    assert any(c['name'] == 'shellcheck' and c['state'] != 'pass' for c in summary['checks'])
+    assert any(c['name'] == 'zizmor' and c['state'] == 'pass' for c in summary['checks'])
     (tools / 'shellcheck').unlink()
     result, summary = invoke('missing')
     assert result.returncode != 0
@@ -125,6 +102,17 @@ with tempfile.TemporaryDirectory(prefix='security-fixture-') as directory:
     result = subprocess.run([sys.executable, str(scanner), str(repo), '--output', str(base / 'stale'), '--osv-db', str(database)], env=environment, text=True, capture_output=True)
     summary = json.loads((base / 'stale/summary.json').read_text())
     assert any(c['name'] == 'osv-scanner' and c['state'] == 'incomplete' for c in summary['checks'])
+    for label, receipt in [('fresh', {'completed_unix': time.time()}), ('future', {'completed_unix': time.time()+86400}), ('invalid', {})]:
+        (database / 'refreshed-at.json').write_text(json.dumps(receipt))
+        result = subprocess.run([sys.executable, str(scanner), str(repo), '--output', str(base / label), '--osv-db', str(database)], env=environment, text=True, capture_output=True)
+        summary = json.loads((base / label / 'summary.json').read_text())
+        state = next(c['state'] for c in summary['checks'] if c['name'] == 'osv-scanner')
+        assert state == ('pass' if label == 'fresh' else 'incomplete'), (label, summary)
+    (repo / 'unlocked').mkdir()
+    (repo / 'unlocked/pyproject.toml').write_text('[project]\nname="inert"\nversion="1.0"\n')
+    subprocess.run([str(tools / 'git'), '-C', str(repo), 'add', '--', 'unlocked/pyproject.toml'], check=True)
+    result, summary = invoke('unlocked')
+    assert result.returncode != 0 and any(c['name'] == 'dependency-scope' and c['state'] == 'incomplete' for c in summary['checks'])
 if os.environ.get('SECURITY_TEST_REAL_GITLEAKS') == '1':
     actual = shutil.which('gitleaks')
     assert actual, 'Requested real Gitleaks acceptance test but binary is absent'

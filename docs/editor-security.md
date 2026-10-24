@@ -1,8 +1,158 @@
-# Reviewed editor and notebook tooling
+# Security and maintenance
 
-Opening Neovim or tmux does not install or update software. Updates are separate,
-reviewed changes to commits, release hashes and dependency locks. A matching pin
-prevents unexpected movement; it is not proof that the pinned source is benign.
+This is the shared policy for bootstrap, package installs, local scans, editors
+and the optional notebook. Pins fix bytes; they do not prove that upstream code
+is benign. Updates require an explicit review of versions, age, hashes and any
+available provenance. One-time host repairs and Python/Packer migrations live in
+the separate Mac replication playbook, not the recurring dotfiles installer.
+
+## Bootstrap and release policy
+
+Install Apple's Command Line Tools, a reviewed official Homebrew release and a
+checksum-verified standalone uv first; preflight also needs `jq`, `python3` and `curl`.
+Never stream mutable installers into a shell. Use uv for personal Python projects/tools; retain Apple's Python and
+Homebrew Python required by formula dependencies.
+
+`artifacts.json` under `scripts/security` pins delta, gcloud, Linux Neovim and
+rustup-init for its explicitly listed platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
+without writing or downloading. Normal installation verifies HTTPS and SHA-256,
+rejects unsafe archive paths/links and refuses unmanaged destinations. Missing
+platform artifacts have no unchecked fallback; Intel delta uses a separately
+reviewed Homebrew install. Existing rustup is retained: review its installed
+version and the Mac playbook's Rust update commands separately. Pinning rustup-init
+does not pin the downstream toolchain downloads.
+
+Homebrew is a trusted rolling distribution. Setup disables automatic updates,
+dependent upgrades and cleanup for its bundle commands. `brew bundle --no-upgrade`
+does not lock first installs or patch existing packages. Review `brew outdated --json=v2` and upgrade selected packages separately. The Brewfile's Terraform
+exception trusts only that named formula; it does not install uv.
+
+Plugin checkouts require their approved origin, full commit, exact repository
+root and no tracked, untracked or ignored changes. GitHub's optional `.git` suffix
+is accepted. A valid checkout works offline; other state is left for explicit
+backup/review. OMZ caches belong outside its checkout at
+`${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh`. Powerline alone permits machine-local
+HTTPS userinfo while preserving exact repository identity; routing is never
+rewritten. Before network Git operations, check the selected helper and username
+without reading credentials; missing HTTPS routing stops the operation.
+
+## Package policy and Socket
+
+Keep the committed seven-day uv/Bun cooldowns. npm >=11.19 is required;
+`scripts/security/npm-age.sh` checks the effective setting and preserves stricter
+numeric values. Project/environment settings can override these defaults, so
+check each installation context. Bun config is linked at both
+`~/.config/.bunfig.toml` and `~/.bunfig.toml`; `python3 -I -S tests/bun-age.py` tests
+its native resolution using inert loopback releases. Lockfiles, Git dependencies,
+Homebrew and native updaters do not inherit registry cooldowns. Review independent
+updaters separately. For urgent fixes, verify the exact artifact/advisory and use
+a temporary version-specific exception, then restore the cooldown.
+
+For reviewed npm projects, begin with `npm ci --ignore-scripts`; approve required
+build scripts explicitly. For already locked uv projects, these checks are online
+and send dependency identifiers to OSV, but do not upload source:
+
+```sh
+uv audit --locked --no-build --no-python-downloads --project /absolute/reviewed/project
+uv tool audit --all --no-python-downloads
+```
+
+Audit support is preview functionality in the reviewed uv. Missing tool lock
+metadata is incomplete coverage. `UV_MALWARE_CHECK=1` covers supported uv sync
+operations; it does not protect every package manager or detect unknown malware.
+
+Socket installation is explicit via `scripts/security/install-socket.sh`, not
+part of assimilation. The reviewed Free binary is unsigned and requires telemetry.
+When its guarded `~/.local/bin/sfw` exists, shared Bash/Zsh settings automatically
+wrap interactive npm, Bun and uv. Scripts/absolute paths bypass aliases;
+private/custom registries are unsupported and unknown/unscanned/cached releases
+have gaps. Bun passed local fixtures but lacks Socket Free's guaranteed support.
+The guard checks the pinned binary and repaired CA bundle, enforces TLS validation
+and discards inherited Node preload options. Keep this guard while the embedded
+runtime still contains the distrusted roots; cooldowns and script restrictions
+remain necessary. Never migrate CLI authentication or generated editor code into
+this repository; copy application settings only by reviewed app name, with apps closed.
+
+## Local scans
+
+Run from a reviewed checkout; the scanner itself executes as your user:
+
+```sh
+scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db /absolute/private/osv-db
+```
+
+The final line gives a private output directory and counts. `summary.json` lists
+checks and selected/omitted paths. Exit 0 requires every applicable check to pass;
+findings, missing/changed scanners, partial source, stale/missing databases and tool
+errors return nonzero. Schema 2 removes per-check timestamps, version/command
+copies and parsed diagnostic aggregation. Scanner-native reports stay private:
+Gitleaks JSON is fully redacted; other tools' `.log` files can contain source.
+Never publish raw reports. Directories/files are 0700/0600; remove the output
+when no longer needed.
+
+`source-snapshot.py` is the single exporter for scans and container tests. Scans
+read current tracked, allowlisted source, including edits. They omit auth-named
+paths before reading contents, plus untracked/ignored files, binaries and symlinks.
+Missing/symlink/nonregular tracked source or unsafe paths make coverage incomplete.
+Container exports instead refuse unsafe names/state, default to clean HEAD, and
+require `--working` plus individual `--include` paths for proposed/new source.
+Both use descriptor-relative reads without following links; neither modifies the
+Git index/object database. Exports carry deterministic file hashes, executable flags and HEAD/mode
+metadata; verification also accepts prior schema-1 snapshots. Git export filters
+cannot omit or transform source. See [container commands](../README.md#container-installation-tests).
+
+Checks are Gitleaks, offline zizmor, ShellCheck without external sources, `zsh -n`
+and offline OSV for supported dependency locks. No install, build, resolution,
+autofix, project execution or network scan occurs. Private scanner configuration
+ignores repository/user suppressions; history is separate via
+`scripts/security/scan-history.sh`. Gitleaks is maintenance-only and pattern-based;
+static checks do not prove that software or this Mac is free of malware.
+
+`scanners.lock.json` records reviewed versions and artifacts; the runner refuses
+version drift. It is not a cross-platform installer. Homebrew's signed API and
+bottle checksums trust Homebrew; upstream attestations were not verified. Other
+platforms need matching artifact review. CI's pre-commit/zizmor wheel locks require
+hashes, binary wheels and no dependency resolution; preserve the exact documented
+virtualenv security exception. The portable Mac playbook has installation commands.
+Review scanner pins monthly and scan weekly; nothing schedules automatic updates.
+
+Refresh OSV separately: this downloads public databases, never source or a project
+dependency list. Include every required ecosystem; this repo uses PyPI and npm.
+Only write a freshness receipt after every archive has downloaded and validated:
+
+```sh
+(
+  set -eu
+  umask 077
+  db="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles-security/osv-db"
+  for ecosystem in PyPI npm; do
+    mkdir -p "$db/osv-scalibr/$ecosystem"
+    curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' \
+      "https://osv-vulnerabilities.storage.googleapis.com/$ecosystem/all.zip" -o "$db/osv-scalibr/$ecosystem/all.zip.pending"
+  done
+  python3 -I -S - "$db" <<'PY'
+import hashlib, json, os, pathlib, sys, time, zipfile
+root = pathlib.Path(sys.argv[1])
+pending = {name: root / 'osv-scalibr' / name / 'all.zip.pending' for name in ['PyPI', 'npm']}
+for path in pending.values():
+    with zipfile.ZipFile(path) as archive:
+        if not archive.namelist() or archive.testzip() is not None:
+            raise SystemExit('Invalid database archive; freshness was not updated')
+hashes = {}
+for name, path in pending.items():
+    target = path.with_suffix('')
+    os.replace(path, target)
+    hashes[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+(root / 'refreshed-at.json').write_text(json.dumps({'completed_unix': time.time(), 'ecosystems': list(pending), 'sha256': hashes}) + '\n')
+PY
+  scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db "$db"
+)
+```
+
+The receipt must be at most seven days old; use `--max-db-age-hours 24` during an
+incident. This is a completed-download record, not an upstream signature. Missing
+ecosystems fail in OSV. `--offline-vulnerabilities` is insufficient because other
+features may access the network; the runner uses `--offline`.
 
 ## Neovim
 
@@ -210,100 +360,52 @@ this guard.
 
 ## tmux and shell updates
 
-TPM's runtime loader/update bindings are removed. Both powerline status commands
-call `scripts/security/tmux-powerline.sh`, which uses the shared read-only checkout
-verifier against `https://github.com/erikw/tmux-powerline` at
-`6079ace8d534a01d4d964b8b854b223f72edaf4b` before executing `powerline.sh` with an
-allowlisted `left`/`right` argument. It never invokes `main.tmux`, which would
-replace the guarded status commands. Failed verification renders `powerline
-unverified` and executes no plugin. The default deployment path is `$HOME/dotfiles`;
-change both status command paths deliberately if you keep this repo elsewhere.
-
-```sh
-bash "$HOME/dotfiles/tests/tmux-policy.sh"
-bash "$HOME/dotfiles/scripts/security/tmux-powerline.sh" left
-bash "$HOME/dotfiles/scripts/security/tmux-powerline.sh" right
-```
-
-Oh My Zsh's automatic update and update prompt are explicitly disabled; the
-bootstrap's reviewed commit remains the update boundary. Review/install new pins
-periodically and make explicit urgent security exceptions rather than freezing
-software indefinitely. Git checks at every status render favor drift detection
-and may add a small cost; they do not isolate hostile same-user processes.
+TPM's runtime install/update bindings are removed. `tmux-powerline.sh` verifies the
+reviewed checkout before running `powerline.sh left|right`; failures render
+`powerline unverified` without executing the plugin. It never invokes `main.tmux`,
+which would overwrite the guarded status commands. Both tmux paths assume
+`$HOME/dotfiles`; change them deliberately for another location. OMZ updates/prompts
+are disabled. Update pins explicitly and test with `bash tests/tmux-policy.sh`.
+These local integrity checks detect drift; they do not isolate hostile processes
+already running as your user.
 
 ## Notebook helper
 
-The optional helper stays unstarted until explicitly built. Its host port is
-`127.0.0.1:8888`, it runs as UID 1000 with no extra capabilities, and Jupyter token
-authentication remains enabled. Only this helper directory is bind-mounted; never
-add home, SSH/auth directories or the Docker socket. Docker Desktop's filesystem
-ownership mapping differs from native Linux; verify write ownership per host.
+The optional helper binds only `127.0.0.1:8888`, runs as UID 1000 without extra
+capabilities, and retains Jupyter token authentication. Mount only the helper
+directory, never home/auth directories or the Docker socket. Verify host write
+ownership; Docker Desktop differs from native Linux.
 
-The base is the official multiarch Python 3.12.15 slim-bookworm image, immutable
-index digest `sha256:6a0e06f5ba0b373d051aabd3fffb9b873f27f9a2a3a14bcbe37dee6f0e3bbc70`.
-Registry platform manifests are:
+The Dockerfile pins the multiarch Python image digest and signed Debian CA repair;
+`filter-ca-bundle.py` rejects the three distrusted SPKIs in both system/certifi
+bundles. Keep that gate even if a patched APT version leaves its live mirror:
+review its successor instead of bypassing signatures. The CA package and certifi
+2026.10.19 are documented urgent cooldown exceptions. The wheel-only, hash-required
+lock covers 93 packages on both Linux architectures. The pandas 2-to-3 upgrade
+still requires testing your own notebooks.
 
-- Linux amd64: `sha256:57d96f71de145a98e7ceca18ee4ade77bba4103a33a72dfaea026b23625c6bf0`.
-- Linux arm64/v8: `sha256:c3729439afc4ec3f3e159e0c86aeabfadac8030ef46838a0256383d0511c5f5e`.
-
-The Dockerfile installs the exact signed Debian security package
-`ca-certificates=20250419~deb12u2`, then checks both system and pinned certifi bundles
-for the three distrusted SPKI hashes using `filter-ca-bundle.py`. A missing patched
-package or remaining key makes the build fail. The helper is an exact copy of the
-portable Mac incident helper (SHA-256
-`14821de1e90f83a354160627da0a422a01480b0ffac35664aa9aee273b2ca1d2`).
-[Debian's live tracker](https://security-tracker.debian.org/tracker/source-package/ca-certificates)
-confirms the bookworm security version. This urgent trust repair and certifi
-2026.10.19 are explicit exceptions to the ordinary seven-day age window.
-
-`requirements.txt` locks 93 packages with SHA-256 hashes. pip accepts only wheels
-and requires every hash. The two Linux architecture resolutions matched exactly.
-The reviewed direct versions are Notebook 7.6.3, pandas 3.0.6 and certifi 2026.10.19;
-the old pandas 2.0.1 helper was upgraded, so existing notebooks still need their
-own functional check. uv's generated dependency audit covered 96 universal
-packages and returned zero known vulnerabilities/adverse statuses on 2026-10-21.
-This is not a claim that scanners can rule out unknown malware.
-
-To refresh, first review supported direct versions and the official image digest.
-Use the verified uv installation. These were the exact resolution flags; both
-commands access public package metadata and execute no source builds:
+Refresh only after reviewing supported direct versions, the official image digest
+and dated exceptions; ordinary deployment must not silently regenerate locks:
 
 ```sh
 cd "$HOME/dotfiles"
 uv --no-config pip compile scripts/docker/requirements.in --generate-hashes --only-binary=:all: --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --exclude-newer 2026-10-14T00:00:00Z --exclude-newer-package certifi=2026-10-21T23:59:59Z --output-file /private/tmp/notebook-amd64.txt
 uv --no-config pip compile scripts/docker/requirements.in --generate-hashes --only-binary=:all: --python-version 3.12 --python-platform aarch64-unknown-linux-gnu --exclude-newer 2026-10-14T00:00:00Z --exclude-newer-package certifi=2026-10-21T23:59:59Z --output-file /private/tmp/notebook-arm64.txt
 diff -u <(tail -n +3 /private/tmp/notebook-amd64.txt) <(tail -n +3 /private/tmp/notebook-arm64.txt)
-```
-
-Do not silently refresh these dates/versions or replace the committed lock during
-ordinary deployment. A future release review updates cutoff dates and checks any
-necessary security exception by exact package/version. The signed Debian package
-can eventually leave a live mirror; review its successor rather than bypassing
-APT signature checks or the SPKI gate.
-
-To validate/build deliberately after the Mac trust repair, without launching a
-service or mounting personal notebooks:
-
-```sh
-cd "$HOME/dotfiles/scripts/docker"
+cd scripts/docker
 docker compose config --quiet
 docker buildx build --platform linux/arm64 --load -f Dockerfile.notebook -t dotfiles-notebook:reviewed .
 docker run --rm --network none --entrypoint id dotfiles-notebook:reviewed -u
 ```
 
-Intel laptops use `--platform linux/amd64`. A cross-platform metadata/wheel check
-is not evidence that the other CPU's image was built or run. To launch only when
-needed, `docker compose up --build` retains generated token authentication; do not
-capture tokens in audit logs or disable auth. Check Docker's published binding
-with an inspection format that prints only port bindings, and stop with
-`docker compose down` afterward. Docker Desktop/Engine itself must be supported
-and updated; old Engine releases have localhost publication caveats.
+Intel uses `linux/amd64`; metadata/wheel checks do not prove another CPU's image
+ran. Launch deliberately with `docker compose up --build`, inspect port bindings
+without logging tokens, then stop with `docker compose down`. Keep Docker updated;
+old engines have localhost-publication caveats.
 
 ## Host settings
 
-Keep laptop FileVault enabled and automatic login disabled. A headless Mac Mini
-availability exception must stay an explicit separate decision. Tailscale cannot
-unlock the same host's encrypted startup volume. Apple Silicon/macOS 26+ supports
-an SSH FileVault unlock path using macOS Remote Login plus independent networking;
-that differs from a Tailscale-only profile with Remote Login disabled. Test any
-independent recovery path before a remote reboot.
+Keep laptop FileVault on and automatic login off. The separate
+[headless Mini availability exception](mac-mini-setup-guide.md#availability-and-security-trade-off)
+weakens physical protection. Tailscale cannot unlock the same host's encrypted
+startup disk; test an independent supported recovery path before remote reboots.
