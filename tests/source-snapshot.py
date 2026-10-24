@@ -45,7 +45,11 @@ class SnapshotTests(unittest.TestCase):
                  '-c', 'commit.gpgsign=false', 'commit', '-qm', 'ignore fixture')
         for name in ['ignored', 'credential-example.txt']:
             (self.repo/name).write_text('inert local fixture\n')
+        (self.repo/'source.txt').touch()  # git status must not refresh cached stat metadata.
+        index = self.repo/'.git/index'
+        index_before = index.read_bytes()
         self.invoke()
+        self.assertEqual(index.read_bytes(), index_before)
         out = self.root/'out'
         self.assertFalse((out/'.git').exists())
         self.assertFalse((out/'ignored').exists())

@@ -41,7 +41,7 @@ SOURCE_NAMES = {'assimilate.sh', 'bashrc', 'bash_profile', 'zshrc', 'zprofile', 
 
 
 def run(repo, *args):
-    return subprocess.check_output(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
+    return subprocess.check_output(['git', '--no-optional-locks', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                                     '-C', str(repo), *args], stderr=subprocess.PIPE)
 
 
