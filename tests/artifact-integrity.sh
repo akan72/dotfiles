@@ -153,5 +153,59 @@ HOME="$work/home-tree" FIXTURE_CURL_FAIL=1 bash "$work/helper/install-artifact.s
 rm "$work/home-tree/.local/bin/nvim"
 if HOME="$work/home-tree" bash "$work/helper/install-artifact.sh" --check nvim 1 Fixture >/dev/null 2>&1; then exit 1; fi
 if HOME="$work/home-tree" bash "$work/helper/install-artifact.sh" nvim 1 Fixture >/dev/null 2>&1; then exit 1; fi
+# Language servers: a tree with no top-level directory (Lua LS) and a single
+# gzipped executable (rust-analyzer). Both keep the digest, layout and offline
+# integrity gates.
+server() {
+  python3 - "$work" "$@" <<'PYSERVER'
+import gzip,hashlib,io,json,pathlib,sys,tarfile
+w=pathlib.Path(sys.argv[1]);kind=sys.argv[2];case=sys.argv[3]
+script=b'#!/bin/sh\ntouch "$FIXTURE_MARKER"\n'
+archive=w/'archive.tar.gz'
+if kind=='file-gz':
+ archive.write_bytes(gzip.compress(script) if case!='corrupt' else b'not gzip')
+ r={'url':'https://github.com/rust-lang/rust-analyzer/releases/download/1/fixture.gz','destination':'.local/share/dotfiles-lsp/rust-analyzer'}
+else:
+ with tarfile.open(archive,'w:gz') as tf:
+  names={'normal':['bin/lua-language-server','main.lua'],'no-executable':['main.lua'],'traversal':['../escape']}.get(case,['bin/lua-language-server'])
+  for name in names:
+   m=tarfile.TarInfo(name);m.size=len(script);m.mode=0o755;tf.addfile(m,io.BytesIO(script))
+  if case=='link':
+   m=tarfile.TarInfo('meta');m.type=tarfile.SYMTYPE;m.linkname='../escape';tf.addfile(m)
+ r={'url':'https://github.com/LuaLS/lua-language-server/releases/download/1/fixture.tar.gz','destination':'.local/share/dotfiles-lsp/lua-language-server','archive_root':'nested/root' if case=='bad-root' else ''}
+tool={'file-gz':'rust-analyzer'}.get(kind,'lua-language-server')
+r.update(version='1',kind=kind if case!='wrong-kind' else 'file-tar',sha256=hashlib.sha256(archive.read_bytes()).hexdigest())
+(w/'helper/artifacts.json').write_text(json.dumps({'artifacts':{tool+'/1/Fixture':r}}))
+PYSERVER
+}
+server tree-tar normal
+HOME="$work/home-lua" bash "$work/helper/install-artifact.sh" lua-language-server 1 Fixture >/dev/null
+test -x "$work/home-lua/.local/share/dotfiles-lsp/lua-language-server/bin/lua-language-server"
+HOME="$work/home-lua" FIXTURE_CURL_FAIL=1 bash "$work/helper/install-artifact.sh" --check lua-language-server 1 Fixture >/dev/null
+# A server writing into its own tree (Lua LS's default log/meta paths) is detected.
+mkdir "$work/home-lua/.local/share/dotfiles-lsp/lua-language-server/log"
+if HOME="$work/home-lua" bash "$work/helper/install-artifact.sh" --check lua-language-server 1 Fixture >/dev/null 2>&1; then exit 1; fi
+for case in no-executable traversal link bad-root; do
+  server tree-tar "$case"
+  if HOME="$work/home-lua-$case" bash "$work/helper/install-artifact.sh" lua-language-server 1 Fixture >/dev/null 2>&1; then
+    echo "unsafe server fixture accepted: $case" >&2; exit 1
+  fi
+  test ! -e "$work/home-lua-$case/.local/share/dotfiles-lsp/lua-language-server"
+done
+server file-gz normal
+HOME="$work/home-ra" bash "$work/helper/install-artifact.sh" rust-analyzer 1 Fixture >/dev/null
+test -x "$work/home-ra/.local/share/dotfiles-lsp/rust-analyzer"
+HOME="$work/home-ra" FIXTURE_CURL_FAIL=1 bash "$work/helper/install-artifact.sh" --check rust-analyzer 1 Fixture >/dev/null
+printf 'changed\n' >> "$work/home-ra/.local/share/dotfiles-lsp/rust-analyzer"
+if HOME="$work/home-ra" bash "$work/helper/install-artifact.sh" --check rust-analyzer 1 Fixture >/dev/null 2>&1; then exit 1; fi
+for case in corrupt wrong-kind; do
+  server file-gz "$case"
+  if HOME="$work/home-ra-$case" bash "$work/helper/install-artifact.sh" rust-analyzer 1 Fixture >/dev/null 2>&1; then
+    echo "unsafe server fixture accepted: $case" >&2; exit 1
+  fi
+  test ! -e "$work/home-ra-$case/.local/share/dotfiles-lsp/rust-analyzer"
+done
+server file-gz normal; printf 'changed' >> "$FIXTURE_ARCHIVE"
+if HOME="$work/home-ra-digest" bash "$work/helper/install-artifact.sh" rust-analyzer 1 Fixture >/dev/null 2>&1; then exit 1; fi
 test ! -e "$FIXTURE_MARKER"
-echo 'artifact tests passed: read-only preflight, unmanaged file/tree, no writes/network, live download heartbeat, exact curl status, digest gate, offline integrity, malformed/missing/platform/HTTP/download/traversal/link/device/layout failures'
+echo 'artifact tests passed: read-only preflight, unmanaged file/tree, no writes/network, live download heartbeat, exact curl status, digest gate, offline integrity, malformed/missing/platform/HTTP/download/traversal/link/device/layout failures, rootless Lua LS tree, gzipped rust-analyzer'

@@ -1,4 +1,5 @@
--- Native LSP/completion/snippets. Installation is an explicit external setup step.
+-- Native LSP/completion/snippets. Installing the pinned servers is an explicit
+-- setup step (docs/editor-security.md); startup never installs anything.
 local M = { commands = {}, missing = {} }
 local uv = vim.uv
 local group = vim.api.nvim_create_augroup('DotfilesLsp', { clear = true })
@@ -97,33 +98,30 @@ vim.api.nvim_create_autocmd('LspAttach', {
   end,
 })
 
+-- Servers start only from their pinned installs here (docs/editor-security.md),
+-- never from PATH, so Mason's, Homebrew's or rustup's copies can't stand in.
+local lsp_home = vim.fs.joinpath(uv.os_homedir(), '.local/share/dotfiles-lsp')
+local lua_cache = vim.fs.joinpath(vim.fn.stdpath('cache'), 'lua-language-server')
 local node = executable('node')
 local servers = {
-  { 'jedi_language_server', 'jedi-language-server', {}, {
-      init_options = { diagnostics = { enable = true } },
+  { 'ty', 'python/bin/ty', { 'server' }, {} },
+  { 'ruff', 'python/bin/ruff', { 'server' }, {
+      -- ty answers hover; Ruff's editor guide leaves it to the type checker.
+      on_init = function(client) client.server_capabilities.hoverProvider = false end,
     } },
-  { 'lua_ls', 'lua-language-server', {}, {
+  -- Logs and generated definitions go to the cache, so the verified tree stays unchanged.
+  { 'lua_ls', 'lua-language-server/bin/lua-language-server',
+    { '--logpath=' .. lua_cache .. '/log', '--metapath=' .. lua_cache .. '/meta' }, {
       settings = { Lua = { diagnostics = { globals = { 'vim' } }, telemetry = { enable = false } } },
     } },
-  { 'ts_ls', 'typescript-language-server', { '--stdio' }, {
+  { 'ts_ls', 'node/node_modules/.bin/typescript-language-server', { '--stdio' }, {
       init_options = {
         disableAutomaticTypingAcquisition = true,
-        tsserver = { path = vim.fn.expand('~/.local/share/dotfiles-lsp/node/node_modules/typescript/lib/tsserver.js') },
+        tsserver = { path = vim.fs.joinpath(lsp_home, 'node/node_modules/typescript/lib/tsserver.js') },
       },
       before_init = function(_, config)
         local project = config.root_dir and vim.fs.joinpath(config.root_dir, 'node_modules/typescript/lib/tsserver.js')
         if project and uv.fs_stat(project) then config.init_options.tsserver.path = project end
-      end,
-    } },
-  { 'eslint', 'vscode-eslint-language-server', { '--stdio' }, {
-      settings = { nodePath = vim.fn.expand('~/.local/share/dotfiles-lsp/node/node_modules') },
-      -- Keep workspace settings without lspconfig's implicit `yarn exec` PnP wrapper.
-      before_init = function(_, config)
-        if config.root_dir then
-          config.settings.workspaceFolder = { uri = vim.uri_from_fname(config.root_dir), name = vim.fs.basename(config.root_dir) }
-          local modules = vim.fs.joinpath(config.root_dir, 'node_modules')
-          if uv.fs_stat(modules .. '/eslint/package.json') then config.settings.nodePath = modules end
-        end
       end,
     } },
   { 'rust_analyzer', 'rust-analyzer', {}, {
@@ -137,9 +135,9 @@ local servers = {
       root_dir = function(bufnr, on_dir)
         local root = vim.fs.root(bufnr, { 'Cargo.toml', 'rust-project.json', '.git' })
         if not root then return end
-        local analyzer = executable('rust-analyzer')
-        local cargo = analyzer and vim.fs.joinpath(vim.fs.dirname(analyzer), 'cargo') or nil
-        if not cargo or vim.fn.executable(cargo) ~= 1 or not uv.fs_stat(root .. '/Cargo.toml') then
+        -- rustup's cargo proxy is fine here: automatic installs are off.
+        local cargo = vim.fn.exepath('cargo')
+        if cargo == '' or not uv.fs_stat(root .. '/Cargo.toml') then
           on_dir(root)
           return
         end
@@ -156,11 +154,16 @@ local servers = {
 
 for _, server in ipairs(servers) do
   local name, binary, args, config = unpack(server)
-  local path = executable(binary)
-  if (name == 'ts_ls' or name == 'eslint') and not node then path = nil end
+  local path = uv.fs_realpath(vim.fs.joinpath(lsp_home, binary))
+  -- typescript-language-server is a script that node runs
+  if name == 'ts_ls' then
+    if not node then path = nil end
+  elseif path and vim.fn.executable(path) ~= 1 then
+    path = nil
+  end
   if path then
     -- Explicit commands prevent project-local or Mason launchers from taking over.
-    local cmd = (name == 'ts_ls' or name == 'eslint') and { node, path } or { path }
+    local cmd = name == 'ts_ls' and { node, path } or { path }
     vim.list_extend(cmd, args)
     config.cmd = cmd
     vim.lsp.config(name, config)
@@ -168,7 +171,7 @@ for _, server in ipairs(servers) do
     M.commands[name] = cmd
   else
     vim.lsp.enable(name, false)
-    table.insert(M.missing, binary)
+    table.insert(M.missing, vim.fs.basename(binary))
   end
 end
 
@@ -177,7 +180,7 @@ vim.api.nvim_create_user_command('LspSetupStatus', function()
   for _, server in ipairs(servers) do
     local name = server[1]
     table.insert(lines, name .. ': ' .. (M.commands[name] and table.concat(M.commands[name], ' ') or
-      'missing external executable; see docs/editor-security.md'))
+      'not installed in ' .. lsp_home .. '; see docs/editor-security.md'))
   end
   vim.notify(table.concat(lines, '\n'), vim.log.levels.INFO)
 end, { desc = 'Show external LSP commands and missing-server setup guidance' })
