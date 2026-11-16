@@ -133,7 +133,6 @@ function nvim_checkouts () {
       markdown-preview.nvim) continue ;; # Disabled until release artifacts are reviewed.
       nvim-lspconfig) origin=neovim/nvim-lspconfig ;;
       nvim-tree.lua) origin=nvim-tree/nvim-tree.lua ;;
-      nvim-treesitter) origin=nvim-treesitter/nvim-treesitter ;;
       nvim-web-devicons) origin=nvim-tree/nvim-web-devicons ;;
       plenary.nvim) origin=nvim-lua/plenary.nvim ;;
       telescope.nvim) origin=nvim-telescope/telescope.nvim ;;

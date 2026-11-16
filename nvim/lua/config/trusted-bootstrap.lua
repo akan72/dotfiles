@@ -6,7 +6,7 @@ local origins = {
   ['lazy.nvim'] = 'folke/lazy.nvim', ['lualine.nvim'] = 'nvim-lualine/lualine.nvim',
   ['markdown-preview.nvim'] = 'iamcco/markdown-preview.nvim',
   ['nvim-lspconfig'] = 'neovim/nvim-lspconfig',
-  ['nvim-tree.lua'] = 'nvim-tree/nvim-tree.lua', ['nvim-treesitter'] = 'nvim-treesitter/nvim-treesitter',
+  ['nvim-tree.lua'] = 'nvim-tree/nvim-tree.lua',
   ['nvim-web-devicons'] = 'nvim-tree/nvim-web-devicons', ['plenary.nvim'] = 'nvim-lua/plenary.nvim',
   ['telescope.nvim'] = 'nvim-telescope/telescope.nvim', ['vim-fugitive'] = 'tpope/vim-fugitive',
   ['vim-gitgutter'] = 'airblade/vim-gitgutter',
