@@ -44,7 +44,6 @@ env -u UV_MALWARE_CHECK HOME="$HOME" zsh -ic 'test "$UV_MALWARE_CHECK" = 1' >/de
 test "$("$HOME/.local/bin/delta" --version)" = "delta 0.19.2"
 test -x "$HOME/.cargo/bin/rustc"
 test -d "$HOME/.oh-my-zsh/.git"
-test -d "$HOME/.tmux/plugins/tpm/.git"
 test -d "$HOME/.tmux/plugins/tmux-powerline/.git"
 if [ -f "$DOTFILES/nvim/lazy-lock.json" ]; then
   test -d "$HOME/.local/share/nvim/lazy/lazy.nvim/.git"

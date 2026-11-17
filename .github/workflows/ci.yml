@@ -28,16 +28,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Install Zsh
+      - name: Install Zsh and ShellCheck
         run: |
           sudo apt-get update
-          sudo apt-get install --yes zsh
+          sudo apt-get install --yes zsh shellcheck
       - name: Check shell syntax
         run: |
           for file in assimilate.sh bashrc bash_profile shared.sh claude/statusline.sh scripts/ci/*.sh scripts/security/*.sh tests/*.sh; do
             bash -n "$file"
           done
           zsh -f -n zshrc
+      - name: ShellCheck shell sources
+        run: shellcheck assimilate.sh shared.sh bashrc bash_profile claude/statusline.sh scripts/ci/*.sh scripts/security/*.sh tests/*.sh
       - name: Test VPS container harness
         run: |
           scripts/ci/test-vps-container.sh
@@ -161,13 +163,13 @@ jobs:
           ln -s "$GITHUB_WORKSPACE" "$HOME/dotfiles"
 
           first_started=$SECONDS
-          DOTFILES_DISPOSABLE_CI=1 scripts/ci/anonymous-github.sh ./assimilate.sh
+          ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           first_seconds=$((SECONDS - first_started))
           backup_count="$(find "$HOME/backups" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')"
 
           second_started=$SECONDS
-          DOTFILES_DISPOSABLE_CI=1 ASSIMILATE_SKIP_PLUGIN_SYNC=1 scripts/ci/anonymous-github.sh ./assimilate.sh
+          ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh
           DOTFILES="$HOME/dotfiles" scripts/ci/verify-assimilate.sh
           second_seconds=$((SECONDS - second_started))
 

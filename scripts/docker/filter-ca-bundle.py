@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inspect/filter public CA PEM data; never edit the input bundle in place."""
+"""Check a public CA PEM bundle for distrusted roots; never edits the bundle."""
 import argparse
 import hashlib
 import json
@@ -27,7 +27,7 @@ def inspect_bundle(path, openssl):
     certs = CERT.findall(data)
     if not certs or len(certs) != data.count(b"-----BEGIN CERTIFICATE-----"):
         raise ValueError("Empty or malformed certificate bundle: " + str(path))
-    kept, removed = [], []
+    removed = []
     for cert in certs:
         pub = command(openssl, ["x509", "-pubkey", "-noout"], cert)
         der = command(openssl, ["pkey", "-pubin", "-outform", "DER"], pub)
@@ -35,34 +35,20 @@ def inspect_bundle(path, openssl):
         if digest in EXCLUDED:
             subject = command(openssl, ["x509", "-subject", "-noout"], cert).decode().strip()
             removed.append({"spki_sha256": digest, "subject": subject})
-        else:
-            kept.append(cert + b"\n")
-    if not kept:
+    if len(removed) == len(certs):
         raise ValueError("Refusing to produce an empty trust bundle")
-    return kept, removed
+    return len(certs) - len(removed), removed
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("input", type=Path)
-    parser.add_argument("output", nargs="?", type=Path)
     parser.add_argument("--openssl", default="/usr/bin/openssl")
-    parser.add_argument("--check", action="store_true", help="exit 1 if excluded roots are present")
+    parser.add_argument("--check", action="store_true", required=True, help="exit 1 if excluded roots are present")
     args = parser.parse_args()
-    if args.check and args.output:
-        parser.error("--check does not accept an output path")
-    if not args.check and args.output is None:
-        parser.error("provide an output path or --check")
-    if args.output and args.output.resolve() == args.input.resolve():
-        parser.error("input and output must differ")
     kept, removed = inspect_bundle(args.input, args.openssl)
-    if args.output:
-        # Exclusive creation prevents silently overwriting a prior backup/result.
-        with args.output.open("xb") as handle:
-            handle.write(b"".join(kept))
-    print(json.dumps({"input": str(args.input), "kept": len(kept), "removed": removed,
-                      "output": str(args.output) if args.output else None}, indent=2))
-    return 1 if args.check and removed else 0
+    print(json.dumps({"input": str(args.input), "kept": kept, "removed": removed}, indent=2))
+    return 1 if removed else 0
 
 
 if __name__ == "__main__":

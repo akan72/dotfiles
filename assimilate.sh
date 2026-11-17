@@ -5,6 +5,8 @@ OS="$(uname -s)"
 ARCH="$(uname -m)"
 PREFIX="$HOME"
 DOTFILES=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+# shellcheck source=scripts/security/pins.sh disable=SC1091 # Checked as its own input.
+source "$DOTFILES/scripts/security/pins.sh"
 BACKUPS="$PREFIX/backups"
 VERBOSE=0
 CHECK_ONLY=0
@@ -89,24 +91,17 @@ function clone_pinned () {
     git -c core.hooksPath=/dev/null init -q "$dir"
     git -c core.hooksPath=/dev/null -C "$dir" remote add origin "$url"
   fi
-  # Observe routing only; never ask a credential helper to return a secret.
   case "$url" in
-    https://*)
-      local selected_helper selected_user remote_url
-      remote_url=$(git -c core.fsmonitor=false -C "$dir" remote get-url origin)
-      selected_helper=$(git config --get-urlmatch credential.helper "$remote_url") || true
-      selected_user=$(git config --get-urlmatch credential.username "$remote_url") || true
-      if [ -z "$selected_helper" ] || [ -z "$selected_user" ]; then
-        echo "Git routing missing for $url; configure the expected helper and username before bootstrap" >&2
-        return 1
-      fi
-      printf 'Git routing verified for reviewed origin\n'
-      ;;
-    /*) ;; # Local fixture repositories require no credential routing.
+    https://*|/*) ;; # Reviewed public HTTPS origins, or local test fixtures.
     *) echo 'only reviewed HTTPS origins are supported' >&2; return 1 ;;
   esac
   if [ "$preflight" = 1 ]; then return 0; fi
-  git -c core.fsmonitor=false -c core.hooksPath=/dev/null -c fetch.recurseSubmodules=false -C "$dir" fetch --depth 1 origin "$sha"
+  # Pinned repositories are public: fetch anonymously, ignoring this machine's
+  # Git config, so no credential helper, URL rewrite or prompt is ever used.
+  env -u GIT_CONFIG_PARAMETERS -u GIT_CONFIG_COUNT GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 \
+    GIT_TERMINAL_PROMPT=0 GIT_ASKPASS='' SSH_ASKPASS='' \
+    git -c credential.helper= -c core.fsmonitor=false -c core.hooksPath=/dev/null -c fetch.recurseSubmodules=false \
+    -C "$dir" fetch --depth 1 origin "$sha"
   git -c core.fsmonitor=false -c core.hooksPath=/dev/null -c submodule.recurse=false -C "$dir" checkout -q --detach "$sha"
   "$helper" "${args[@]}"
 }
@@ -119,51 +114,39 @@ function check_existing () {
 }
 
 function nvim_checkouts () {
-  local action="$1" plugin_entries name commit origin
-  command -v jq >/dev/null || { echo 'jq is required to read the plugin lock' >&2; exit 1; }
-  plugin_entries=$(jq -er 'to_entries[] | [.key, .value.commit] | @tsv' "$DOTFILES/nvim/lazy-lock.json")
-  while IFS=$'\t' read -r name commit; do
-    case "$name" in
-      Comment.nvim) origin=numToStr/Comment.nvim ;;
-      bufferline.nvim) origin=akinsho/bufferline.nvim ;;
-      gruvbox.nvim) origin=ellisonleao/gruvbox.nvim ;;
-      indent-blankline.nvim) origin=lukas-reineke/indent-blankline.nvim ;;
-      lazy.nvim) origin=folke/lazy.nvim ;;
-      lualine.nvim) origin=nvim-lualine/lualine.nvim ;;
-      markdown-preview.nvim) continue ;; # Disabled until release artifacts are reviewed.
-      nvim-lspconfig) origin=neovim/nvim-lspconfig ;;
-      nvim-tree.lua) origin=nvim-tree/nvim-tree.lua ;;
-      nvim-treesitter) origin=nvim-treesitter/nvim-treesitter ;;
-      nvim-web-devicons) origin=nvim-tree/nvim-web-devicons ;;
-      plenary.nvim) origin=nvim-lua/plenary.nvim ;;
-      telescope.nvim) origin=nvim-telescope/telescope.nvim ;;
-      vim-fugitive) origin=tpope/vim-fugitive ;;
-      vim-gitgutter) origin=airblade/vim-gitgutter ;;
-      *) echo "unreviewed plugin in lock: $name" >&2; exit 1 ;;
-    esac
+  local action="$1" entries name commit origin
+  command -v jq >/dev/null || { echo 'jq is required to read the plugin lock' >&2; return 1; }
+  # Every locked plugin needs a reviewed origin in plugin-origins.json; null
+  # marks a disabled plugin that is never installed or loaded.
+  entries=$(jq -er --slurpfile origins "$DOTFILES/nvim/plugin-origins.json" '
+    to_entries[] | .key as $name
+    | if ($origins[0] | has($name)) | not then error("unreviewed plugin in lock: \($name)") else . end
+    | select($origins[0][$name] != null) | [$name, .value.commit, $origins[0][$name]] | @tsv
+  ' "$DOTFILES/nvim/lazy-lock.json") || return 1
+  while IFS=$'\t' read -r name commit origin; do
     "$action" "https://github.com/$origin.git" "$HOME/.local/share/nvim/lazy/$name" "$commit" --allow-help-tags
-  done <<< "$plugin_entries"
+  done <<< "$entries"
 }
 
 function checkout_preflight () {
-  check_existing https://github.com/ohmyzsh/ohmyzsh "$HOME/.oh-my-zsh" e7aa0c56e68348afefdd6af4c5bdb314a2bd6640
-  check_existing https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm" 7bdb7ca33c9cc6440a600202b50142f401b6fe21
-  check_existing https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-powerline" 6079ace8d534a01d4d964b8b854b223f72edaf4b --allow-userinfo
+  check_existing "$OMZ_ORIGIN" "$HOME/.oh-my-zsh" "$OMZ_COMMIT"
+  check_existing "$POWERLINE_ORIGIN" "$HOME/.tmux/plugins/tmux-powerline" "$POWERLINE_COMMIT" --allow-userinfo
   if [ -d "$HOME/.local/share/nvim/lazy" ]; then nvim_checkouts check_existing; fi
 }
 
+# The reviewed CLI artifacts this platform needs, one TOOL:VERSION per line.
+function cli_artifacts () {
+  [ -x "$HOME/.cargo/bin/rustup" ] || echo rustup-init:1.29.2
+  case "$OS-$ARCH" in Darwin-arm64|Linux-x86_64) echo delta:0.19.2 ;; esac
+  echo gcloud:577.0.0
+  [ "$OS-$ARCH" != Linux-x86_64 ] || echo nvim:0.12.4
+}
+
 function cli_preflight () {
-  local installer="$DOTFILES/scripts/security/install-artifact.sh"
-  local requests=(gcloud:577.0.0) request tool version failed=0
-  if [ ! -x "$HOME/.cargo/bin/rustup" ]; then requests+=(rustup-init:1.29.2); fi
-  case "$OS-$ARCH" in
-    Darwin-arm64|Linux-x86_64) requests+=(delta:0.19.2) ;;
-  esac
-  if [ "$OS-$ARCH" = Linux-x86_64 ]; then requests+=(nvim:0.12.4); fi
-  # Collect all CLI conflicts so one run reports both delta and gcloud.
-  for request in "${requests[@]}"; do
-    tool="${request%%:*}" version="${request#*:}"
-    if ! "$installer" --check "$tool" "$version" "$OS-$ARCH"; then failed=1; fi
+  local request failed=0
+  # Check every tool before failing, so one run reports all conflicts.
+  for request in $(cli_artifacts); do
+    "$DOTFILES/scripts/security/install-artifact.sh" --check "${request%%:*}" "${request#*:}" "$OS-$ARCH" || failed=1
   done
   [ "$failed" = 0 ]
 }
@@ -265,37 +248,31 @@ fi
 }
 
 function omz_checkout () {
-clone_pinned https://github.com/ohmyzsh/ohmyzsh "$HOME/.oh-my-zsh" e7aa0c56e68348afefdd6af4c5bdb314a2bd6640
+clone_pinned "$OMZ_ORIGIN" "$HOME/.oh-my-zsh" "$OMZ_COMMIT"
 }
 
 function install_clis () {
-ARTIFACT_INSTALL="$DOTFILES/scripts/security/install-artifact.sh"
-if [ ! -x "$HOME/.cargo/bin/rustup" ]; then
-  DOTFILES_ARTIFACT_PROGRESS_FD=3 "$ARTIFACT_INSTALL" rustup-init 1.29.2 "$OS-$ARCH"
-else
-  notice 'Rustup: already installed; skipping installation and keeping your Rust toolchains.'
-  notice 'Check your version with: rustup --version (reviewed version: 1.29.2).'
+local request
+if [ -x "$HOME/.cargo/bin/rustup" ]; then
+  notice 'Rustup: already installed; keeping your Rust toolchains (reviewed version: 1.29.2).'
 fi
 case "$OS-$ARCH" in
-  Darwin-arm64|Linux-x86_64) DOTFILES_ARTIFACT_PROGRESS_FD=3 "$ARTIFACT_INSTALL" delta 0.19.2 "$OS-$ARCH" ;;
+  Darwin-arm64|Linux-x86_64) ;;
   Darwin-x86_64) echo 'Intel delta: use the reviewed Homebrew git-delta channel.' ;;
   *) echo "No reviewed delta artifact for $OS-$ARCH" >&2 ;;
 esac
-DOTFILES_ARTIFACT_PROGRESS_FD=3 "$ARTIFACT_INSTALL" gcloud 577.0.0 "$OS-$ARCH"
-
+for request in $(cli_artifacts); do
+  DOTFILES_ARTIFACT_PROGRESS_FD=3 "$DOTFILES/scripts/security/install-artifact.sh" "${request%%:*}" "${request#*:}" "$OS-$ARCH"
+done
+# The Linux Neovim artifact links into ~/.local/bin, used by the plugin step.
+export PATH="$HOME/.local/bin:$PATH"
 }
 
 function tmux_checkouts () {
-clone_pinned https://github.com/tmux-plugins/tpm     "$HOME/.tmux/plugins/tpm"            7bdb7ca33c9cc6440a600202b50142f401b6fe21  # v3.1.0
-clone_pinned https://github.com/erikw/tmux-powerline "$HOME/.tmux/plugins/tmux-powerline" 6079ace8d534a01d4d964b8b854b223f72edaf4b --allow-userinfo  # v3.2.0
-
+clone_pinned "$POWERLINE_ORIGIN" "$HOME/.tmux/plugins/tmux-powerline" "$POWERLINE_COMMIT" --allow-userinfo
 }
 
-function install_nvim () {
-if [ "$OS-$ARCH" = Linux-x86_64 ]; then
-  DOTFILES_ARTIFACT_PROGRESS_FD=3 "$ARTIFACT_INSTALL" nvim 0.12.4 "$OS-$ARCH"
-  export PATH="$HOME/.local/bin:$PATH"
-fi
+function nvim_plugins () {
 if [ "${ASSIMILATE_SKIP_PLUGIN_SYNC:-0}" != 1 ]; then nvim_checkouts clone_pinned
 else notice 'SKIP Neovim checkout sync (explicitly requested)'; fi
 }
@@ -328,5 +305,5 @@ run_step 'Python and Git hooks' python_and_hooks
 run_step 'Oh My Zsh checkout' omz_checkout
 run_step 'Verified CLI artifacts' install_clis
 run_step 'tmux checkouts' tmux_checkouts
-run_step 'Neovim checkouts' install_nvim
+run_step 'Neovim checkouts' nvim_plugins
 printf '\nAssimilation Successful!\nLogs: %s\n' "$LOG_DIR"
