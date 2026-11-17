@@ -78,6 +78,7 @@ function clone_pinned () {
   local args=("$dir" "$url" "$sha")
   case "${4:-}" in
     --allow-help-tags) args=(--allow-help-tags "${args[@]}") ;;
+    --allow-preview-bin) args=(--allow-help-tags --allow-preview-bin "${args[@]}") ;;
     --allow-userinfo) args=(--allow-userinfo "${args[@]}") ;;
     '') ;;
     *) echo 'unsupported checkout policy flag' >&2; return 1 ;;
@@ -123,9 +124,40 @@ function nvim_checkouts () {
     | if ($origins[0] | has($name)) | not then error("unreviewed plugin in lock: \($name)") else . end
     | select($origins[0][$name] != null) | [$name, .value.commit, $origins[0][$name]] | @tsv
   ' "$DOTFILES/nvim/lazy-lock.json") || return 1
+  local policy
   while IFS=$'\t' read -r name commit origin; do
-    "$action" "https://github.com/$origin.git" "$HOME/.local/share/nvim/lazy/$name" "$commit" --allow-help-tags
+    policy=--allow-help-tags
+    [ "$name" != markdown-preview.nvim ] || policy=--allow-preview-bin
+    "$action" "https://github.com/$origin.git" "$HOME/.local/share/nvim/lazy/$name" "$commit" "$policy"
   done <<< "$entries"
+}
+
+# markdown-preview.nvim's server runs on the pinned Node with the locked
+# packages in nvim/markdown-preview, never the plugin's bundled Node binary.
+# The plugin only looks in its own app/bin, so the launcher is hard-linked
+# there; check-clone.sh verifies the link is the same file.
+function preview_server () {
+  local home="$HOME/.local/share/dotfiles-markdown-preview" plugin="$HOME/.local/share/nvim/lazy/markdown-preview.nvim" name
+  case "$OS-$ARCH" in
+    Darwin-arm64) name=markdown-preview-macos-arm64 ;;
+    Darwin-x86_64) name=markdown-preview-macos ;;
+    Linux-*) name=markdown-preview-linux ;;
+    *) notice "SKIP markdown preview: unsupported $OS-$ARCH"; return 0 ;;
+  esac
+  [ -x "$HOME/.local/bin/node" ] || { notice 'SKIP markdown preview: pinned Node is missing'; return 0; }
+  mkdir -p "$home/bin"
+  if ! cmp -s "$DOTFILES/nvim/markdown-preview/package-lock.json" "$home/package-lock.json"; then
+    cp "$DOTFILES/nvim/markdown-preview/package.json" "$DOTFILES/nvim/markdown-preview/package-lock.json" "$home/"
+    (cd "$home" && "$HOME/.local/bin/npm" ci --ignore-scripts --omit=dev --no-audit --no-fund)
+  fi
+  install -m 644 "$DOTFILES/nvim/markdown-preview/harden.js" "$home/harden.js"
+  # Rewrite in place so the hard link in app/bin keeps pointing at the same file.
+  if [ -e "$home/bin/$name" ]; then cat "$DOTFILES/nvim/markdown-preview/server.sh" > "$home/bin/$name"
+  else install -m 755 "$DOTFILES/nvim/markdown-preview/server.sh" "$home/bin/$name"; fi
+  if [ "$plugin/app/bin/$name" -ef "$home/bin/$name" ]; then return 0; fi
+  [ ! -e "$plugin/app/bin" ] && [ ! -L "$plugin/app/bin" ] || { echo "Review existing $plugin/app/bin" >&2; return 1; }
+  mkdir "$plugin/app/bin"
+  ln "$home/bin/$name" "$plugin/app/bin/$name"
 }
 
 function checkout_preflight () {
@@ -140,6 +172,8 @@ function cli_artifacts () {
   case "$OS-$ARCH" in Darwin-arm64|Linux-x86_64) echo delta:0.19.2 ;; esac
   echo gcloud:577.0.0
   [ "$OS-$ARCH" != Linux-x86_64 ] || echo nvim:0.12.4
+  # The one Node for shells, editors, language servers and agent tools.
+  case "$OS-$ARCH" in Darwin-arm64|Darwin-x86_64|Linux-x86_64|Linux-aarch64) echo node:26.13.1 ;; esac
 }
 
 function cli_preflight () {
@@ -264,8 +298,23 @@ esac
 for request in $(cli_artifacts); do
   DOTFILES_ARTIFACT_PROGRESS_FD=3 "$DOTFILES/scripts/security/install-artifact.sh" "${request%%:*}" "${request#*:}" "$OS-$ARCH"
 done
+link_node
 # The Linux Neovim artifact links into ~/.local/bin, used by the plugin step.
 export PATH="$HOME/.local/bin:$PATH"
+}
+
+# Point ~/.local/bin/node, npm and npx at the pinned Node; replace only symlinks
+# (such as an old nvm link), never a regular file someone installed there.
+function link_node () {
+  local root="$HOME/.local/share/dotfiles-node/v26.13.1" tool link
+  [ -x "$root/bin/node" ] || { notice 'SKIP Node links: no reviewed Node for this platform'; return 0; }
+  mkdir -p "$HOME/.local/bin"
+  for tool in node npm npx; do
+    link="$HOME/.local/bin/$tool"
+    if [ -L "$link" ] && [ "$(readlink "$link")" = "$root/bin/$tool" ]; then continue; fi
+    [ ! -e "$link" ] || [ -L "$link" ] || { echo "Review existing $link" >&2; return 1; }
+    ln -sfn "$root/bin/$tool" "$link"
+  done
 }
 
 function tmux_checkouts () {
@@ -273,7 +322,7 @@ clone_pinned "$POWERLINE_ORIGIN" "$HOME/.tmux/plugins/tmux-powerline" "$POWERLIN
 }
 
 function nvim_plugins () {
-if [ "${ASSIMILATE_SKIP_PLUGIN_SYNC:-0}" != 1 ]; then nvim_checkouts clone_pinned
+if [ "${ASSIMILATE_SKIP_PLUGIN_SYNC:-0}" != 1 ]; then nvim_checkouts clone_pinned; preview_server
 else notice 'SKIP Neovim checkout sync (explicitly requested)'; fi
 }
 

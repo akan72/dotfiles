@@ -193,6 +193,30 @@ the runtime path belongs to the Neovim installation. Adding a parser is a review
 change: pin its source by SHA-256 in `artifacts.json`, build it outside Neovim, install
 it to a dedicated runtime path directory and update that assertion.
 
+### Markdown preview
+
+`markdown-preview.nvim` runs its server on the pinned Node, not the plugin's
+prebuilt binary, which bundles Node 18. `nvim/markdown-preview` locks the server's
+54 packages: socket.io 2.5.1 (the last 2.x, compatible with the plugin's browser
+client) with patched engine.io 3.6.2, ws 7.5.13 and socket.io-parser 3.4.5, plus
+`debug` and `cookie` overridden to fixed releases. `npm audit` still reports one
+moderate ReDoS in `parseuri`, which only runs in the browser-side client.
+
+`assimilate.sh` installs the lock with `npm ci --ignore-scripts` under
+`~/.local/share/dotfiles-markdown-preview` and installs `server.sh` as the launcher.
+The plugin only looks in its own `app/bin`, so the launcher is hard-linked there.
+Both checkout checks accept only that one entry, and only when it is the same file
+(device and inode) as the installed launcher. The plugin's own installer is never
+run. The server listens on 127.0.0.1 only and stops with Neovim.
+
+Listening on localhost does not stop web pages: browsers let any site open a
+WebSocket to it, and DNS rebinding can make it look same-origin. socket.io 2.x
+accepts every origin by default, and `/_local_image_` serves any absolute path.
+The launcher therefore preloads `harden.js`, which rejects HTTP and socket.io
+requests unless their Host, Origin and Referer name this server on 127.0.0.1 or
+localhost, rejects `..` path segments, and serves only image files from
+`/_local_image_`.
+
 ### Native LSP, completion and snippets
 
 `nvim-lspconfig` supplies server definitions; native `vim.lsp.config`/`enable`,
@@ -264,14 +288,15 @@ The Node lock was resolved on 21 October 2026 with npm's seven-day minimum age,
 using TypeScript LS 6.0.2 and TypeScript 5.9.3. ESLint and the VSCode extracted
 servers were removed on 15 November 2026 without re-resolving, leaving the remaining
 entries unchanged. It contains the complete two-package dependency graph and integrity
-hashes. No global npm packages are installed. Use the reviewed Node26.12.1 for this
-recorded recipe; review a successor explicitly rather than downgrading an existing
-newer patched runtime.
+hashes. No global npm packages are installed. Node itself is the SHA-256-pinned
+v26.13.1 release in `scripts/security/artifacts.json`, which `assimilate.sh`
+installs under `~/.local/share/dotfiles-node` and links as `~/.local/bin/node`,
+`npm` and `npx`. Neither nvm nor Homebrew Node is used.
 
 ```sh
 (
   set -eu
-  test "$(node --version)" = v26.12.1
+  test "$(node --version)" = v26.13.1
   test ! -L "$LSP_HOME/node"
   mkdir -p "$LSP_HOME/node"
   cp "$DOTFILES/nvim/lsp/node/package.json" "$DOTFILES/nvim/lsp/node/package-lock.json" "$LSP_HOME/node/"

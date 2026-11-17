@@ -19,6 +19,7 @@ ORIGINS = {
     'delta': 'https://github.com/dandavison/delta/releases/download/',
     'gcloud': 'https://storage.googleapis.com/cloud-sdk-release/',
     'lua-language-server': 'https://github.com/LuaLS/lua-language-server/releases/download/',
+    'node': 'https://nodejs.org/dist/',
     'nvim': 'https://github.com/neovim/neovim/releases/download/',
     'rust-analyzer': 'https://github.com/rust-lang/rust-analyzer/releases/download/',
     'rustup-init': 'https://static.rust-lang.org/rustup/archive/',
@@ -30,6 +31,7 @@ EXECUTABLES = {
     'delta': 'delta',
     'gcloud': 'bin/gcloud',
     'lua-language-server': 'bin/lua-language-server',
+    'node': 'bin/node',
     'nvim': 'bin/nvim',
 }
 

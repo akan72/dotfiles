@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
-clean_only=0; allow_help_tags=0; allow_userinfo=0
+clean_only=0; allow_help_tags=0; allow_userinfo=0; allow_preview_bin=0
 while :; do
   case "${1:-}" in
     --clean) clean_only=1; shift ;;
     --allow-help-tags) allow_help_tags=1; shift ;;
     --allow-userinfo) allow_userinfo=1; shift ;;
+    --allow-preview-bin) allow_preview_bin=1; shift ;;
     *) break ;;
   esac
 done
-[ "$#" -eq 3 ] || { echo "usage: $0 [--clean] [--allow-help-tags] [--allow-userinfo] DIRECTORY ORIGIN FULL_COMMIT" >&2; exit 2; }
+[ "$#" -eq 3 ] || { echo "usage: $0 [--clean] [--allow-help-tags] [--allow-userinfo] [--allow-preview-bin] DIRECTORY ORIGIN FULL_COMMIT" >&2; exit 2; }
 dir=$1; origin=$2; sha=$3
 fail() { echo "checkout rejected: $dir ($1)" >&2; exit 1; }
 [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || fail 'expected a full lowercase commit SHA'
@@ -39,6 +40,20 @@ if [ "$allow_help_tags" = 1 ]; then
     { [ -f "$dir/doc/tags" ] && [ ! -L "$dir/doc/tags" ] && [ ! -L "$dir/doc" ] && [ ! -x "$dir/doc/tags" ]; } || fail 'unsafe generated help tags'
     status=$(printf '%s\n' "$status" | sed '/^?? doc\/tags$/d; /^!! doc\/tags$/d')
   fi
+fi
+if [ "$allow_preview_bin" = 1 ] && { [ -e "$dir/app/bin" ] || [ -L "$dir/app/bin" ]; }; then
+  # markdown-preview.nvim only: app/bin may hold one hard link to the installed server launcher.
+  { [ -d "$dir/app/bin" ] && [ ! -L "$dir/app/bin" ] && [ ! -L "$dir/app" ]; } || fail 'unexpected app/bin'
+  entries=("$dir"/app/bin/* "$dir"/app/bin/.[!.]*)
+  bin_count=0
+  for entry in "${entries[@]}"; do
+    [ -e "$entry" ] || [ -L "$entry" ] || continue
+    bin_count=$((bin_count + 1)); name=${entry##*/}
+    { [[ "$name" =~ ^markdown-preview-(macos-arm64|macos|linux)$ ]] && [ -f "$entry" ] && [ ! -L "$entry" ] \
+      && [ "$entry" -ef "$HOME/.local/share/dotfiles-markdown-preview/bin/$name" ]; } || fail 'app/bin is not the installed server launcher'
+  done
+  [ "$bin_count" = 1 ] || fail 'app/bin must hold exactly the pinned server'
+  status=$(printf '%s\n' "$status" | sed '/^[?!][?!] app\/bin\//d')
 fi
 if [ -n "$status" ]; then
   printf 'Checkout contains local or ignored state; review/back it up without resetting: %s\n' "$dir" >&2

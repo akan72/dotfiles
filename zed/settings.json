@@ -1,4 +1,8 @@
 {
+    // Zed installs the html extension by default; keep extensions explicit.
+    "auto_install_extensions": {
+        "html": false
+    },
     "project_panel": {
         "dock": "left"
     },

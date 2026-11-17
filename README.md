@@ -123,9 +123,9 @@ session links. The first existing settings file is retained as
 
 ### Tmux plugins
 
-Assimilation installs only reviewed full commits. Runtime TPM installation/update
-shortcuts are disabled; powerline uses guarded local rendering. Review changed
-commits before changing pins and rerunning bootstrap. See
+Assimilation installs only reviewed full commits. TPM is not installed; powerline
+uses guarded local rendering. Review changed commits before changing pins and
+rerunning bootstrap. See
 [editor security and reversible legacy migration](docs/editor-security.md).
 
 ## Headless Mac mini

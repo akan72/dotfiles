@@ -11,6 +11,19 @@ local function git(path, args)
   if vim.v.shell_error ~= 0 then error('Cannot verify plugin checkout: ' .. path) end
   return vim.trim(result)
 end
+function M.preview_bin_ok(path)
+  local uv = vim.uv or vim.loop
+  local app, bin = uv.fs_lstat(path .. '/app'), uv.fs_lstat(path .. '/app/bin')
+  if not (app and app.type == 'directory' and bin and bin.type == 'directory') then return false end
+  local entries = vim.fn.readdir(path .. '/app/bin')
+  if #entries ~= 1 or not vim.tbl_contains({ 'markdown-preview-macos-arm64', 'markdown-preview-macos', 'markdown-preview-linux' }, entries[1]) then
+    return false
+  end
+  local link = uv.fs_lstat(path .. '/app/bin/' .. entries[1])
+  local pinned = uv.fs_lstat(vim.env.HOME .. '/.local/share/dotfiles-markdown-preview/bin/' .. entries[1])
+  return link ~= nil and pinned ~= nil and link.type == 'file' and pinned.type == 'file'
+    and link.ino == pinned.ino and link.dev == pinned.dev
+end
 function M.verify(path, name, commit)
   if type(origins[name]) ~= 'string' or type(commit) ~= 'string' or #commit ~= 40 or not commit:match('^[0-9a-f]+$') then
     error('Invalid reviewed plugin pin: ' .. tostring(name))
@@ -26,13 +39,19 @@ function M.verify(path, name, commit)
   end
   if git(path, {'rev-parse', 'HEAD'}) ~= commit then error('Plugin differs from lazy-lock.json: ' .. name) end
   local status = git(path, {'status', '--porcelain', '--untracked-files=all', '--ignored=matching'})
-  -- Help indexing creates this exact non-executable file in many locked plugins.
-  if status == '?? doc/tags' or status == '!! doc/tags' then
-    local tags, doc = uv.fs_lstat(path .. '/doc/tags'), uv.fs_lstat(path .. '/doc')
-    local executable = tags and bit.band(tags.mode, 73) ~= 0 -- 0111
-    if tags and tags.type == 'file' and not executable and doc and doc.type == 'directory' then status = '' end
+  for _, line in ipairs(vim.split(status, '\n', { trimempty = true })) do
+    local allowed = false
+    -- Help indexing creates this exact non-executable file in many locked plugins.
+    if line == '?? doc/tags' or line == '!! doc/tags' then
+      local tags, doc = uv.fs_lstat(path .. '/doc/tags'), uv.fs_lstat(path .. '/doc')
+      local executable = tags and bit.band(tags.mode, 73) ~= 0 -- 0111
+      allowed = tags and tags.type == 'file' and not executable and doc and doc.type == 'directory' or false
+    -- markdown-preview.nvim's app/bin may only hold a hard link to the installed launcher.
+    elseif name == 'markdown-preview.nvim' and line:match('^[?!][?!] app/bin/') then
+      allowed = M.preview_bin_ok(path)
+    end
+    if not allowed then error('Dirty plugin checkout: ' .. name) end
   end
-  if status ~= '' then error('Dirty plugin checkout: ' .. name) end
 end
 function M.verify_all(config, data)
   data, config = data or vim.fn.stdpath('data'), config or vim.fn.stdpath('config')

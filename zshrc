@@ -57,10 +57,6 @@ if command -v brew >/dev/null 2>&1; then
   unset _zsh_autosug
 fi
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use  # Load nvm without auto-use (auto-use errors with "N/A" when no .nvmrc is set)
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 alias snowsql=/Applications/SnowSQL.app/Contents/MacOS/snowsql
 
