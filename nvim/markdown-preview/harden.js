@@ -13,6 +13,8 @@ function local(req) {
   const port = req.socket && req.socket.localPort
   const hosts = [`127.0.0.1:${port}`, `localhost:${port}`]
   if (!hosts.includes(req.headers.host)) return false
+  // Browsers mark requests a foreign page starts, even without Origin/Referer.
+  if (req.headers['sec-fetch-site'] === 'cross-site') return false
   const origin = req.headers.origin
   if (origin !== undefined && !hosts.some((host) => origin === `http://${host}`)) return false
   const referer = req.headers.referer
@@ -20,14 +22,16 @@ function local(req) {
   return true
 }
 
-function safePath(url) {
+function safePath(req) {
+  const url = req.url
   let path
   try {
     path = decodeURIComponent(decodeURIComponent((url || '').replace(/[?#].*$/, '')))
   } catch (_) {
     return false
   }
-  if (path.startsWith('/_local_image_')) return IMAGE.test(path)
+  // Images load from the preview page, which always sends its own Referer.
+  if (path.startsWith('/_local_image_')) return IMAGE.test(path) && req.headers.referer !== undefined
   return !path.split(/[\\/]/).includes('..')
 }
 
@@ -36,9 +40,14 @@ http.createServer = function (...args) {
   const handler = args.find((arg) => typeof arg === 'function')
   const rest = args.filter((arg) => arg !== handler)
   return createServer.call(http, ...rest, (req, res) => {
-    if (!local(req) || !safePath(req.url)) {
+    if (!local(req) || !safePath(req)) {
       res.writeHead(403, { 'content-type': 'text/plain' })
       return res.end('Forbidden\n')
+    }
+    if (req.url.startsWith('/_local_image_')) {
+      // A local SVG opened directly must never run script on the preview origin.
+      res.setHeader('content-security-policy', "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+      res.setHeader('x-content-type-options', 'nosniff')
     }
     return handler(req, res)
   })

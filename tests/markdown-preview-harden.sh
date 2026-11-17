@@ -22,6 +22,10 @@ expect 403 -H 'Host: evil.example' "$base/page/1"
 expect 403 -H 'Origin: http://evil.example' "$base/page/1"
 expect 403 -H 'Referer: http://evil.example/' "$base/page/1"
 expect 403 "$base/_local_image_$HOME/.ssh/config"
+expect 403 "$base/_local_image_img.svg"
+expect 403 -H 'Sec-Fetch-Site: cross-site' "$base/page/1"
+curl -s -D - -o /dev/null -H "Referer: $base/page/1" "$base/_local_image_img.svg" | grep -qi "^content-security-policy: sandbox" \
+  || { echo 'local images must carry a sandbox CSP' >&2; exit 1; }
 expect 403 --path-as-is "$base/_next/../../etc/hosts"
 expect 403 "$base/_static/%252e%252e/package.json"
-echo 'markdown preview hardening: same-origin allowed; foreign host, origin, referer and file reads refused'
+echo 'markdown preview hardening: same-origin allowed; foreign host, origin, referer, cross-site fetches and file reads refused; images sandboxed'
