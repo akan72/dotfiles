@@ -18,7 +18,7 @@ local ok, err = pcall(function()
     vim.bo.filetype = 'python'
     assert(vim.wait(15000, function()
       for _, client in ipairs(vim.lsp.get_clients({ bufnr = 0 })) do
-        if client.name == 'jedi_language_server' then return true end
+        if client.name == 'ty' then return true end
       end
       return false
     end, 100), 'installed Python language server did not attach')

@@ -56,6 +56,42 @@
       "reviewed": "2026-10-21",
       "archive_root": "google-cloud-sdk"
     },
+    "lua-language-server/3.19.2/Darwin-arm64": {
+      "version": "3.19.2",
+      "url": "https://github.com/LuaLS/lua-language-server/releases/download/3.19.2/lua-language-server-3.19.2-darwin-arm64.tar.gz",
+      "sha256": "79149584320a23bd5fcd5bc31f47a1975acd8a4560a0e89036bb1016fa61687f",
+      "kind": "tree-tar",
+      "destination": ".local/share/dotfiles-lsp/lua-language-server",
+      "reviewed": "2026-11-15",
+      "archive_root": ""
+    },
+    "lua-language-server/3.19.2/Darwin-x86_64": {
+      "version": "3.19.2",
+      "url": "https://github.com/LuaLS/lua-language-server/releases/download/3.19.2/lua-language-server-3.19.2-darwin-x64.tar.gz",
+      "sha256": "6f2174ece5ec63bcd9d5b22b2c902445c1cd9045fafe48c62602448ebf4c09cc",
+      "kind": "tree-tar",
+      "destination": ".local/share/dotfiles-lsp/lua-language-server",
+      "reviewed": "2026-11-15",
+      "archive_root": ""
+    },
+    "lua-language-server/3.19.2/Linux-aarch64": {
+      "version": "3.19.2",
+      "url": "https://github.com/LuaLS/lua-language-server/releases/download/3.19.2/lua-language-server-3.19.2-linux-arm64.tar.gz",
+      "sha256": "17b8e401a874440adeb649e5024c364f2bb9d15156c74a40e56d1ae9a1b2e4f2",
+      "kind": "tree-tar",
+      "destination": ".local/share/dotfiles-lsp/lua-language-server",
+      "reviewed": "2026-11-15",
+      "archive_root": ""
+    },
+    "lua-language-server/3.19.2/Linux-x86_64": {
+      "version": "3.19.2",
+      "url": "https://github.com/LuaLS/lua-language-server/releases/download/3.19.2/lua-language-server-3.19.2-linux-x64.tar.gz",
+      "sha256": "93ad326b10f6c00911dd8c450fa098332dbd8f9f45d1052f5636a2d54479b947",
+      "kind": "tree-tar",
+      "destination": ".local/share/dotfiles-lsp/lua-language-server",
+      "reviewed": "2026-11-15",
+      "archive_root": ""
+    },
     "nvim/0.12.4/Linux-x86_64": {
       "version": "0.12.4",
       "url": "https://github.com/neovim/neovim/releases/download/v0.12.4/nvim-linux-x86_64.tar.gz",
@@ -64,6 +100,38 @@
       "destination": ".local/share/nvim-linux-x86_64",
       "reviewed": "2026-10-21",
       "archive_root": "nvim-linux-x86_64"
+    },
+    "rust-analyzer/2026-11-02/Darwin-arm64": {
+      "version": "2026-11-02",
+      "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-aarch64-apple-darwin.gz",
+      "sha256": "d10ca0a10e386f74ca36847b3df2ad5ab6f1328feeb1591467b3724f3fd8e8cf",
+      "kind": "file-gz",
+      "destination": ".local/share/dotfiles-lsp/rust-analyzer",
+      "reviewed": "2026-11-15"
+    },
+    "rust-analyzer/2026-11-02/Darwin-x86_64": {
+      "version": "2026-11-02",
+      "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-x86_64-apple-darwin.gz",
+      "sha256": "2c3d6c564f9b2734085cf6439c78896545e86b54ebb63870ba701e12ca582b22",
+      "kind": "file-gz",
+      "destination": ".local/share/dotfiles-lsp/rust-analyzer",
+      "reviewed": "2026-11-15"
+    },
+    "rust-analyzer/2026-11-02/Linux-aarch64": {
+      "version": "2026-11-02",
+      "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-aarch64-unknown-linux-gnu.gz",
+      "sha256": "4f8699eaee4231df5a5ffd477106ecae3bf6328918a60de742798912ecff6869",
+      "kind": "file-gz",
+      "destination": ".local/share/dotfiles-lsp/rust-analyzer",
+      "reviewed": "2026-11-15"
+    },
+    "rust-analyzer/2026-11-02/Linux-x86_64": {
+      "version": "2026-11-02",
+      "url": "https://github.com/rust-lang/rust-analyzer/releases/download/2026-11-02/rust-analyzer-x86_64-unknown-linux-gnu.gz",
+      "sha256": "5249da68c3f36bb77ea7d401824f5e8bd8d0a47a162daf5f72208eb7c1bf1500",
+      "kind": "file-gz",
+      "destination": ".local/share/dotfiles-lsp/rust-analyzer",
+      "reviewed": "2026-11-15"
     },
     "rustup-init/1.29.2/Darwin-arm64": {
       "version": "1.29.2",

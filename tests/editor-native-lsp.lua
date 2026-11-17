@@ -15,25 +15,36 @@ local function request(client, method, position, bufnr)
   local response = client:request_sync(method, {
     textDocument = { uri = vim.uri_from_bufnr(bufnr) }, position = position,
   }, 20000, bufnr)
+  -- ContentModified: the server is still loading the project, so ask again
+  if response and response.err and response.err.code == vim.lsp.protocol.ErrorCodes.ContentModified then return nil end
   assert(response and not response.err, method .. ': ' .. vim.inspect(response))
   return response.result
+end
+
+local function tree(path)
+  local entries = {}
+  for name, kind in vim.fs.dir(path, { depth = 50 }) do table.insert(entries, name .. ' ' .. kind) end
+  table.sort(entries)
+  return table.concat(entries, '\n')
 end
 
 local function real_servers()
   local native = require('config.plugins.lsp')
   assert(#native.missing == 0, 'External servers missing: ' .. table.concat(native.missing, ', '))
+  local home = vim.fs.joinpath(vim.uv.os_homedir(), '.local/share/dotfiles-lsp')
+  local lua_tree = tree(home .. '/lua-language-server')
   local fixtures = {
-    { name = 'jedi_language_server', ft = 'python', file = 'python/main.py',
+    { name = 'ty', ft = 'python', file = 'python/main.py',
       lines = { 'import pathlib', 'value = pathlib.Path(".")', 'value.' },
       hover = { line = 1, character = 1 }, completion = { line = 2, character = 6 }, diagnostic = true },
+    { name = 'ruff', ft = 'python', file = 'python/lint.py',
+      lines = { 'import os', 'value = 1' }, diagnostic = true },
     { name = 'lua_ls', ft = 'lua', file = 'lua/main.lua',
       lines = { 'local value = "hello"', 'print(value)', 'vim.print(value)', 'print(unknown_dotfiles_symbol)' },
       hover = { line = 0, character = 8 }, completion = { line = 1, character = 8 }, diagnostic = true },
     { name = 'ts_ls', ft = 'typescript', file = 'typescript/main.ts',
       lines = { 'const value: string = "hello";', 'value.', 'const wrong: number = "text";' },
       hover = { line = 0, character = 8 }, completion = { line = 1, character = 6 }, diagnostic = true },
-    { name = 'eslint', ft = 'javascript', file = 'eslint/main.js',
-      lines = { 'const unused = 1;', 'console.log(unknown_dotfiles_symbol);' }, diagnostic = true },
     { name = 'rust_analyzer', ft = 'rust', file = 'rust/src/main.rs',
       lines = { 'fn main() {', '    let value: i32 = 1;', '    val', '}' },
       hover = { line = 1, character = 9 }, completion = { line = 2, character = 7 } },
@@ -41,8 +52,7 @@ local function real_servers()
   write(root .. '/lua/.luarc.json', { '{}' })
   write(root .. '/typescript/package.json', { '{"private":true}' })
   write(root .. '/typescript/tsconfig.json', { '{"compilerOptions":{"strict":true,"noEmit":true}}' })
-  write(root .. '/eslint/package.json', { '{"private":true}' })
-  write(root .. '/eslint/eslint.config.mjs', { 'export default [{rules:{"no-unused-vars":"error","no-undef":"error"}}];' })
+  write(root .. '/python/pyproject.toml', { '[project]', 'name = "dotfiles-lsp-fixture"', 'version = "0.0.0"' })
   write(root .. '/rust/Cargo.toml', { '[package]', 'name = "dotfiles-lsp-fixture"', 'version = "0.0.0"', 'edition = "2021"' })
   for _, fixture in ipairs(fixtures) do
     local path = root .. '/' .. fixture.file
@@ -75,11 +85,18 @@ local function real_servers()
     end
     if fixture.diagnostic then
       wait(fixture.name .. ' diagnostics', function()
-        local provider = client.server_capabilities.diagnosticProvider
-        local push = vim.lsp.diagnostic.get_namespace(client.id)
-        local pull = vim.lsp.diagnostic.get_namespace(client.id, true, type(provider) == 'table' and provider.identifier or nil)
-        return #vim.diagnostic.get(bufnr, { namespace = push }) + #vim.diagnostic.get(bufnr, { namespace = pull }) > 0
+        -- Pushed or pulled; ty and Ruff register their pull providers after
+        -- startup, so match the client's namespaces by name rather than id.
+        local prefix = ('nvim.lsp.%s.%d'):format(client.name, client.id)
+        for _, diagnostic in ipairs(vim.diagnostic.get(bufnr)) do
+          local name = vim.diagnostic.get_namespace(diagnostic.namespace).name
+          if name == prefix or vim.startswith(name, prefix .. '.') then return true end
+        end
+        return false
       end, 30000)
+    end
+    if fixture.name == 'ruff' then
+      assert(not client.server_capabilities.hoverProvider, 'Ruff hover should be left to ty')
     end
     if fixture.name == 'lua_ls' then
       for _, diagnostic in ipairs(vim.diagnostic.get(bufnr)) do
@@ -93,18 +110,19 @@ local function real_servers()
   -- Preserve installed project libraries without selecting project server launchers.
   local project = root .. '/existing-node-project'
   write(project .. '/node_modules/typescript/lib/tsserver.js', { '// Inert presence fixture, never executed.' })
-  write(project .. '/node_modules/eslint/package.json', { '{"name":"eslint"}' })
   local ts = vim.deepcopy(vim.lsp.config.ts_ls)
   ts.root_dir = project
   ts.before_init({}, ts)
   assert(ts.init_options.tsserver.path == project .. '/node_modules/typescript/lib/tsserver.js')
   assert(vim.deep_equal(ts.cmd, native.commands.ts_ls))
-  local eslint = vim.deepcopy(vim.lsp.config.eslint)
-  eslint.root_dir = project
-  eslint.before_init({}, eslint)
-  assert(eslint.settings.nodePath == project .. '/node_modules')
-  assert(vim.deep_equal(eslint.cmd, native.commands.eslint))
   record('trusted project libraries preserve explicit external server commands')
+  -- Every server runs from its pinned install, and Lua LS writes nothing into it.
+  for name, cmd in pairs(native.commands) do
+    local server = name == 'ts_ls' and cmd[2] or cmd[1]
+    assert(vim.fs.relpath(home, server), name .. ' did not run from the pinned install: ' .. server)
+  end
+  assert(tree(home .. '/lua-language-server') == lua_tree, 'Lua LS wrote into its verified install')
+  record('servers run only from their pinned installs')
 end
 
 local function transport(label, include_snippet)
@@ -284,13 +302,15 @@ step(function()
   record('real theme, disabled native package loading and retired-wrapper absence')
 end)
 step(function()
+  -- Servers on PATH (here, Mason's) never stand in for missing pinned installs.
   local bin = root .. '/mason/bin'
   vim.fn.mkdir(bin, 'p', 448)
-  for _, name in ipairs({ 'node', 'jedi-language-server', 'lua-language-server', 'typescript-language-server', 'vscode-eslint-language-server', 'rust-analyzer' }) do
+  for _, name in ipairs({ 'node', 'ty', 'ruff', 'lua-language-server', 'typescript-language-server', 'rust-analyzer' }) do
     write(bin .. '/' .. name, { '#!/bin/sh', 'touch "' .. root .. '/unexpected-launch"' })
     vim.fn.setfperm(bin .. '/' .. name, 'rwx------')
   end
   vim.env.PATH = bin .. ':/usr/bin:/bin'
+  vim.env.HOME = root .. '/home-without-servers'
   package.loaded['config.plugins.lsp'] = nil
   local missing = require('config.plugins.lsp')
   assert(#missing.missing == 5 and vim.tbl_isempty(missing.commands), 'Missing/Mason server was enabled')

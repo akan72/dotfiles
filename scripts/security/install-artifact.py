@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Install exact reviewed artifacts; --check is read-only and offline."""
 import argparse
+import gzip
 import hashlib
 import json
 import os
@@ -17,8 +18,19 @@ import time
 ORIGINS = {
     'delta': 'https://github.com/dandavison/delta/releases/download/',
     'gcloud': 'https://storage.googleapis.com/cloud-sdk-release/',
+    'lua-language-server': 'https://github.com/LuaLS/lua-language-server/releases/download/',
     'nvim': 'https://github.com/neovim/neovim/releases/download/',
+    'rust-analyzer': 'https://github.com/rust-lang/rust-analyzer/releases/download/',
     'rustup-init': 'https://static.rust-lang.org/rustup/archive/',
+}
+# Each tar archive's executable, relative to its archive root: a file-tar
+# installs only that file; a tree-tar installs the whole tree and requires it.
+# A file-gz is one gzipped executable.
+EXECUTABLES = {
+    'delta': 'delta',
+    'gcloud': 'bin/gcloud',
+    'lua-language-server': 'bin/lua-language-server',
+    'nvim': 'bin/nvim',
 }
 
 
@@ -55,13 +67,17 @@ def reviewed_record(tool, version, platform):
     record = records[ident]
     destination = PurePosixPath(record['destination'])
     if (record['version'] != version or tool not in ORIGINS
-            or record['kind'] not in ('file-tar', 'tree-tar', 'rustup-init')
+            or record['kind'] not in ('file-gz', 'file-tar', 'tree-tar', 'rustup-init')
             or (tool == 'rustup-init') != (record['kind'] == 'rustup-init')
+            or (record['kind'] == 'file-gz') == (tool in EXECUTABLES or tool == 'rustup-init')
             or not re.fullmatch('[0-9a-f]{64}', record['sha256'])
             or re.search(r'[\x00-\x20\x7f]', record['url'])
             or not record['url'].startswith(ORIGINS[tool])
             or destination.is_absolute() or '..' in destination.parts
-            or not str(destination).startswith('.local/')):
+            or not str(destination).startswith('.local/')
+            # One plain directory name, or '' for archives with no top-level directory
+            or (record['kind'] in ('file-tar', 'tree-tar')
+                and not re.fullmatch(r'([A-Za-z0-9_+-][A-Za-z0-9._+-]*)?', record['archive_root']))):
         raise ValueError('invalid reviewed artifact metadata')
     if tool == 'rustup-init' and (
             os.environ.get('RUSTUP_UPDATE_ROOT', 'https://static.rust-lang.org/rustup') != 'https://static.rust-lang.org/rustup'
@@ -128,10 +144,13 @@ def download(url, destination, ident, progress):
 
 def extract(archive, stage, record, ident):
     root, seen, links = record['archive_root'], set(), []
+    prefix = (root,) if root else ()
+    base = stage / root if root else stage
     with tarfile.open(archive, 'r:gz') as source:
         for member in source.getmembers():
             name = PurePosixPath(member.name)
-            if name.is_absolute() or '..' in name.parts or not name.parts or name.parts[0] != root:
+            if (name.is_absolute() or '..' in name.parts or not name.parts
+                    or name.parts[:len(prefix)] != prefix):
                 raise ValueError('unsafe archive path/layout')
             if str(name) in seen:
                 raise ValueError('duplicate archive entry')
@@ -146,27 +165,37 @@ def extract(archive, stage, record, ident):
                 target.chmod(0o755 if member.mode & 0o111 else 0o644)
             elif member.issym():
                 link = PurePosixPath(member.linkname)
-                if link.is_absolute() or not Path(os.path.normpath(str(target.parent / link))).is_relative_to(stage / root):
+                if link.is_absolute() or not Path(os.path.normpath(str(target.parent / link))).is_relative_to(base):
                     raise ValueError('escaping archive symlink')
                 links.append((target, member.linkname))
             else:
                 raise ValueError('archive hardlink/device/unsupported entry refused')
     for target, link in links:
-        if not target.parent.resolve().is_relative_to(stage / root):
+        if not target.parent.resolve().is_relative_to(base):
             raise ValueError('escaping archive symlink parent')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.symlink_to(link)
-    if any(not target.resolve().is_relative_to(stage / root) for target, _ in links):
+    if any(not target.resolve().is_relative_to(base) for target, _ in links):
         raise ValueError('escaping archive symlink chain')
-    payload = stage / root / 'delta' if record['kind'] == 'file-tar' else stage / root
+    executable = EXECUTABLES[ident.split('/')[0]]
+    payload = base / executable if record['kind'] == 'file-tar' else base
     if payload.is_symlink() or not payload.exists():
         raise ValueError('expected archive payload absent')
     if record['kind'] == 'file-tar' and not payload.is_file():
         raise ValueError('expected a regular artifact executable')
     if record['kind'] == 'tree-tar':
-        executable = payload / 'bin' / ('nvim' if ident.startswith('nvim/') else 'gcloud')
+        executable = payload / executable
         if not executable.is_file() or executable.is_symlink() or not executable.stat().st_mode & 0o111:
             raise ValueError('expected tree executable absent')
+    return payload
+
+
+def decompress(archive, stage):
+    # The digest was verified first, so this is the reviewed executable.
+    stage.mkdir()
+    payload = stage / 'executable'
+    with gzip.open(archive, 'rb') as source, payload.open('xb') as output:
+        shutil.copyfileobj(source, output)
     return payload
 
 
@@ -183,7 +212,9 @@ def publish(home, ident, record, work):
         if ident.startswith('nvim/') and os.path.lexists(launcher):
             raise ValueError('nvim launcher already exists; migrate explicitly')
         payload = work / 'download'
-        if record['kind'] != 'rustup-init':
+        if record['kind'] == 'file-gz':
+            payload = decompress(payload, work / 'extract')
+        elif record['kind'] != 'rustup-init':
             payload = extract(payload, work / 'extract', record, ident)
         with tempfile.TemporaryDirectory(prefix='.' + destination.name + '.', dir=destination.parent) as directory:
             staged = Path(directory) / 'payload'
@@ -256,5 +287,5 @@ if __name__ == '__main__':
         main()
     except subprocess.CalledProcessError as error:
         sys.exit(error.returncode)
-    except (OSError, ValueError, KeyError, tarfile.TarError, RuntimeError) as error:
+    except (OSError, ValueError, KeyError, tarfile.TarError, EOFError, RuntimeError) as error:
         sys.exit(str(error))

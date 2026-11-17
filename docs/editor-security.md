@@ -13,8 +13,9 @@ checksum-verified standalone uv first; preflight also needs `jq`, `python3` and 
 Never stream mutable installers into a shell. Use uv for personal Python projects/tools; retain Apple's Python and
 Homebrew Python required by formula dependencies.
 
-`artifacts.json` under `scripts/security` pins delta, gcloud, Linux Neovim and
-rustup-init for its explicitly listed platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
+`artifacts.json` under `scripts/security` pins delta, gcloud, Linux Neovim,
+rustup-init and the Lua and Rust language servers for its explicitly listed
+platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
 without writing or downloading. Normal installation verifies HTTPS and SHA-256,
 rejects unsafe archive paths/links and refuses unmanaged destinations. Missing
 platform artifacts have no unchecked fallback; Intel delta uses a separately
@@ -181,19 +182,17 @@ LSP/completion/installation wrappers are absent from the active specs, lock and
 origin maps. Every remaining active plugin keeps the same reviewed full commit.
 Retired downloaded directories are inactive rollback material, not runtime paths.
 
-Only Jedi, Lua, TypeScript, ESLint and Rust Analyzer are deliberately configured.
-External executables are resolved explicitly, with Mason paths and rustup's
-runtime-downloading proxy refused. A missing optional tool produces one local
-notice; `:LspSetupStatus` shows the exact commands and setup guidance. Opening a
-buffer never repairs a missing tool by installing it.
+Only ty, Ruff, Lua, TypeScript and Rust Analyzer are deliberately configured.
+Each starts only from its hash-pinned install under `~/.local/share/dotfiles-lsp`,
+never from `PATH`, so Mason, Homebrew and rustup copies cannot stand in. A missing
+optional tool produces one local notice; `:LspSetupStatus` shows the exact commands
+and setup guidance. Opening a buffer never repairs a missing tool by installing it.
 
 TypeScript's automatic typings acquisition is disabled. Its fallback tsserver is
 locked TypeScript 5.9.3; an existing trusted project's JavaScript tsserver is honored.
-ESLint similarly honors an installed project ESLint library, with locked ESLint
-10.12.0 as fallback. Their server executables remain external, and the implicit
-`yarn exec` wrapper is disabled. ESLint still executes trusted project lint
-configuration as part of its normal function; these settings are not a project-code
-sandbox. Rust workspace metadata is queried with `cargo --offline`, rustup automatic
+The server executable itself stays the pinned one. Ruff's hover is left to ty. Lua LS
+writes its logs and generated definitions to Neovim's cache, so its verified tree
+stays unchanged. Rust workspace metadata is queried with `cargo --offline`, rustup automatic
 installation is disabled in server processes, and automatic build-script/procedural
 macro execution and check-on-save builds are disabled. Those Rust analysis features
 need a separately deliberate project policy if required.
@@ -216,9 +215,11 @@ The commented leader-key examples in the old configuration were not active bindi
 
 Complete the Mac security playbook first, including patched Node/Rustup and the
 existing uv-managed Python. Use these dedicated directories only; stop if they
-contain unrelated data. The frozen uv lock and npm integrity lock are public source;
-installed environments stay outside the checkout. Neither command installs a new
-Python runtime or runs package source builds/lifecycle scripts.
+contain unrelated data. Every server is pinned by hash: ty and Ruff by the uv lock
+(SHA-256 per wheel), TypeScript LS by the npm lock (SHA-512 integrity), and Lua LS
+and rust-analyzer by `artifacts.json` (SHA-256). The locks are public source;
+installed environments stay outside the checkout. Neither package command installs
+a new Python runtime or runs package source builds/lifecycle scripts.
 
 ```sh
 export DOTFILES="$HOME/dotfiles"
@@ -236,9 +237,14 @@ export LSP_HOME="$HOME/.local/share/dotfiles-lsp"
 )
 ```
 
+The Python lock pins ty 0.0.99 and Ruff 0.17.4, Astral's type checker and linter
+servers, resolved on 15 November 2026 with uv's seven-day cutoff (2026-11-08). Both
+are prebuilt binary wheels with no dependencies.
+
 The Node lock was resolved on 21 October 2026 with npm's seven-day minimum age,
-using TypeScript LS 6.0.2, TypeScript 5.9.3, VSCode extracted servers 4.10.0 and
-ESLint 10.12.0. It contains the complete 111-package dependency graph and integrity
+using TypeScript LS 6.0.2 and TypeScript 5.9.3. ESLint and the VSCode extracted
+servers were removed on 15 November 2026 without re-resolving, leaving the remaining
+entries unchanged. It contains the complete two-package dependency graph and integrity
 hashes. No global npm packages are installed. Use the reviewed Node26.12.1 for this
 recorded recipe; review a successor explicitly rather than downgrading an existing
 newer patched runtime.
@@ -261,57 +267,56 @@ newer patched runtime.
 )
 ```
 
-Lua uses the explicitly trusted Homebrew rolling-distribution boundary and a
-bottle-only install. The reviewed Apple Silicon bottle was LuaLS3.19.2. The current
-formula has no Intel macOS bottle; do not silently source-build on Intel. Leave Lua
-optional there until a matching official artifact is reviewed. The Rust component
-uses the already installed toolchain's manifest without `rustup update`; it does
-not replace project environments or install a second compiler. The audited Mac
-uses stable1.91.1; the existing bootstrap's reviewed fresh-toolchain target is1.95.0.
+Lua LS and rust-analyzer are upstream release artifacts installed by
+`install-artifact.sh`, which verifies each archive's SHA-256 before unpacking and
+keeps a receipt for `--check`. Lua LS 3.19.2 and rust-analyzer 2026-11-02 come from
+their projects' GitHub releases; the reviewed digests match GitHub's published ones.
+This rust-analyzer is the project's standalone build, the one editor extensions
+ship. Rustup's component is not used: it links the toolchain's `librustc_driver`,
+and `rustup update` replaces it in place, so it cannot hold a pin. rust-analyzer
+still reads the standard library from the toolchain's `rust-src` component, added
+from the already installed toolchain's manifest without `rustup update`. It loads
+that library as a Cargo workspace, whose `Cargo.lock` pins about 40 crates.io
+dependencies (such as `hashbrown` and `object`) that `rust-src` does not ship.
+The editor runs Cargo offline, so `cargo fetch --locked` downloads them once here,
+checking each against that lockfile's SHA-256; without them, standard-library
+types show as `{unknown}` and std hovers are empty. `RUSTC_BOOTSTRAP=1` lets
+stable Cargo read the library's manifest, as rust-analyzer itself does. These
+crates are the one exception to the dedicated directories: they go to Cargo's
+shared cache (`~/.cargo/registry` by default), because rust-analyzer reads project
+dependencies from that same cache. Cargo checks each hash only when it downloads
+the crate and trusts the unpacked sources afterwards, so the offline recheck below
+confirms the crates are present, not that their bytes are unchanged. rust-analyzer
+only reads them; their build scripts never run. Records cover Apple Silicon and
+Intel Macs and x86_64/aarch64 Linux; other platforms stay optional.
 
 ```sh
 (
   set -eu
-  case "$(uname -s)-$(uname -m)" in
-    Darwin-arm64)
-      HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 \
-      HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1 \
-        brew install --force-bottle lua-language-server ;;
-    Darwin-x86_64) echo 'Lua LS optional: review an Intel artifact; no source-build fallback.' ;;
-    *) echo 'Review the matching platform package before installing Lua LS.' ;;
-  esac
-  case "$(uname -m)" in
-    arm64) toolchain=stable-aarch64-apple-darwin ;;
-    x86_64) toolchain=stable-x86_64-apple-darwin ;;
-    *) exit 2 ;;
-  esac
+  platform="$(uname -s)-$(uname -m)"
+  "$DOTFILES/scripts/security/install-artifact.sh" lua-language-server 3.19.2 "$platform"
+  "$DOTFILES/scripts/security/install-artifact.sh" rust-analyzer 2026-11-02 "$platform"
   case "$(rustup --version 2>/dev/null)" in
     'rustup 1.29.2 '*) ;;
     *) echo 'Review/repair Rustup first using the security playbook.' >&2; exit 1 ;;
   esac
-  case "$(RUSTUP_AUTO_INSTALL=0 rustup run "$toolchain" rustc --version)" in
+  case "$(RUSTUP_AUTO_INSTALL=0 rustc --version)" in
     'rustc 1.91.1 '*|'rustc 1.95.0 '*) ;;
     *) echo 'Review this existing Rust toolchain before adding components.' >&2; exit 1 ;;
   esac
-  RUSTUP_AUTO_INSTALL=0 rustup component add rust-analyzer rust-src --toolchain "$toolchain"
-  analyzer="$(RUSTUP_AUTO_INSTALL=0 rustup which --toolchain "$toolchain" rust-analyzer)"
-  mkdir -p "$HOME/.local/bin"
-  link_lsp() {
-    target="$1"; name="$2"; dest="$HOME/.local/bin/$name"
-    test -f "$target" && test -x "$target"
-    if test -L "$dest" && test "$(readlink "$dest")" = "$target"; then return; fi
-    if test -e "$dest" || test -L "$dest"; then echo "Review existing launcher: $dest" >&2; return 1; fi
-    ln -s "$target" "$dest"
-  }
-  link_lsp "$LSP_HOME/python/bin/jedi-language-server" jedi-language-server
-  link_lsp "$LSP_HOME/node/node_modules/.bin/typescript-language-server" typescript-language-server
-  link_lsp "$LSP_HOME/node/node_modules/.bin/vscode-eslint-language-server" vscode-eslint-language-server
-  link_lsp "$analyzer" rust-analyzer
+  RUSTUP_AUTO_INSTALL=0 rustup component add rust-src
+  library="$(RUSTUP_AUTO_INSTALL=0 rustc --print sysroot)/lib/rustlib/src/rust/library"
+  RUSTUP_AUTO_INSTALL=0 RUSTC_BOOTSTRAP=1 cargo fetch --locked --manifest-path "$library/Cargo.toml"
 )
 ```
 
-Updates are explicit lockfile/package changes followed by these same native package
-manager operations and functional tests. Do not use `:Lazy update`, `:TSUpdate`,
+Later, `install-artifact.sh --check lua-language-server 3.19.2 "$platform"` (and the
+same for rust-analyzer) re-verifies the installed bytes offline. Rerunning the
+`cargo fetch` line with `--offline` confirms the standard library's crates are
+still cached.
+
+Updates are explicit lockfile/package or reviewed `artifacts.json` changes followed
+by these same operations and functional tests. Do not use `:Lazy update`, `:TSUpdate`,
 unversioned `npx`, `uv run` or an installer wrapper to repair startup. The shared
 bootstrap installs only reviewed plugin checkouts; it never launches Neovim to
 fetch software.
@@ -341,8 +346,10 @@ DOTFILES="$DOTFILES" DOTFILES_LSP_REAL=1 DOTFILES_LSP_TEST_ROOT="$fixtures" \
 
 The test creates only inert public fixtures: no user project or authentication
 configuration is read. It checks external commands, completion/hover/diagnostics,
-Lua's `vim` global, multi-client completion, actual menu acceptance, snippet
-navigation, documentation scrolling, key fallbacks and missing/Mason-only tools.
+Lua's `vim` global, that every server runs from its pinned install and Lua LS leaves
+its tree unchanged, multi-client completion, actual menu acceptance, snippet
+navigation, documentation scrolling, key fallbacks, and that servers on `PATH` (here
+Mason's) never stand in for missing installs.
 The last missing-server case intentionally prints an optional-tool notice.
 
 ## Existing legacy Packer state
