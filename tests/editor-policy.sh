@@ -72,12 +72,7 @@ vim.fn.mkdir(data .. '/site/pack/packer/start', 'p')
 bad(function() policy.verify_all(legacy, data) end)
 assert(checked == 0)
 policy.verify = verify
--- The pinned Treesitter release exposes configs.setup, not the top-level setup.
-local ts
-package.loaded['nvim-treesitter.configs'] = { setup = function(opts) ts = opts end }
-dofile(root .. '/nvim/lua/config/plugins/nvim-treesitter.lua')
-assert(ts.highlight.enable and ts.auto_install == false and #ts.ensure_installed == 0)
-print('Editor origin/HEAD/dirty/symlink gates and Treesitter API checks passed')
+print('Editor origin/HEAD/dirty/symlink gates passed')
 vim.cmd('qa!')
 LUA
 NVIM_LOG_FILE="$tmp/nvim.log" XDG_STATE_HOME="$tmp/state" nvim --headless -u NONE -i NONE --noplugin -l "$tmp/test.lua" "$repo_root" "$checkout" "$sha"
@@ -98,8 +93,12 @@ for control in ['vim.lsp.config(name, config)', 'vim.lsp.enable(name)', 'vim.lsp
 for removed in ['lsp-zero', 'mason-lspconfig', "require('mason')", "require('cmp')", "require('luasnip')"]:
     assert removed not in s and removed not in lsp, removed
 lock=__import__('json').loads((r/'nvim/lazy-lock.json').read_text())
-for removed in ['lsp-zero.nvim', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-cmp', 'cmp-nvim-lsp', 'LuaSnip']:
-    assert removed not in lock, removed
+for removed in ['lsp-zero.nvim', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-cmp', 'cmp-nvim-lsp', 'LuaSnip', 'nvim-treesitter']:
+    assert removed not in lock and removed not in (r/'nvim/plugin-origins.json').read_text(), removed
+# Treesitter uses only Neovim's bundled parsers; no plugin can download or compile one.
+assert not (r/'nvim/lua/config/plugins/nvim-treesitter.lua').exists()
+for path in ['nvim/lua/config/plugins.lua', 'nvim/lua/config/trusted-bootstrap.lua', 'assimilate.sh']:
+    assert 'nvim-treesitter' not in (r/path).read_text(), path
 zsh=(r/'zshrc').read_text()
 assert 'DISABLE_AUTO_UPDATE="true"' in zsh
 assert 'export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"' in zsh

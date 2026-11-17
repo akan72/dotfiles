@@ -147,7 +147,8 @@ local function transport(label, include_snippet)
               documentation = { kind = 'markdown', value = string.rep('Completion documentation line.\n\n', 30) } })
           end
         elseif method == 'completionItem/resolve' then result = params
-        elseif method == 'textDocument/hover' then result = { contents = 'Fixture hover' }
+        elseif method == 'textDocument/hover' then
+          result = { contents = { kind = 'markdown', value = '```python\nvalue = 1\n```\nFixture hover' } }
         end
         vim.schedule(function() callback(nil, result) end)
         return true, id
@@ -288,12 +289,26 @@ step(function()
   input('<Esc>K')
 end)
 step(function()
-  local floats = 0
+  local floats, fences = 0, 0
   for _, win in ipairs(vim.api.nvim_list_wins()) do
-    if vim.api.nvim_win_get_config(win).relative ~= '' then floats = floats + 1; vim.api.nvim_win_close(win, true) end
+    if vim.api.nvim_win_get_config(win).relative ~= '' then
+      floats = floats + 1
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.treesitter.highlighter.active[buf] and vim.wo[win].conceallevel == 2 then
+        -- Injections run the info-string directive that the archived nvim-treesitter broke.
+        local parser = vim.treesitter.get_parser(buf)
+        parser:parse(true)
+        local query = vim.treesitter.query.get('markdown', 'highlights')
+        for _, node, metadata in query:iter_captures(parser:trees()[1]:root(), buf) do
+          if metadata.conceal_lines and node:type() == 'fenced_code_block_delimiter' then fences = fences + 1 end
+        end
+      end
+      vim.api.nvim_win_close(win, true)
+    end
   end
   assert(floats > 0, 'Hover key did not show an LSP response')
-  record('hover key invokes native LSP behavior')
+  assert(fences >= 2, 'Hover code fences were not concealed by Treesitter Markdown')
+  record('hover key invokes native LSP behavior with concealed Markdown code fences')
   for _, id in ipairs(ids) do vim.lsp.get_client_by_id(id):stop(true) end
   for _, module in ipairs({ 'cmp', 'luasnip', 'lsp-zero', 'mason', 'mason-lspconfig' }) do
     assert(not package.loaded[module], 'Retired wrapper loaded: ' .. module)

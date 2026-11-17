@@ -8,7 +8,6 @@
   "markdown-preview.nvim": null,
   "nvim-lspconfig": "neovim/nvim-lspconfig",
   "nvim-tree.lua": "nvim-tree/nvim-tree.lua",
-  "nvim-treesitter": "nvim-treesitter/nvim-treesitter",
   "nvim-web-devicons": "nvim-tree/nvim-web-devicons",
   "plenary.nvim": "nvim-lua/plenary.nvim",
   "telescope.nvim": "nvim-telescope/telescope.nvim",

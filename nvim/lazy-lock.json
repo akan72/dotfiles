@@ -8,7 +8,6 @@
   "markdown-preview.nvim": {"branch": "master", "commit": "a923f5fc5ba36a3b17e289dc35dc17f66d0548ee"},
   "nvim-lspconfig": {"branch": "master", "commit": "d224a1920728ba129880efc700d4a0180ac4ecbb"},
   "nvim-tree.lua": {"branch": "master", "commit": "5e4475d8bf7a3646164e01d9b65ef68369b17e3c"},
-  "nvim-treesitter": {"branch": "main", "commit": "42fc28ba918343ebfd5565147a42a26580579482"},
   "nvim-web-devicons": {"branch": "master", "commit": "21417212f640a1dad28a1408f04468819848f5e7"},
   "plenary.nvim": {"branch": "master", "commit": "74b06c6c75e4eeb3108ec01852001636d85a932b"},
   "telescope.nvim": {"branch": "master", "commit": "c1a2af0af69e80e14e6b226d3957a064cd080805"},

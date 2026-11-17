@@ -64,6 +64,13 @@ autocmd(
 
 -- "filetype plugin indent on" is automatically turned on by Neovim
 
+-- Treesitter uses only Neovim's bundled parsers and queries; nothing is downloaded or compiled.
+-- Neovim's ftplugins start Lua, Markdown, help and query highlighting; C and Vimscript need this.
+autocmd("FileType", {
+    pattern = { "c", "vim" },
+    callback = function(args) vim.treesitter.start(args.buf) end,
+})
+
 -- Prevent gray sign column from appearing after toggling FileTree and Gdiffsplit
 o.foldcolumn = '0'
 

@@ -169,10 +169,29 @@ loading for lazy setup. The pinned lazy manager then disables automatic native
 loading again while loading the verified plugins itself.
 
 Startup disables missing-plugin installation, project-local lazy specs, package/rock
-download channels, update checking and Treesitter parser installs. Neovim **0.12 or
-newer** is required. The existing Treesitter release still uses
-`nvim-treesitter.configs.setup`; highlighting remains enabled for existing parsers.
+download channels and update checking. Neovim **0.12 or newer** is required.
 Markdown preview remains disabled until its separate binary artifacts are reviewed.
+
+### Treesitter
+
+Treesitter uses only the parsers and queries bundled with Neovim: C, Lua, Markdown,
+query, Vimscript and Vim help. Neovim's ftplugins start highlighting for Lua, Markdown,
+help and query; `settings.lua` starts it for C and Vimscript. Other languages keep
+Vim's regex syntax. Nothing downloads, compiles or installs a parser.
+
+The nvim-treesitter plugin is removed. Its pin was the archived `master` branch's last
+commit, mislabeled `main` in the lock. On 0.12 its Markdown injection query and directive
+override the bundled ones and fail, so Markdown code fences and LSP hovers raised
+`conceal_line` errors and showed raw fences. The `main` rewrite would download parser
+tarballs without checksums and compile native code into `stdpath('data')/site`, outside
+every verified checkout, using the `tree-sitter` CLI and a C compiler. The clean-checkout
+gate had already kept the old plugin's `parser/` directory empty, so no language loses
+Treesitter highlighting. Its downloaded checkout is inactive rollback material.
+
+`tests/editor-startup.lua` asserts that every `parser/*` and `queries/*/*.scm` file on
+the runtime path belongs to the Neovim installation. Adding a parser is a reviewed
+change: pin its source by SHA-256 in `artifacts.json`, build it outside Neovim, install
+it to a dedicated runtime path directory and update that assertion.
 
 ### Native LSP, completion and snippets
 
@@ -316,7 +335,7 @@ same for rust-analyzer) re-verifies the installed bytes offline. Rerunning the
 still cached.
 
 Updates are explicit lockfile/package or reviewed `artifacts.json` changes followed
-by these same operations and functional tests. Do not use `:Lazy update`, `:TSUpdate`,
+by these same operations and functional tests. Do not use `:Lazy update`,
 unversioned `npx`, `uv run` or an installer wrapper to repair startup. The shared
 bootstrap installs only reviewed plugin checkouts; it never launches Neovim to
 fetch software.
