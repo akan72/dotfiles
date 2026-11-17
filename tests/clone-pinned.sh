@@ -76,22 +76,6 @@ for actual in https://github.com/erikw/other.git https://github.com/erikw/tmux-p
   git -C "$dest" remote set-url origin "$actual"
   if "$check" "$dest" "$expected" "$next" >/dev/null 2>&1; then exit 1; fi
  done
-# markdown-preview.nvim: app/bin may hold only a hard link to the pinned server.
-git -C "$dest" remote set-url origin "$expected"
-preview_home=$(mktemp -d "${TMPDIR:-/tmp}/preview-home.XXXXXX")
-mkdir -p "$preview_home/.local/share/dotfiles-markdown-preview/bin" "$dest/app/bin"
-printf 'server\n' > "$preview_home/.local/share/dotfiles-markdown-preview/bin/markdown-preview-linux"
-ln "$preview_home/.local/share/dotfiles-markdown-preview/bin/markdown-preview-linux" "$dest/app/bin/markdown-preview-linux"
-HOME="$preview_home" "$check" --allow-preview-bin "$dest" "$expected" "$next"
-if HOME="$preview_home" "$check" "$dest" "$expected" "$next" >/dev/null 2>&1; then exit 1; fi
-cp "$dest/app/bin/markdown-preview-linux" "$preview_home/copy"; rm "$dest/app/bin/markdown-preview-linux"
-cp "$preview_home/copy" "$dest/app/bin/markdown-preview-linux"
-if HOME="$preview_home" "$check" --allow-preview-bin "$dest" "$expected" "$next" >/dev/null 2>&1; then exit 1; fi
-rm "$dest/app/bin/markdown-preview-linux"
-ln "$preview_home/.local/share/dotfiles-markdown-preview/bin/markdown-preview-linux" "$dest/app/bin/markdown-preview-linux"
-printf 'extra\n' > "$dest/app/bin/extra"
-if HOME="$preview_home" "$check" --allow-preview-bin "$dest" "$expected" "$next" >/dev/null 2>&1; then exit 1; fi
-rm -rf "$dest/app" "$preview_home"
 echo 'clone tests passed: offline pin, strict failures, edit preservation, safe repin'
 
 # Pinned public fetches ignore this machine's Git config: no credential helper,

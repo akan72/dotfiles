@@ -3,7 +3,6 @@
   "gruvbox.nvim": "ellisonleao/gruvbox.nvim",
   "lazy.nvim": "folke/lazy.nvim",
   "lualine.nvim": "nvim-lualine/lualine.nvim",
-  "markdown-preview.nvim": "iamcco/markdown-preview.nvim",
   "nvim-lspconfig": "neovim/nvim-lspconfig",
   "nvim-tree.lua": "nvim-tree/nvim-tree.lua",
   "nvim-web-devicons": "nvim-tree/nvim-web-devicons",

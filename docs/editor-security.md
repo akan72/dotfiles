@@ -170,7 +170,8 @@ loading again while loading the verified plugins itself.
 
 Startup disables missing-plugin installation, project-local lazy specs, package/rock
 download channels and update checking. Neovim **0.12 or newer** is required.
-Markdown preview remains disabled until its separate binary artifacts are reviewed.
+markdown-preview.nvim is removed: its Node server needed a large npm graph and
+localhost-origin hardening. Use Zed's built-in `markdown: open preview` instead.
 
 ### Treesitter
 
@@ -192,33 +193,6 @@ Treesitter highlighting. Its downloaded checkout is inactive rollback material.
 the runtime path belongs to the Neovim installation. Adding a parser is a reviewed
 change: pin its source by SHA-256 in `artifacts.json`, build it outside Neovim, install
 it to a dedicated runtime path directory and update that assertion.
-
-### Markdown preview
-
-`markdown-preview.nvim` runs its server on the pinned Node, not the plugin's
-prebuilt binary, which bundles Node 18. `nvim/markdown-preview` locks the server's
-54 packages: socket.io 2.5.1 (the last 2.x, compatible with the plugin's browser
-client) with patched engine.io 3.6.2, ws 7.5.13 and socket.io-parser 3.4.5, plus
-`debug` and `cookie` overridden to fixed releases. `npm audit` still reports one
-moderate ReDoS in `parseuri`, which only runs in the browser-side client.
-
-`assimilate.sh` installs the lock with `npm ci --ignore-scripts` under
-`~/.local/share/dotfiles-markdown-preview` and installs `server.sh` as the launcher.
-The plugin only looks in its own `app/bin`, so the launcher is hard-linked there.
-Both checkout checks accept only that one entry, and only when it is the same file
-(device and inode) as the installed launcher. The plugin's own installer is never
-run. The server listens on 127.0.0.1 only and stops with Neovim.
-
-Listening on localhost does not stop web pages: browsers let any site open a
-WebSocket to it, and DNS rebinding can make it look same-origin. socket.io 2.x
-accepts every origin by default, and `/_local_image_` serves any absolute path.
-The launcher therefore preloads `harden.js`, which checks every HTTP request and
-WebSocket upgrade before the plugin or engine.io sees it. It rejects requests
-unless their Host, Origin and Referer name this server on 127.0.0.1 or localhost,
-rejects `Sec-Fetch-Site: cross-site` and `..` path segments, requires socket.io
-requests to carry this server's Origin or Referer and refuses JSONP polling, and
-serves only image files from `/_local_image_`, only with this server's Referer and
-a sandbox Content-Security-Policy, so a local SVG cannot run script.
 
 ### Native LSP, completion and snippets
 

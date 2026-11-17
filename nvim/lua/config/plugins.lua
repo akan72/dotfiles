@@ -29,20 +29,6 @@ require("lazy").setup({
         end,
     },
 
-    -- Markdown preview (load only for markdown files)
-    {
-        "iamcco/markdown-preview.nvim",
-        commit = 'a923f5fc5ba36a3b17e289dc35dc17f66d0548ee',
-        ft = "markdown",
-        -- The server runs on the pinned Node with nvim/markdown-preview's
-        -- locked packages (assimilate.sh); never run the plugin's own installer.
-        init = function()
-            vim.g.mkdp_open_to_the_world = 0
-            vim.g.mkdp_open_ip = '127.0.0.1'
-            vim.g.mkdp_echo_preview_url = 1
-        end,
-    },
-
     -- Fuzzyfinder (load on its keys / :Telescope)
     {
         'nvim-telescope/telescope.nvim',
