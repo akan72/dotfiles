@@ -1,10 +1,10 @@
 # Security and maintenance
 
-This is the shared policy for bootstrap, package installs, local scans, editors
-and the optional notebook. Pins fix bytes; they do not prove that upstream code
-is benign. Updates require an explicit review of versions, age, hashes and any
-available provenance. One-time host repairs and Python/Packer migrations live in
-the separate Mac replication playbook, not the recurring dotfiles installer.
+This is the shared policy for bootstrap, package installs, local scans and
+editors. Pins fix bytes; they do not prove that upstream code is benign. Updates
+require an explicit review of versions, age, hashes and any available
+provenance. One-time host repairs and Python/Packer migrations live in the
+separate Mac replication playbook, not the recurring dotfiles installer.
 
 ## Bootstrap and release policy
 
@@ -365,40 +365,6 @@ which would overwrite the guarded status commands. Both tmux paths assume
 are disabled. Update pins explicitly and test with `bash tests/tmux-policy.sh`.
 These local integrity checks detect drift; they do not isolate hostile processes
 already running as your user.
-
-## Notebook helper
-
-The optional helper binds only `127.0.0.1:8888`, runs as UID 1000 without extra
-capabilities, and retains Jupyter token authentication. Mount only the helper
-directory, never home/auth directories or the Docker socket. Verify host write
-ownership; Docker Desktop differs from native Linux.
-
-The Dockerfile pins the multiarch Python image digest and signed Debian CA repair;
-`filter-ca-bundle.py` rejects the three distrusted SPKIs in both system/certifi
-bundles. Keep that gate even if a patched APT version leaves its live mirror:
-review its successor instead of bypassing signatures. The CA package and certifi
-2026.10.19 are documented urgent cooldown exceptions. The wheel-only, hash-required
-lock covers 93 packages on both Linux architectures. The pandas 2-to-3 upgrade
-still requires testing your own notebooks.
-
-Refresh only after reviewing supported direct versions, the official image digest
-and dated exceptions; ordinary deployment must not silently regenerate locks:
-
-```sh
-cd "$HOME/dotfiles"
-uv --no-config pip compile scripts/docker/requirements.in --generate-hashes --only-binary=:all: --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --exclude-newer 2026-10-14T00:00:00Z --exclude-newer-package certifi=2026-10-21T23:59:59Z --output-file /private/tmp/notebook-amd64.txt
-uv --no-config pip compile scripts/docker/requirements.in --generate-hashes --only-binary=:all: --python-version 3.12 --python-platform aarch64-unknown-linux-gnu --exclude-newer 2026-10-14T00:00:00Z --exclude-newer-package certifi=2026-10-21T23:59:59Z --output-file /private/tmp/notebook-arm64.txt
-diff -u <(tail -n +3 /private/tmp/notebook-amd64.txt) <(tail -n +3 /private/tmp/notebook-arm64.txt)
-cd scripts/docker
-docker compose config --quiet
-docker buildx build --platform linux/arm64 --load -f Dockerfile.notebook -t dotfiles-notebook:reviewed .
-docker run --rm --network none --entrypoint id dotfiles-notebook:reviewed -u
-```
-
-Intel uses `linux/amd64`; metadata/wheel checks do not prove another CPU's image
-ran. Launch deliberately with `docker compose up --build`, inspect port bindings
-without logging tokens, then stop with `docker compose down`. Keep Docker updated;
-old engines have localhost-publication caveats.
 
 ## Host settings
 
