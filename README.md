@@ -61,7 +61,7 @@ bundle commands; first installs still use the reviewed distribution boundary.
 Read the shared [security and maintenance guide](docs/editor-security.md) before
 installing or updating tools. It covers prerequisites, pinned artifacts, checkout
 integrity, Homebrew's rolling-distribution boundary, package cooldowns, Socket,
-local scans and reviewed editor/notebook updates. Use uv for personal Python;
+local scans and reviewed editor updates. Use uv for personal Python;
 retain Apple/Homebrew runtimes required by the system and formula dependencies.
 
 ### Container installation tests
