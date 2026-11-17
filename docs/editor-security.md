@@ -284,9 +284,14 @@ dependencies (such as `hashbrown` and `object`) that `rust-src` does not ship.
 The editor runs Cargo offline, so `cargo fetch --locked` downloads them once here,
 checking each against that lockfile's SHA-256; without them, standard-library
 types show as `{unknown}` and std hovers are empty. `RUSTC_BOOTSTRAP=1` lets
-stable Cargo read the library's manifest, as rust-analyzer itself does. Records
-cover Apple Silicon and Intel Macs and x86_64/aarch64 Linux; other platforms stay
-optional.
+stable Cargo read the library's manifest, as rust-analyzer itself does. These
+crates are the one exception to the dedicated directories: they go to Cargo's
+shared cache (`~/.cargo/registry` by default), because rust-analyzer reads project
+dependencies from that same cache. Cargo checks each hash only when it downloads
+the crate and trusts the unpacked sources afterwards, so the offline recheck below
+confirms the crates are present, not that their bytes are unchanged. rust-analyzer
+only reads them; their build scripts never run. Records cover Apple Silicon and
+Intel Macs and x86_64/aarch64 Linux; other platforms stay optional.
 
 ```sh
 (
