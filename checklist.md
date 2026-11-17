@@ -44,13 +44,13 @@
 - Install Docker Desktop.
 - Install Postman.
 - Install pgAdmin.
-- Install [Homebrew](https://brew.sh/), then run `./assimilate.sh`
+- Follow the [reviewed bootstrap policy](README.md#installation), including the verified standalone uv bootstrap.
 - Install [Ghostty](https://ghostty.org/) (terminal; config is symlinked from `ghostty/`)
 - Install [Zed](https://zed.dev/) (editor; `settings.json` + `keymap.json` symlinked from `zed/`)
-- Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`curl -fsSL https://claude.ai/install.sh | bash`)
-- In tmux, install plugins with `<prefix>I`
+- Install a reviewed exact [Claude Code](https://docs.anthropic.com/en/docs/claude-code) release through the approved package policy; verify native updater settings separately.
+- tmux-powerline comes from the pinned bootstrap; TPM is not used.
 
 > The Hack Nerd Font is installed automatically via `brew bundle`
-> (`cask "font-hack-nerd-font"`) — no manual version pin needed.
-> oh-my-zsh, zsh plugins, tmux plugin manager (tpm), and the Neovim plugin
-> manager are all handled by `assimilate.sh`.
+> (`cask "font-hack-nerd-font"`) ; it remains a separately trusted rolling channel.
+> oh-my-zsh, zsh plugins, tmux-powerline and the Neovim plugins are all
+> handled by `assimilate.sh`.

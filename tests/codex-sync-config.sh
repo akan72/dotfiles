@@ -2,8 +2,8 @@
 
 set -eu
 
-test_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-repo_root=$(CDPATH= cd -- "$test_dir/.." && pwd)
+test_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+repo_root=$(CDPATH='' cd -- "$test_dir/.." && pwd)
 test_root=$(mktemp -d "${TMPDIR:-/tmp}/codex-sync.XXXXXX")
 codex_home="$test_root/codex-home"
 invalid_home="$test_root/invalid-home"

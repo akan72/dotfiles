@@ -3,7 +3,9 @@
 [ -f "$HOME/.shared.sh" ] && . "$HOME/.shared.sh"
 
 export ZSH="$HOME/.oh-my-zsh"
-export UPDATE_ZSH_DAYS=13
+# Generated OMZ state belongs outside its verified source checkout.
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"
+
 
 # Match hidden files with tab
 setopt globdots
@@ -14,8 +16,9 @@ ZSH_THEME="robbyrussell"
 CASE_SENSITIVE="false"
 HYPHEN_INSENSITIVE="true"
 
-DISABLE_AUTO_UPDATE="false"
-DISABLE_UPDATE_PROMPT="false"
+DISABLE_AUTO_UPDATE="true"
+zstyle ':omz:update' mode disabled
+DISABLE_UPDATE_PROMPT="true"
 DISABLE_LS_COLORS="false"
 DISABLE_UNTRACKED_FILES_DIRTY="false"
 DISABLE_AUTO_TITLE="false"

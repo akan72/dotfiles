@@ -22,9 +22,9 @@ image_for() {
   esac
 }
 
-command="${1:-}"
-target="${2:-}"
 [ "$#" -eq 2 ] || usage
+command="$1"
+target="$2"
 
 image="$(image_for "$target")"
 
@@ -35,12 +35,16 @@ fi
 
 [ "$command" = run ] || usage
 
-repo_root="$(git rev-parse --show-toplevel)"
+repo_root="$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)"
+context=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-vps-context.XXXXXX")
+trap 'rm -rf "$context"' EXIT HUP INT TERM
+# The container only gets a read-only mount of this temporary export of committed HEAD.
+python3 "$repo_root/scripts/security/source-snapshot.py" --repo "$repo_root" --output "$context/source"
 
 docker run --rm --interactive \
   --platform linux/amd64 \
   --env VPS_TARGET="$target" \
-  --volume "$repo_root:/workspace:ro" \
+  --volume "$context/source:/workspace:ro" \
   "$image" \
   bash -s <<'CONTAINER'
 set -euxo pipefail
@@ -49,10 +53,10 @@ case "$VPS_TARGET" in
   ubuntu)
     export DEBIAN_FRONTEND=noninteractive
     apt-get update
-    apt-get install --yes ca-certificates curl findutils git gzip passwd tar zsh
+    apt-get install --yes ca-certificates curl findutils git gzip passwd tar zsh jq python3
     ;;
   amazon-linux)
-    dnf install --assumeyes ca-certificates curl-minimal findutils git gzip shadow-utils tar util-linux zsh
+    dnf install --assumeyes ca-certificates curl-minimal findutils git gzip shadow-utils tar util-linux zsh jq python3
     ;;
   *)
     echo "unsupported VPS target: $VPS_TARGET" >&2
@@ -66,6 +70,7 @@ chown -R dotfiles:dotfiles /home/dotfiles/dotfiles
 
 runuser --user dotfiles -- env \
   HOME=/home/dotfiles \
+  ASSIMILATE_SOURCE_MODE=archive \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
   bash -c '
     set -euo pipefail

@@ -2,7 +2,7 @@
 
 set -eu
 
-script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 managed_settings="$script_dir/settings.managed.json"
 claude_home=${CLAUDE_CONFIG_DIR:-"$HOME/.claude"}
 dest_settings="$claude_home/settings.json"
