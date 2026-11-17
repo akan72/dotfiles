@@ -1,7 +1,0 @@
-**
-!Dockerfile.notebook
-!requirements.txt
-!requirements.in
-!docker-compose.yml
-!.dockerignore
-!filter-ca-bundle.py
