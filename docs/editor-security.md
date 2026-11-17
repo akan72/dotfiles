@@ -212,11 +212,13 @@ run. The server listens on 127.0.0.1 only and stops with Neovim.
 Listening on localhost does not stop web pages: browsers let any site open a
 WebSocket to it, and DNS rebinding can make it look same-origin. socket.io 2.x
 accepts every origin by default, and `/_local_image_` serves any absolute path.
-The launcher therefore preloads `harden.js`, which rejects HTTP and socket.io
-requests unless their Host, Origin and Referer name this server on 127.0.0.1 or
-localhost, rejects requests browsers mark `Sec-Fetch-Site: cross-site` and `..`
-path segments, and serves only image files from `/_local_image_`, only with a
-Referer and with a sandbox Content-Security-Policy, so a local SVG cannot run script.
+The launcher therefore preloads `harden.js`, which checks every HTTP request and
+WebSocket upgrade before the plugin or engine.io sees it. It rejects requests
+unless their Host, Origin and Referer name this server on 127.0.0.1 or localhost,
+rejects `Sec-Fetch-Site: cross-site` and `..` path segments, requires socket.io
+requests to carry this server's Origin or Referer and refuses JSONP polling, and
+serves only image files from `/_local_image_`, only with this server's Referer and
+a sandbox Content-Security-Policy, so a local SVG cannot run script.
 
 ### Native LSP, completion and snippets
 
