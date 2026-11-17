@@ -278,7 +278,13 @@ This rust-analyzer is the project's standalone build, the one editor extensions
 ship. Rustup's component is not used: it links the toolchain's `librustc_driver`,
 and `rustup update` replaces it in place, so it cannot hold a pin. rust-analyzer
 still reads the standard library from the toolchain's `rust-src` component, added
-from the already installed toolchain's manifest without `rustup update`. Records
+from the already installed toolchain's manifest without `rustup update`. It loads
+that library as a Cargo workspace, whose `Cargo.lock` pins about 40 crates.io
+dependencies (such as `hashbrown` and `object`) that `rust-src` does not ship.
+The editor runs Cargo offline, so `cargo fetch --locked` downloads them once here,
+checking each against that lockfile's SHA-256; without them, standard-library
+types show as `{unknown}` and std hovers are empty. `RUSTC_BOOTSTRAP=1` lets
+stable Cargo read the library's manifest, as rust-analyzer itself does. Records
 cover Apple Silicon and Intel Macs and x86_64/aarch64 Linux; other platforms stay
 optional.
 
@@ -297,11 +303,15 @@ optional.
     *) echo 'Review this existing Rust toolchain before adding components.' >&2; exit 1 ;;
   esac
   RUSTUP_AUTO_INSTALL=0 rustup component add rust-src
+  library="$(RUSTUP_AUTO_INSTALL=0 rustc --print sysroot)/lib/rustlib/src/rust/library"
+  RUSTUP_AUTO_INSTALL=0 RUSTC_BOOTSTRAP=1 cargo fetch --locked --manifest-path "$library/Cargo.toml"
 )
 ```
 
 Later, `install-artifact.sh --check lua-language-server 3.19.2 "$platform"` (and the
-same for rust-analyzer) re-verifies the installed bytes offline.
+same for rust-analyzer) re-verifies the installed bytes offline. Rerunning the
+`cargo fetch` line with `--offline` confirms the standard library's crates are
+still cached.
 
 Updates are explicit lockfile/package or reviewed `artifacts.json` changes followed
 by these same operations and functional tests. Do not use `:Lazy update`, `:TSUpdate`,
