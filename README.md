@@ -64,6 +64,10 @@ integrity, Homebrew's rolling-distribution boundary, package cooldowns, Socket,
 local scans and reviewed editor updates. Use uv for personal Python;
 retain Apple/Homebrew runtimes required by the system and formula dependencies.
 
+Neovim 0.12+ uses native LSP/completion/snippets with externally managed servers.
+See [reviewed editor setup](docs/editor-security.md#explicit-external-server-setup)
+for locked uv/npm environments, Lua/Rust ownership and exact replication commands.
+
 ### Container installation tests
 
 Tests export committed HEAD only, never the live checkout, uncommitted edits or

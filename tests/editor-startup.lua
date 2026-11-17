@@ -3,7 +3,11 @@ local ok, err = pcall(function()
   local config = require('lazy.core.config')
   assert(config.plugins['gruvbox.nvim'], 'lazy did not initialize plugin specs')
   assert(package.loaded['gruvbox'] and vim.g.colors_name == 'gruvbox', 'theme was not loaded')
-  assert(package.loaded['lsp-zero'], 'LSP configuration was not loaded')
+  local lsp = require('config.plugins.lsp')
+  assert(type(lsp.commands) == 'table', 'Native LSP configuration was not loaded')
+  for _, name in ipairs({ 'lsp-zero', 'mason', 'mason-lspconfig', 'cmp', 'luasnip' }) do
+    assert(not package.loaded[name], 'Retired wrapper loaded: ' .. name)
+  end
   assert(config.options.install.missing == false and not config.options.checker.enabled,
     'startup installers or update checking enabled')
   assert(vim.go.loadplugins == false, 'native automatic loading must remain disabled after lazy setup')
