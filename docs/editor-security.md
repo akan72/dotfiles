@@ -34,8 +34,10 @@ is accepted. A valid checkout works offline; other state is left for explicit
 backup/review. OMZ caches belong outside its checkout at
 `${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh`. Powerline alone permits machine-local
 HTTPS userinfo while preserving exact repository identity; routing is never
-rewritten. Before network Git operations, check the selected helper and username
-without reading credentials; missing HTTPS routing stops the operation.
+rewritten. Pinned repositories are public, so bootstrap fetches them anonymously:
+the fetch ignores this machine's Git config, and no credential helper, URL rewrite
+or prompt takes part. Checkout pins live in `scripts/security/pins.sh`, and
+Neovim plugin origins in `nvim/plugin-origins.json`, each used by every check.
 
 ## Package policy and Socket
 
@@ -82,40 +84,34 @@ Run from a reviewed checkout; the scanner itself executes as your user:
 scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db /absolute/private/osv-db
 ```
 
-The final line gives a private output directory and counts. `summary.json` lists
-checks and selected/omitted paths. Exit 0 requires every applicable check to pass;
-findings, missing/changed scanners, partial source, stale/missing databases and tool
-errors return nonzero. Schema 2 removes per-check timestamps, version/command
-copies and parsed diagnostic aggregation. Scanner-native reports stay private:
-Gitleaks JSON is fully redacted; other tools' `.log` files can contain source.
-Never publish raw reports. Directories/files are 0700/0600; remove the output
-when no longer needed.
+The final line gives a private output directory and counts; `summary.json` lists
+each check and the selected and omitted paths. Exit 0 requires every applicable
+check to pass; findings, missing or changed scanners, incomplete scope, stale or
+missing databases and tool errors return nonzero. Reports stay private (0700/0600):
+Gitleaks JSON is fully redacted, but other tools' `.log` files can contain source,
+so never publish them and remove the output when done.
 
-`source-snapshot.py` is the single exporter for scans and container tests. Scans
-read current tracked, allowlisted source, including edits. They omit auth-named
-paths before reading contents, plus untracked/ignored files, binaries and symlinks.
-Missing/symlink/nonregular tracked source or unsafe paths make coverage incomplete.
-Container exports instead refuse unsafe names/state, default to clean HEAD, and
-require `--working` plus individual `--include` paths for proposed/new source.
-Both use descriptor-relative reads without following links; neither modifies the
-Git index/object database. Exports carry deterministic file hashes, executable flags and HEAD/mode
-metadata; verification also accepts prior schema-1 snapshots. Git export filters
-cannot omit or transform source. See [container commands](../README.md#container-installation-tests).
-
+The scan reads tracked files in place and never reads untracked or ignored files.
+A tracked file with a credential-like name fails the scan, without its contents
+being read; symlinks, nonregular files and unsafe names make the scope incomplete.
 Checks are Gitleaks, offline zizmor, ShellCheck without external sources, `zsh -n`
 and offline OSV for supported dependency locks. No install, build, resolution,
-autofix, project execution or network scan occurs. Private scanner configuration
-ignores repository/user suppressions; history is separate via
-`scripts/security/scan-history.sh`. Gitleaks is maintenance-only and pattern-based;
-static checks do not prove that software or this Mac is free of malware.
+autofix, project execution or network scan occurs, and repository or user scanner
+configuration is ignored.
 
-`scanners.lock.json` records reviewed versions and artifacts; the runner refuses
-version drift. It is not a cross-platform installer. Homebrew's signed API and
-bottle checksums trust Homebrew; upstream attestations were not verified. Other
-platforms need matching artifact review. CI's pre-commit/zizmor wheel locks require
-hashes, binary wheels and no dependency resolution; preserve the exact documented
-virtualenv security exception. The portable Mac playbook has installation commands.
-Review scanner pins monthly and scan weekly; nothing schedules automatic updates.
+Gitleaks runs through `scripts/security/scan-history.sh`, which CI also runs: all
+history, then staged and unstaged edits. Nothing in the repository can hide a
+finding: its Gitleaks config, `.gitleaksignore`, inline allows and diff attributes
+are ignored, and merge-only or type-changed content is scanned. It reads diffs,
+so a secret split across separate commits may be missed. Gitleaks is
+pattern-based; static checks do not prove that software or this Mac is free of malware.
+
+`scanners.lock.json` records the reviewed scanner versions; the runner refuses
+any other version. It is not an installer: Homebrew supplies the Mac scanners.
+CI's pre-commit and zizmor wheel locks require hashes and binary wheels and do not
+resolve dependencies. CI's Pre-commit job is a required check, but its Gitleaks
+hook only scans staged changes; the Secret history job scans every commit. Review
+scanner pins monthly and scan weekly; nothing schedules automatic updates.
 
 Refresh OSV separately: this downloads public databases, never source or a project
 dependency list. Include every required ecosystem; this repo uses PyPI and npm.
@@ -158,7 +154,8 @@ features may access the network; the runner uses `--offline`.
 ## Neovim
 
 Before loading any downloaded plugin, `config.trusted-bootstrap` verifies every
-active entry in `nvim/lazy-lock.json`: canonical HTTPS origin, full commit, normal
+active entry in `nvim/lazy-lock.json`: canonical HTTPS origin from
+`nvim/plugin-origins.json` (an entry without one is refused), full commit, normal
 checkout root, and clean tracked, untracked and ignored files. The only generated
 file exception is the exact non-executable regular `doc/tags` help index with a
 non-symlink parent. Unknown Lua, symlink checkouts and other ignored changes fail
@@ -297,9 +294,20 @@ This rust-analyzer is the project's standalone build, the one editor extensions
 ship. Rustup's component is not used: it links the toolchain's `librustc_driver`,
 and `rustup update` replaces it in place, so it cannot hold a pin. rust-analyzer
 still reads the standard library from the toolchain's `rust-src` component, added
-from the already installed toolchain's manifest without `rustup update`. Records
-cover Apple Silicon and Intel Macs and x86_64/aarch64 Linux; other platforms stay
-optional.
+from the already installed toolchain's manifest without `rustup update`. It loads
+that library as a Cargo workspace, whose `Cargo.lock` pins about 40 crates.io
+dependencies (such as `hashbrown` and `object`) that `rust-src` does not ship.
+The editor runs Cargo offline, so `cargo fetch --locked` downloads them once here,
+checking each against that lockfile's SHA-256; without them, standard-library
+types show as `{unknown}` and std hovers are empty. `RUSTC_BOOTSTRAP=1` lets
+stable Cargo read the library's manifest, as rust-analyzer itself does. These
+crates are the one exception to the dedicated directories: they go to Cargo's
+shared cache (`~/.cargo/registry` by default), because rust-analyzer reads project
+dependencies from that same cache. Cargo checks each hash only when it downloads
+the crate and trusts the unpacked sources afterwards, so the offline recheck below
+confirms the crates are present, not that their bytes are unchanged. rust-analyzer
+only reads them; their build scripts never run. Records cover Apple Silicon and
+Intel Macs and x86_64/aarch64 Linux; other platforms stay optional.
 
 ```sh
 (
@@ -316,11 +324,15 @@ optional.
     *) echo 'Review this existing Rust toolchain before adding components.' >&2; exit 1 ;;
   esac
   RUSTUP_AUTO_INSTALL=0 rustup component add rust-src
+  library="$(RUSTUP_AUTO_INSTALL=0 rustc --print sysroot)/lib/rustlib/src/rust/library"
+  RUSTUP_AUTO_INSTALL=0 RUSTC_BOOTSTRAP=1 cargo fetch --locked --manifest-path "$library/Cargo.toml"
 )
 ```
 
 Later, `install-artifact.sh --check lua-language-server 3.19.2 "$platform"` (and the
-same for rust-analyzer) re-verifies the installed bytes offline.
+same for rust-analyzer) re-verifies the installed bytes offline. Rerunning the
+`cargo fetch` line with `--offline` confirms the standard library's crates are
+still cached.
 
 Updates are explicit lockfile/package or reviewed `artifacts.json` changes followed
 by these same operations and functional tests. Do not use `:Lazy update`,
@@ -371,7 +383,7 @@ this guard.
 
 ## tmux and shell updates
 
-TPM's runtime install/update bindings are removed. `tmux-powerline.sh` verifies the
+TPM is no longer installed or loaded. `tmux-powerline.sh` verifies the
 reviewed checkout before running `powerline.sh left|right`; failures render
 `powerline unverified` without executing the plugin. It never invokes `main.tmux`,
 which would overwrite the guarded status commands. Both tmux paths assume

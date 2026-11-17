@@ -21,21 +21,16 @@ root=$(g rev-parse --show-toplevel) || fail 'invalid repository'
 actual_origin=$(g remote get-url origin)
 # GitHub's optional .git suffix does not change repository identity. All other
 # URL components remain strict; userinfo is allowed only for the explicit caller.
-printf '%s\0%s' "$actual_origin" "$origin" | python3 -c '
-import re,sys
-actual,expected=sys.stdin.buffer.read().decode().split("\0")
-if any(ord(c)<32 or ord(c)==127 for c in actual+expected): sys.exit(1)
-if actual==expected: sys.exit(0)
-pattern=r"https://([^/?#]+)/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)"
-a,e=re.fullmatch(pattern,actual),re.fullmatch(pattern,expected)
-if not a or not e or e[1]!="github.com": sys.exit(1)
-host=a[1]
-if "@" in host:
- if sys.argv[1]!="1": sys.exit(1)
- host=host.rsplit("@",1)[1]
-def repo(value): return value[:-4] if value.endswith(".git") else value
-sys.exit(0 if host==e[1] and a[2]==e[2] and repo(a[3])==repo(e[3]) else 1)
-' "$allow_userinfo" || fail "origin differs from reviewed origin; expected $origin (optional .git suffix accepted)"
+same_origin() {
+  local actual=$1 expected=$2 repo='https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+'
+  [[ "$actual$expected" != *[[:cntrl:]]* ]] || return 1
+  [ "$actual" != "$expected" ] || return 0
+  if [ "$allow_userinfo" = 1 ] && [[ "$actual" =~ ^https://[^/@?#]+@(github\.com/.*)$ ]]; then
+    actual="https://${BASH_REMATCH[1]}"
+  fi
+  [[ "$actual" =~ ^$repo$ && "$expected" =~ ^$repo$ && "${actual%.git}" = "${expected%.git}" ]]
+}
+same_origin "$actual_origin" "$origin" || fail "origin differs from reviewed origin; expected $origin (optional .git suffix accepted)"
 [ "$(g config --get-all remote.origin.url | wc -l | tr -d ' ')" = 1 ] || fail 'multiple origin URLs'
 status=$(g status --porcelain=v1 --untracked-files=all --ignored)
 if [ "$allow_help_tags" = 1 ]; then

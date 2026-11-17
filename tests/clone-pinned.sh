@@ -78,59 +78,37 @@ for actual in https://github.com/erikw/other.git https://github.com/erikw/tmux-p
  done
 echo 'clone tests passed: offline pin, strict failures, edit preservation, safe repin'
 
-# The same checkout contract must hold for disposable anonymous GitHub routing.
-# Run in a subshell so its temporary HOME and local transport never affect callers.
+# Pinned public fetches ignore this machine's Git config: no credential helper,
+# injected config, URL rewrite or prompt can take part. A PATH stub records the
+# fetch environment and serves the HTTPS origin from a local fixture.
 (
-root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-work=$(mktemp -d "${TMPDIR:-/tmp}/ci-git-routing.XXXXXX")
+unset -f git
+work=$(mktemp -d "${TMPDIR:-/tmp}/clone-anonymous.XXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
-mkdir "$work/home"
-export HOME="$work/home" GIT_CONFIG_SYSTEM=/dev/null GIT_CONFIG_GLOBAL=/dev/null
-unset GIT_CONFIG_COUNT
-if "$root/scripts/ci/anonymous-github.sh" true >/dev/null 2>&1; then exit 1; fi
-export DOTFILES_DISPOSABLE_CI=1
-# shellcheck disable=SC2016 # Assertions intentionally expand in the isolated child.
-"$root/scripts/ci/anonymous-github.sh" bash -c '
-  test "$(git config --get-urlmatch credential.username https://github.com/folke/lazy.nvim.git)" = anonymous
-  test -n "$(git config --get-urlmatch credential.helper https://github.com/folke/lazy.nvim.git)"
-  if git config --get-urlmatch credential.username https://example.invalid/repo; then exit 1; fi
-  test "$GIT_TERMINAL_PROMPT" = 0
-'
-test -z "${GIT_CONFIG_COUNT:-}" # wrapper cannot mutate caller environment or persistent config
-source_repo="$work/source"
-git init -q "$source_repo"
-printf 'public fixture\n' > "$source_repo/source.txt"
-git -C "$source_repo" add source.txt
-git -C "$source_repo" -c user.name=Fixture -c user.email=fixture@example.invalid -c commit.gpgsign=false commit -qm fixture
-sha=$(git -C "$source_repo" rev-parse HEAD)
-export FIXTURE_REMOTE="$source_repo" FIXTURE_FETCH_MARKER="$work/fetch-called"
-cat > "$work/fetch.sh" <<'FIXTURE'
-set -euo pipefail
-root=$1; dest=$2; sha=$3
-export DOTFILES=$root
-eval "$(sed -n '/^function clone_pinned () {/,/^}/p' "$root/assimilate.sh")"
-git() {
-  local args=("$@") i
-  for ((i=0;i<${#args[@]};i++)); do
-    if [ "${args[$i]}" = fetch ]; then
-      # Keep the actual HTTPS origin/preflight checks; transport stays local.
-      args[$((i+3))]="$FIXTURE_REMOTE"
-      : > "$FIXTURE_FETCH_MARKER"
-    fi
-  done
-  command git "${args[@]}"
-}
-clone_pinned https://github.com/folke/lazy.nvim.git "$dest" "$sha"
-FIXTURE
-if bash "$work/fetch.sh" "$root" "$work/refused" "$sha" >"$work/refused.log" 2>&1; then exit 1; fi
-test ! -e "$FIXTURE_FETCH_MARKER"
-grep -Fq 'Git routing missing' "$work/refused.log"
-"$root/scripts/ci/anonymous-github.sh" bash "$work/fetch.sh" "$root" "$work/installed" "$sha"
-test -e "$FIXTURE_FETCH_MARKER"
-test "$(git -C "$work/installed" rev-parse HEAD)" = "$sha"
-rm "$FIXTURE_FETCH_MARKER"
-"$root/scripts/ci/anonymous-github.sh" bash "$work/fetch.sh" "$root" "$work/installed" "$sha"
-test ! -e "$FIXTURE_FETCH_MARKER"
-test ! -e "$HOME/.gitconfig"
-printf 'CI anonymous GitHub route: missing route refused, public route selected, local pin fetch/offline repeat passed\n'
+real_git=$(command -v git)
+mkdir -p "$work/bin" "$work/home"
+"$real_git" init -q "$work/source"
+printf 'public fixture\n' > "$work/source/source.txt"
+"$real_git" -C "$work/source" add source.txt
+"$real_git" -C "$work/source" -c user.name=Fixture -c user.email=fixture@example.invalid -c commit.gpgsign=false commit -qm fixture
+sha=$("$real_git" -C "$work/source" rev-parse HEAD)
+cat > "$work/bin/git" <<STUB
+#!/usr/bin/env bash
+if printf '%s\n' "\$@" | grep -qx fetch; then
+  printf '%s\n' "global=\${GIT_CONFIG_GLOBAL-unset} nosystem=\${GIT_CONFIG_NOSYSTEM-unset} prompt=\${GIT_TERMINAL_PROMPT-unset} askpass=[\${GIT_ASKPASS-unset}] count=\${GIT_CONFIG_COUNT-unset}" "\$@" > "$work/fetch.log"
+  args=(); for a in "\$@"; do if [ "\$a" = origin ]; then a="$work/source"; fi; args+=("\$a"); done
+  exec "$real_git" "\${args[@]}"
+fi
+exec "$real_git" "\$@"
+STUB
+chmod +x "$work/bin/git"
+printf '[credential]\n\thelper = !touch %s/helper-ran\n' "$work" > "$work/home/.gitconfig"
+eval "$(sed -n '/^function clone_pinned () {/,/^}/p' "$repo_root/assimilate.sh")"
+HOME="$work/home" PATH="$work/bin:$PATH" GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=credential.helper GIT_CONFIG_VALUE_0="!touch $work/injected-ran" \
+  clone_pinned https://github.com/folke/lazy.nvim.git "$work/installed" "$sha"
+test "$("$real_git" -C "$work/installed" rev-parse HEAD)" = "$sha"
+grep -Fxq 'global=/dev/null nosystem=1 prompt=0 askpass=[] count=unset' "$work/fetch.log"
+grep -Fxq 'credential.helper=' "$work/fetch.log"
+test ! -e "$work/helper-ran" && test ! -e "$work/injected-ran"
+printf 'Anonymous pinned fetch: machine config, injected config, helpers and prompts excluded\n'
 )

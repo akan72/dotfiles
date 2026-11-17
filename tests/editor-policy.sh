@@ -94,7 +94,7 @@ for removed in ['lsp-zero', 'mason-lspconfig', "require('mason')", "require('cmp
     assert removed not in s and removed not in lsp, removed
 lock=__import__('json').loads((r/'nvim/lazy-lock.json').read_text())
 for removed in ['lsp-zero.nvim', 'mason.nvim', 'mason-lspconfig.nvim', 'nvim-cmp', 'cmp-nvim-lsp', 'LuaSnip', 'nvim-treesitter']:
-    assert removed not in lock, removed
+    assert removed not in lock and removed not in (r/'nvim/plugin-origins.json').read_text(), removed
 # Treesitter uses only Neovim's bundled parsers; no plugin can download or compile one.
 assert not (r/'nvim/lua/config/plugins/nvim-treesitter.lua').exists()
 for path in ['nvim/lua/config/plugins.lua', 'nvim/lua/config/trusted-bootstrap.lua', 'assimilate.sh']:
