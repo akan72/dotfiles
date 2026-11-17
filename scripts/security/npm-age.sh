@@ -21,7 +21,7 @@ esac
 value=$((10#$value))
 if [ "$value" -lt 7 ]; then npm config set min-release-age 7 --location=user; fi
 value=$(npm config get min-release-age)
-[[ "$value" =~ ^[0-9]{1,5}$ ]] && [ "$((10#$value))" -ge 7 ] || {
+{ [[ "$value" =~ ^[0-9]{1,5}$ ]] && [ "$((10#$value))" -ge 7 ]; } || {
   echo 'effective npm release age remains below seven days (check project/environment overrides)' >&2; exit 1;
 }
 printf 'npm effective minimum release age: %s days\n' "$value"

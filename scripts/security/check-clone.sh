@@ -13,7 +13,7 @@ done
 dir=$1; origin=$2; sha=$3
 fail() { echo "checkout rejected: $dir ($1)" >&2; exit 1; }
 [[ "$sha" =~ ^[0-9a-f]{40}$ ]] || fail 'expected a full lowercase commit SHA'
-[ -d "$dir" ] && [ ! -L "$dir" ] && [ -d "$dir/.git" ] && [ ! -L "$dir/.git" ] || fail 'not a managed repository directory'
+{ [ -d "$dir" ] && [ ! -L "$dir" ] && [ -d "$dir/.git" ] && [ ! -L "$dir/.git" ]; } || fail 'not a managed repository directory'
 # No repository-controlled fsmonitor or hooks may run during these checks.
 g() { git -c core.fsmonitor=false -c core.hooksPath=/dev/null -c core.untrackedCache=false -C "$dir" "$@"; }
 root=$(g rev-parse --show-toplevel) || fail 'invalid repository'
@@ -36,7 +36,7 @@ status=$(g status --porcelain=v1 --untracked-files=all --ignored)
 if [ "$allow_help_tags" = 1 ]; then
   # Generated Neovim help indexes only. Never exempt tracked changes or code.
   if [ -e "$dir/doc/tags" ] || [ -L "$dir/doc/tags" ]; then
-    [ -f "$dir/doc/tags" ] && [ ! -L "$dir/doc/tags" ] && [ ! -L "$dir/doc" ] && [ ! -x "$dir/doc/tags" ] || fail 'unsafe generated help tags'
+    { [ -f "$dir/doc/tags" ] && [ ! -L "$dir/doc/tags" ] && [ ! -L "$dir/doc" ] && [ ! -x "$dir/doc/tags" ]; } || fail 'unsafe generated help tags'
     status=$(printf '%s\n' "$status" | sed '/^?? doc\/tags$/d; /^!! doc\/tags$/d')
   fi
 fi
