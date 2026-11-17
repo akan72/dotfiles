@@ -5,7 +5,7 @@ tmp="$(mktemp -d /private/tmp/tmux-policy.XXXXXX)"
 trap 'rm -rf "$tmp"' EXIT
 fixture="$tmp/root with spaces"
 mkdir -p "$fixture/scripts/security" "$tmp/home/.tmux/plugins/tmux-powerline"
-cp "$repo_root/scripts/security/tmux-powerline.sh" "$fixture/scripts/security/"
+cp "$repo_root/scripts/security/tmux-powerline.sh" "$repo_root/scripts/security/pins.sh" "$fixture/scripts/security/"
 cat > "$fixture/scripts/security/check-clone.sh" <<'BASH'
 #!/usr/bin/env bash
 set -eu

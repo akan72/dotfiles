@@ -118,9 +118,11 @@ grep -Fq 'FAILED: Existing installation preflight' "$test_home/bad.log"
 test ! -e "$test_home/bad-home/.shared.sh"
 test ! -e "$test_home/should-not-run"
 # Exercise the production dispatcher with inert stages, including its final banner.
+mkdir -p "$test_home/scripts/security"
+cp "$repo_root/scripts/security/pins.sh" "$test_home/scripts/security/"
 sed '/^# Run the reviewed setup phases/,$d' "$repo_root/assimilate.sh" > "$test_home/dispatch.sh"
 cat >> "$test_home/dispatch.sh" <<'STAGES'
-for phase in installation_preflight link_config package_policy sync_agents python_and_hooks omz_checkout install_clis tmux_checkouts install_nvim; do
+for phase in installation_preflight link_config package_policy sync_agents python_and_hooks omz_checkout install_clis tmux_checkouts nvim_plugins; do
   eval "function $phase () { :; }"
 done
 if [ "${TEST_DISPATCH_FAILURE:-0}" = 1 ]; then

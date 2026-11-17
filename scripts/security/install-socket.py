@@ -14,6 +14,9 @@ import sys
 import tempfile
 
 
+# The reviewed release; socket-artifacts.json must describe exactly this version.
+VERSION = '1.15.4'
+
 def no_links(path):
     for part in (path, *path.parents):
         if part.is_symlink():
@@ -63,13 +66,13 @@ def open_directory(path, create=False):
 
 def validate_manifest(manifest, architecture, now):
     version = manifest['version']
-    if version != '1.15.4' or manifest['minimum_age_days'] != 7:
+    if version != VERSION or manifest['minimum_age_days'] != 7:
         raise ValueError('Only the reviewed version and minimum age are accepted')
     published = datetime.datetime.fromisoformat(manifest['published_at'].replace('Z', '+00:00'))
     if (now - published).total_seconds() < 7 * 86400:
         raise ValueError('Release is younger than seven days')
     record = manifest['artifacts'][architecture]
-    expected_url = 'https://github.com/SocketDev/sfw-free/releases/download/v1.15.4/sfw-free-macos-' + architecture
+    expected_url = f'https://github.com/SocketDev/sfw-free/releases/download/v{VERSION}/sfw-free-macos-{architecture}'
     if record['url'] != expected_url or not re.fullmatch('[0-9a-f]{64}', record['sha256']):
         raise ValueError('Unreviewed URL or malformed SHA256')
     return record
@@ -146,7 +149,7 @@ def install(manifest, architecture, home, download, ca_loader=load_ca_bundle):
     home=home.absolute()
     if home!=home.resolve() or '..' in home.parts:
         raise ValueError('Canonical home directory required')
-    root=home/'.local/share/socket-firewall/1.15.4'
+    root=home/'.local/share/socket-firewall'/VERSION
     destination,ca,empty,guard=root/'sfw',root/'ca-certificates.pem',root/'empty-ca',root/'launch.py'
     launcher=home/'.local/bin/sfw'
     guard_data=guard_source(destination,ca,empty,record['sha256'],manifest['ca_sha256'])

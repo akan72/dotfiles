@@ -33,8 +33,10 @@ is accepted. A valid checkout works offline; other state is left for explicit
 backup/review. OMZ caches belong outside its checkout at
 `${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh`. Powerline alone permits machine-local
 HTTPS userinfo while preserving exact repository identity; routing is never
-rewritten. Before network Git operations, check the selected helper and username
-without reading credentials; missing HTTPS routing stops the operation.
+rewritten. Pinned repositories are public, so bootstrap fetches them anonymously:
+the fetch ignores this machine's Git config, and no credential helper, URL rewrite
+or prompt takes part. Checkout pins live in `scripts/security/pins.sh`, and
+Neovim plugin origins in `nvim/plugin-origins.json`, each used by every check.
 
 ## Package policy and Socket
 
@@ -81,40 +83,34 @@ Run from a reviewed checkout; the scanner itself executes as your user:
 scripts/security/scan-local.sh "$HOME/dotfiles" --osv-db /absolute/private/osv-db
 ```
 
-The final line gives a private output directory and counts. `summary.json` lists
-checks and selected/omitted paths. Exit 0 requires every applicable check to pass;
-findings, missing/changed scanners, partial source, stale/missing databases and tool
-errors return nonzero. Schema 2 removes per-check timestamps, version/command
-copies and parsed diagnostic aggregation. Scanner-native reports stay private:
-Gitleaks JSON is fully redacted; other tools' `.log` files can contain source.
-Never publish raw reports. Directories/files are 0700/0600; remove the output
-when no longer needed.
+The final line gives a private output directory and counts; `summary.json` lists
+each check and the selected and omitted paths. Exit 0 requires every applicable
+check to pass; findings, missing or changed scanners, incomplete scope, stale or
+missing databases and tool errors return nonzero. Reports stay private (0700/0600):
+Gitleaks JSON is fully redacted, but other tools' `.log` files can contain source,
+so never publish them and remove the output when done.
 
-`source-snapshot.py` is the single exporter for scans and container tests. Scans
-read current tracked, allowlisted source, including edits. They omit auth-named
-paths before reading contents, plus untracked/ignored files, binaries and symlinks.
-Missing/symlink/nonregular tracked source or unsafe paths make coverage incomplete.
-Container exports instead refuse unsafe names/state, default to clean HEAD, and
-require `--working` plus individual `--include` paths for proposed/new source.
-Both use descriptor-relative reads without following links; neither modifies the
-Git index/object database. Exports carry deterministic file hashes, executable flags and HEAD/mode
-metadata; verification also accepts prior schema-1 snapshots. Git export filters
-cannot omit or transform source. See [container commands](../README.md#container-installation-tests).
-
+The scan reads tracked files in place and never reads untracked or ignored files.
+A tracked file with a credential-like name fails the scan, without its contents
+being read; symlinks, nonregular files and unsafe names make the scope incomplete.
 Checks are Gitleaks, offline zizmor, ShellCheck without external sources, `zsh -n`
 and offline OSV for supported dependency locks. No install, build, resolution,
-autofix, project execution or network scan occurs. Private scanner configuration
-ignores repository/user suppressions; history is separate via
-`scripts/security/scan-history.sh`. Gitleaks is maintenance-only and pattern-based;
-static checks do not prove that software or this Mac is free of malware.
+autofix, project execution or network scan occurs, and repository or user scanner
+configuration is ignored.
 
-`scanners.lock.json` records reviewed versions and artifacts; the runner refuses
-version drift. It is not a cross-platform installer. Homebrew's signed API and
-bottle checksums trust Homebrew; upstream attestations were not verified. Other
-platforms need matching artifact review. CI's pre-commit/zizmor wheel locks require
-hashes, binary wheels and no dependency resolution; preserve the exact documented
-virtualenv security exception. The portable Mac playbook has installation commands.
-Review scanner pins monthly and scan weekly; nothing schedules automatic updates.
+Gitleaks runs through `scripts/security/scan-history.sh`, which CI also runs: all
+history, then staged and unstaged edits. Nothing in the repository can hide a
+finding: its Gitleaks config, `.gitleaksignore`, inline allows and diff attributes
+are ignored, and merge-only or type-changed content is scanned. It reads diffs,
+so a secret split across separate commits may be missed. Gitleaks is
+pattern-based; static checks do not prove that software or this Mac is free of malware.
+
+`scanners.lock.json` records the reviewed scanner versions; the runner refuses
+any other version. It is not an installer: Homebrew supplies the Mac scanners.
+CI's pre-commit and zizmor wheel locks require hashes and binary wheels and do not
+resolve dependencies. CI's Pre-commit job is a required check, but its Gitleaks
+hook only scans staged changes; the Secret history job scans every commit. Review
+scanner pins monthly and scan weekly; nothing schedules automatic updates.
 
 Refresh OSV separately: this downloads public databases, never source or a project
 dependency list. Include every required ecosystem; this repo uses PyPI and npm.
@@ -156,8 +152,9 @@ features may access the network; the runner uses `--offline`.
 
 ## Neovim
 
-Startup verifies every active lock entry before loading plugins: origin, commit,
-clean checkout and the reviewed stage-zero lazy commit. Only a regular,
+Startup verifies every active lock entry before loading plugins: origin (from
+`nvim/plugin-origins.json`), commit, clean checkout and the reviewed stage-zero
+lazy commit. A lock entry without a reviewed origin is refused. Only a regular,
 non-executable generated `doc/tags` with non-symlink parents is allowed. Packer's
 legacy loader/start directory is refused; use the separate playbook's reversible
 migration rather than deleting/executing an unknown loader.
@@ -184,7 +181,7 @@ To test an existing Python server, set `DOTFILES_EDITOR_EXPECT_PYTHON_LSP=1` and
 
 ## tmux and shell updates
 
-TPM's runtime install/update bindings are removed. `tmux-powerline.sh` verifies the
+TPM is no longer installed or loaded. `tmux-powerline.sh` verifies the
 reviewed checkout before running `powerline.sh left|right`; failures render
 `powerline unverified` without executing the plugin. It never invokes `main.tmux`,
 which would overwrite the guarded status commands. Both tmux paths assume

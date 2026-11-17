@@ -2,10 +2,11 @@
 # No TPM or main.tmux execution: retain the guarded status commands in tmux.conf.
 set -euo pipefail
 case "${1:-}" in left|right) ;; *) printf 'powerline unverified'; exit 1 ;; esac
-repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd -P)"
+security="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+# shellcheck source=scripts/security/pins.sh disable=SC1091 # Checked as its own input.
+source "$security/pins.sh"
 plugin="$HOME/.tmux/plugins/tmux-powerline"
-if ! bash "$repo_root/scripts/security/check-clone.sh" --allow-userinfo "$plugin" \
-  https://github.com/erikw/tmux-powerline 6079ace8d534a01d4d964b8b854b223f72edaf4b >/dev/null 2>&1; then
+if ! bash "$security/check-clone.sh" --allow-userinfo "$plugin" "$POWERLINE_ORIGIN" "$POWERLINE_COMMIT" >/dev/null 2>&1; then
   printf 'powerline unverified'
   exit 1
 fi

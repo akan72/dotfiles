@@ -16,8 +16,6 @@ grep -Fq 'scripts/security/check-clone.sh' assimilate.sh
 grep -Fq 'brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' "$runner"
-grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 scripts/ci/anonymous-github.sh ./assimilate.sh' .github/workflows/ci.yml
-grep -Fq 'scripts/ci/anonymous-github.sh bash' "$runner"
 grep -Fq 'ASSIMILATE_SOURCE_MODE=archive' "$runner"
 grep -Fq 'source-snapshot.py' "$runner"
 if grep -Fq -- '--norc' scripts/ci/verify-assimilate.sh; then
