@@ -3,18 +3,27 @@
 import argparse
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import runpy
 import shutil
+import stat
 import subprocess
 import tempfile
 import time
 
-export = runpy.run_path(str(Path(__file__).with_name("source-snapshot.py")))["export"]
+validate_source_path = runpy.run_path(str(Path(__file__).with_name("source-snapshot.py")))["validate_source_path"]
+SOURCE_SUFFIXES = {".sh", ".bash", ".zsh", ".py", ".lua", ".toml", ".yaml", ".yml",
+                   ".json", ".jsonc", ".md", ".txt", ".vim", ".conf", ".ini", ".js",
+                   ".ts", ".tsx", ".jsx", ".go", ".rs", ".lock"}
+SOURCE_NAMES = {"assimilate.sh", "bashrc", "bash_profile", "zshrc", "zprofile", "shared.sh",
+                "Brewfile", "Dockerfile", "Makefile", "gitconfig", ".gitignore", "go.sum", "go.mod", "config"}
 LOCK_NAMES = {"package-lock.json", "npm-shrinkwrap.json", "pnpm-lock.yaml", "yarn.lock",
               "bun.lock", "bun.lockb", "uv.lock", "poetry.lock", "Cargo.lock", "go.sum",
               "Gemfile.lock", "composer.lock", "packages.lock.json"}
+GIT = ["git", "--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null"]
+# Gitleaks runs through scan-history.sh, the same hardened invocation CI uses.
+GITLEAKS_MODES = [("history", []), ("staged", ["--staged"]), ("unstaged", ["--pre-commit"])]
 
 
 def run(command, environment=None, cwd=None):
@@ -22,6 +31,42 @@ def run(command, environment=None, cwd=None):
         return subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, env=environment, cwd=cwd)
     except OSError:
         return subprocess.CompletedProcess(command, 127, stdout=b"", stderr=b"Cannot execute tool")
+
+
+def regular_file(repo, rel):
+    """Every parent must be a real directory and the file itself regular; no link is followed."""
+    try:
+        modes = [os.lstat(repo.joinpath(*rel.parts[:depth])).st_mode for depth in range(1, len(rel.parts) + 1)]
+    except OSError:
+        return False
+    return all(map(stat.S_ISDIR, modes[:-1])) and stat.S_ISREG(modes[-1])
+
+
+def select(repo):
+    """Classify every tracked name before any file contents are read."""
+    listing = run([*GIT, "-C", str(repo), "ls-files", "-z", "-v"], dict(os.environ, GIT_OPTIONAL_LOCKS="0"))
+    if listing.returncode:
+        raise SystemExit("git ls-files failed")
+    tags = {os.fsdecode(entry[2:]): entry[:1].decode() for entry in listing.stdout.split(b"\0")[:-1]}
+    selected, omitted, sensitive = [], [], []
+    for name, tag in sorted(tags.items()):
+        try:
+            rel = validate_source_path(name)
+        except SystemExit as error:
+            if str(error) == "unsafe source path":
+                omitted.append({"path": name, "reason": "unsafe path"})
+            else:
+                sensitive.append(name)
+            continue
+        if tag in "MS" or tag.islower():
+            omitted.append({"path": name, "reason": "unmerged, skip-worktree or assume-unchanged entry"})
+        elif rel.suffix not in SOURCE_SUFFIXES and rel.name not in SOURCE_NAMES and not rel.name.startswith("Dockerfile"):
+            omitted.append({"path": name, "reason": "outside source allowlist"})
+        elif not regular_file(repo, rel):
+            omitted.append({"path": name, "reason": "missing, symlink or nonregular file"})
+        else:
+            selected.append(name)
+    return selected, omitted, sensitive
 
 
 def main():
@@ -32,7 +77,7 @@ def main():
     parser.add_argument("--max-db-age-hours", type=int, default=168)
     args = parser.parse_args()
     os.umask(0o077)
-    result = run(["git", "-c", "core.fsmonitor=false", "-C", str(args.repository), "rev-parse", "--show-toplevel"])
+    result = run([*GIT, "-C", str(args.repository), "rev-parse", "--show-toplevel"])
     if result.returncode:
         parser.error("repository must be an existing Git worktree")
     repo = Path(os.fsdecode(result.stdout).strip()).resolve()
@@ -41,61 +86,60 @@ def main():
         out.mkdir(mode=0o700, parents=True, exist_ok=False)
     else:
         out = Path(tempfile.mkdtemp(prefix="dotfiles-security-"))
-    snap = out / "source"
-    selected, omitted = export(repo, snap, working=True, scan=True)
+    selected, omitted, sensitive = select(repo)
     private_home = out / "scanner-home"
     private_home.mkdir(mode=0o700)
-    scanner_environment = os.environ.copy()
-    for key in ("GITLEAKS_CONFIG", "GITLEAKS_CONFIG_TOML", "ZIZMOR_CONFIG", "SHELLCHECK_OPTS"):
-        scanner_environment.pop(key, None)
-    scanner_environment["HOME"] = str(private_home)
-    scanner_environment["XDG_CONFIG_HOME"] = str(private_home / "config")
-    scanner_environment["XDG_CACHE_HOME"] = str(private_home / "cache")
-    paths = [entry["path"] for entry in selected]
+    scanner_environment = {key: value for key, value in os.environ.items()
+                           if key not in {"GITLEAKS_CONFIG", "GITLEAKS_CONFIG_TOML", "ZIZMOR_CONFIG", "SHELLCHECK_OPTS"}}
+    scanner_environment.update(HOME=str(private_home), XDG_CONFIG_HOME=str(private_home / "config"),
+                               XDG_CACHE_HOME=str(private_home / "cache"))
     checks = []
     locks = json.loads(Path(__file__).with_name("scanners.lock.json").read_text())
     versions = {entry["name"]: entry["version"] for entry in locks["tools"]}
+    reviewed = {}
 
-    def record(name, state, note, code=None):
-        checks.append({"name": name, "state": state, "note": note, "exit_code": code})
+    def record(name, state, note, code=None, **extra):
+        checks.append({"name": name, "state": state, "note": note, "exit_code": code, **extra})
 
-    def check(name, command, finding_codes=(1,), version=True):
-        binary = shutil.which(command[0])
+    def check(name, command, finding_codes=(1,), tool=None):
+        tool = tool or command[0]
+        binary = shutil.which(tool)
         if not binary:
-            record(name, "incomplete", "Required scanner is not installed")
-            return
-        if version:
-            result = run([binary, "version" if name == "gitleaks" else "--version"], scanner_environment, snap)
-            expected = versions[name]
-            if result.returncode or not re.search(r"(?<![\d.])" + re.escape(expected) + r"(?![\d.])", (result.stdout + result.stderr).decode(errors="replace")):
-                record(name, "incomplete", "Scanner version differs from reviewed lock: " + expected)
-                return
-        result = run([binary, *command[1:]], scanner_environment, snap)
+            return record(name, "incomplete", "Required scanner is not installed")
+        if tool in versions:
+            if tool not in reviewed:
+                result = run([binary, "version" if tool == "gitleaks" else "--version"], scanner_environment, out)
+                output = (result.stdout + result.stderr).decode(errors="replace")
+                reviewed[tool] = not result.returncode and re.search(r"(?<![\d.])" + re.escape(versions[tool]) + r"(?![\d.])", output)
+            if not reviewed[tool]:
+                return record(name, "incomplete", "Scanner version differs from reviewed lock: " + versions[tool])
+        result = run([binary, *command[1:]] if command[0] == tool else command, scanner_environment, repo)
         state = "pass" if result.returncode == 0 else "findings" if result.returncode in finding_codes else "tool-error"
-        report_name = "gitleaks-redacted.json" if name == "gitleaks" else f"{name}-{len(checks) + 1}.log"
+        report_name = f"{name}-redacted.json" if tool == "gitleaks" else f"{name}-{len(checks) + 1}.log"
         record(name, state, "See " + report_name, result.returncode)
         # Never print scanner diagnostics or retain unredacted Gitleaks process output.
-        if name != "gitleaks":
+        if tool != "gitleaks":
             (out / report_name).write_bytes(result.stdout + result.stderr)
 
-    partial = any(entry["reason"] == "missing, symlink or nonregular file" or entry["reason"] == "unsafe path" for entry in omitted)
-    record("scope", "incomplete" if partial else "pass", "Current tracked allowlisted source only; no untracked files or Git history")
-    gitleaks_config = out / "gitleaks.toml"
-    gitleaks_config.write_text("[extend]\nuseDefault = true\n")
-    gitleaks_ignore = out / ".gitleaksignore"
-    gitleaks_ignore.write_text("")
-    check("gitleaks", ["gitleaks", "dir", "--redact=100", "--no-banner", "--no-color",
-                        "--config", str(gitleaks_config), "--gitleaks-ignore-path", str(gitleaks_ignore),
-                        "--ignore-gitleaks-allow",
-                        "--report-format", "json", "--report-path", str(out / "gitleaks-redacted.json"), str(snap)])
-    if any(path.startswith(".github/workflows/") for path in paths):
-        check("zizmor", ["zizmor", "--offline", "--strict-collection", "--no-config", "--no-ignores", "--no-progress", "--format", "json", str(snap)], finding_codes=(11, 12, 13, 14))
+    partial = any(entry["reason"] != "outside source allowlist" for entry in omitted)
+    record("scope", "incomplete" if partial else "pass",
+           "Tracked files only; untracked and ignored files are never read; Gitleaks also covers history and staged/unstaged edits")
+    record("sensitive-path", "findings" if sensitive else "pass",
+           "Tracked credential-like names; contents are never read or passed to other scanners", paths=sensitive)
+    history = Path(__file__).with_name("scan-history.sh")
+    for label, mode in GITLEAKS_MODES:
+        check("gitleaks-" + label, ["bash", str(history), *mode, "--report", str(out / f"gitleaks-{label}-redacted.json"), str(repo)],
+              tool="gitleaks")
+    workflows = [name for name in selected if re.fullmatch(r"\.github/workflows/[^/]+\.ya?ml", name)
+                 or PurePosixPath(name).name in {"action.yml", "action.yaml"}]
+    if workflows:
+        check("zizmor", ["zizmor", "--offline", "--strict-collection", "--no-config", "--no-ignores", "--no-progress",
+                         "--format", "json", *(str(repo / name) for name in workflows)], finding_codes=(11, 12, 13, 14))
     else:
-        record("zizmor", "pass", "Not applicable: no tracked workflows")
+        record("zizmor", "pass", "Not applicable: no tracked workflows or actions")
     shell, zsh = [], []
-    for name in paths:
-        data = (snap / name).read_bytes()
-        first = data.split(b"\n", 1)[0].decode(errors="replace")
+    for name in selected:
+        first = (repo / name).read_bytes().split(b"\n", 1)[0].decode(errors="replace")
         if name in {"zshrc", "zprofile"} or name.endswith(".zsh") or re.search(r"^#!.*\bzsh\b", first):
             zsh.append(name)
         elif name in {"bashrc", "bash_profile", "shared.sh"} or re.search(r"^#!.*\b(ba)?sh\b", first):
@@ -103,13 +147,13 @@ def main():
     if shell:
         # Per-file calls avoid ARG_MAX and preserve independent errors.
         for name in shell:
-            check("shellcheck", ["shellcheck", "--norc", "--format=json", str(snap / name)])
+            check("shellcheck", ["shellcheck", "--norc", "--format=json", str(repo / name)])
     else:
         record("shellcheck", "pass", "No recognized sh/bash sources")
     for name in zsh:
-        check("zsh", ["/bin/zsh", "-f", "-n", str(snap / name)], version=False)
-    dependency_files = [name for name in paths if Path(name).name in LOCK_NAMES or re.fullmatch(r"requirements[^/]*\.txt", Path(name).name)]
-    manifests = [name for name in paths if Path(name).name in {"package.json", "pyproject.toml", "Cargo.toml", "go.mod", "Gemfile", "composer.json"}]
+        check("zsh", ["/bin/zsh", "-f", "-n", str(repo / name)])
+    dependency_files = [name for name in selected if Path(name).name in LOCK_NAMES or re.fullmatch(r"requirements[^/]*\.txt", Path(name).name)]
+    manifests = [name for name in selected if Path(name).name in {"package.json", "pyproject.toml", "Cargo.toml", "go.mod", "Gemfile", "composer.json"}]
     unlocked = [name for name in manifests if not any(Path(dependency).parent == Path(name).parent for dependency in dependency_files)]
     if unlocked:
         record("dependency-scope", "incomplete", "Tracked dependency manifests lack a supported lockfile in their directory; no resolution was attempted")
@@ -133,12 +177,12 @@ def main():
                            "--no-resolve", "--no-call-analysis=go", "--no-call-analysis=rust",
                            "--config", str(config_path)]
                 for name in dependency_files:
-                    command += ["--lockfile", str(snap / name)]
+                    command += ["--lockfile", str(repo / name)]
                 scanner_environment["OSV_SCANNER_LOCAL_DB_CACHE_DIRECTORY"] = str(args.osv_db.absolute())
                 check("osv-scanner", command)
     else:
         record("osv-scanner", "pass", "Not applicable: no supported dependency files in tracked-source scope")
-    report = {"schema_version": 2, "repository": str(repo), "selected": selected,
+    report = {"schema_version": 3, "repository": str(repo), "selected": selected,
               "omitted": omitted, "checks": checks}
     (out / "summary.json").write_text(json.dumps(report, indent=2) + "\n")
     counts = {state: sum(c["state"] == state for c in checks) for state in ["pass", "findings", "incomplete", "tool-error"]}

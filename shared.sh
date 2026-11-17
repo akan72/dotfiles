@@ -96,7 +96,6 @@ alias docker_rmi_dangling='docker rmi $(docker images -qa -f "dangling=true") -f
 # python and python3 resolve to uv's ~/.local/bin executables.
 alias pip='uv pip'
 alias pip3='uv pip'
-alias pip3='pip'
 alias grepy='grep -r --include \*.py'
 alias greps='grep -r --include \*.sql'
 alias jpn='jupyter notebook'

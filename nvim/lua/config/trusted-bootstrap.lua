@@ -1,16 +1,9 @@
 -- Local, read-only checks run before any downloaded Lua. No shell or network.
 local M = {}
-local origins = {
-  ['Comment.nvim'] = 'numToStr/Comment.nvim', ['bufferline.nvim'] = 'akinsho/bufferline.nvim',
-  ['gruvbox.nvim'] = 'ellisonleao/gruvbox.nvim', ['indent-blankline.nvim'] = 'lukas-reineke/indent-blankline.nvim',
-  ['lazy.nvim'] = 'folke/lazy.nvim', ['lualine.nvim'] = 'nvim-lualine/lualine.nvim',
-  ['markdown-preview.nvim'] = 'iamcco/markdown-preview.nvim',
-  ['nvim-lspconfig'] = 'neovim/nvim-lspconfig',
-  ['nvim-tree.lua'] = 'nvim-tree/nvim-tree.lua', ['nvim-treesitter'] = 'nvim-treesitter/nvim-treesitter',
-  ['nvim-web-devicons'] = 'nvim-tree/nvim-web-devicons', ['plenary.nvim'] = 'nvim-lua/plenary.nvim',
-  ['telescope.nvim'] = 'nvim-telescope/telescope.nvim', ['vim-fugitive'] = 'tpope/vim-fugitive',
-  ['vim-gitgutter'] = 'airblade/vim-gitgutter',
-}
+-- Reviewed origins, shared with assimilate.sh: nvim/plugin-origins.json, next to
+-- lua/. A null origin marks a disabled plugin that is never installed or loaded.
+local nvim_dir = vim.fs.dirname(vim.fs.dirname(vim.fs.dirname(debug.getinfo(1, 'S').source:sub(2))))
+local origins = vim.json.decode(table.concat(vim.fn.readfile(nvim_dir .. '/plugin-origins.json'), '\n'))
 local function git(path, args)
   local command = { 'git', '-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false', '-C', path }
   vim.list_extend(command, args)
@@ -19,7 +12,7 @@ local function git(path, args)
   return vim.trim(result)
 end
 function M.verify(path, name, commit)
-  if not origins[name] or type(commit) ~= 'string' or #commit ~= 40 or not commit:match('^[0-9a-f]+$') then
+  if type(origins[name]) ~= 'string' or type(commit) ~= 'string' or #commit ~= 40 or not commit:match('^[0-9a-f]+$') then
     error('Invalid reviewed plugin pin: ' .. tostring(name))
   end
   local uv = vim.uv or vim.loop
@@ -49,8 +42,8 @@ function M.verify_all(config, data)
   end
   local lock = vim.json.decode(table.concat(vim.fn.readfile(config .. '/lazy-lock.json'), '\n'))
   -- A removed lock entry must never leave an active spec unverified.
-  for name, _ in pairs(origins) do
-    if name ~= 'markdown-preview.nvim' and type(lock[name]) ~= 'table' then
+  for name, origin in pairs(origins) do
+    if origin ~= vim.NIL and type(lock[name]) ~= 'table' then
       error('Missing active plugin lock entry: ' .. name)
     end
   end
@@ -58,8 +51,8 @@ function M.verify_all(config, data)
     error('Stage-zero lazy.nvim pin requires explicit review')
   end
   for name, entry in pairs(lock) do
-    -- Disabled Markdown preview is never loaded and need not be installed.
-    if name ~= 'markdown-preview.nvim' then M.verify(data .. '/lazy/' .. name, name, entry.commit) end
+    -- Disabled plugins are never loaded and need not be installed.
+    if origins[name] ~= vim.NIL then M.verify(data .. '/lazy/' .. name, name, entry.commit) end
   end
 end
 return M

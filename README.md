@@ -32,9 +32,11 @@ Examples usage of focus switching with `Hyper + <key>`:
 
 ## Installation
 
-Review this checkout and the release manifest before running the setup entry point:
+Install the prerequisites in the [security and maintenance guide](docs/editor-security.md#bootstrap-and-release-policy),
+then clone, review and run the setup entry point:
 
 ```sh
+git clone https://github.com/akan72/dotfiles.git "$HOME/dotfiles"
 cd "$HOME/dotfiles"
 git status --short
 bash ./assimilate.sh
@@ -68,24 +70,18 @@ for locked uv/npm environments, Lua/Rust ownership and exact replication command
 
 ### Container installation tests
 
-Default tests export clean tracked HEAD only, never the live checkout or `.git`:
+Tests export committed HEAD only, never the live checkout, uncommitted edits or
+`.git`; commit to a branch to test a change:
 
 ```sh
 scripts/ci/run-vps-container.sh run ubuntu
 ```
 
-For proposed changes, explicitly select the working tracked bytes and each new
-reviewed source file. No commit is created, and untracked files are excluded unless
-named. Sensitive-named new files and symlinks are refused:
-
-```sh
-scripts/ci/run-vps-container.sh run ubuntu --working --include tests/new-check.sh
-```
-
-The shared exporter copies source into a private snapshot without changing the
-Git index/object database. The container verifies its file-hash manifest; host
-tracked content and HEAD are checked again after execution. Registry access and package installs occur only inside the disposable
-container. A readonly mount alone is not a confidentiality control.
+`source-snapshot.py` refuses sensitive-named or non-regular entries before reading
+any content and never changes the Git index or object database. The container
+gets a read-only mount of that temporary export and verifies its file-hash
+manifest after installing, so setup cannot have modified the source. Registry
+access and package installs occur only inside the disposable container.
 
 The installer shares `agent-instructions.md` with Claude Code and Codex by
 linking it to `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`.

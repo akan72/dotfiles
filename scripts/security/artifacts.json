@@ -88,6 +88,14 @@
       "kind": "rustup-init",
       "destination": ".local/share/dotfiles-security/rustup-init-1.29.2",
       "reviewed": "2026-10-21"
+    },
+    "rustup-init/1.29.2/Linux-aarch64": {
+      "version": "1.29.2",
+      "url": "https://static.rust-lang.org/rustup/archive/1.29.2/aarch64-unknown-linux-gnu/rustup-init",
+      "sha256": "a9c168dbea81a84671c6b7a5c1795cb0eb699020110d107ddfca427bd797e697",
+      "kind": "rustup-init",
+      "destination": ".local/share/dotfiles-security/rustup-init-1.29.2",
+      "reviewed": "2026-11-17"
     }
   }
 }
