@@ -59,7 +59,7 @@ is retained under the separate playbook update policy. Homebrew is not used.
 Read the shared [security and maintenance guide](docs/editor-security.md) before
 installing or updating tools. It covers prerequisites, pinned artifacts, checkout
 integrity, source builds, package cooldowns, Socket, local scans and reviewed
-editor/notebook updates. Use uv for personal Python.
+editor updates. Use uv for personal Python.
 
 Neovim 0.12+ uses native LSP/completion/snippets with externally managed servers.
 See [reviewed editor setup](docs/editor-security.md#explicit-external-server-setup)
