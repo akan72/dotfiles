@@ -12,16 +12,24 @@ import signal
 import subprocess
 import sys
 import tarfile
+import zipfile
 import tempfile
 import time
 
 ORIGINS = {
     'delta': 'https://github.com/dandavison/delta/releases/download/',
+    'duckdb': 'https://github.com/duckdb/duckdb/releases/download/',
     'gcloud': 'https://storage.googleapis.com/cloud-sdk-release/',
+    'gh': 'https://github.com/cli/cli/releases/download/',
+    'hack-nerd-font': 'https://github.com/ryanoasis/nerd-fonts/releases/download/',
+    'jq': 'https://github.com/jqlang/jq/releases/download/',
+    'lsd': 'https://github.com/lsd-rs/lsd/releases/download/',
     'lua-language-server': 'https://github.com/LuaLS/lua-language-server/releases/download/',
     'node': 'https://nodejs.org/dist/',
     'nvim': 'https://github.com/neovim/neovim/releases/download/',
     'rust-analyzer': 'https://github.com/rust-lang/rust-analyzer/releases/download/',
+    'terraform': 'https://releases.hashicorp.com/terraform/',
+    'yq': 'https://github.com/mikefarah/yq/releases/download/',
     'rustup-init': 'https://static.rust-lang.org/rustup/archive/',
 }
 # Each tar archive's executable, relative to its archive root: a file-tar
@@ -29,11 +37,46 @@ ORIGINS = {
 # A file-gz is one gzipped executable.
 EXECUTABLES = {
     'delta': 'delta',
+    'duckdb': 'duckdb',
     'gcloud': 'bin/gcloud',
+    'gh': 'bin/gh',
+    'hack-nerd-font': 'HackNerdFontMono-Regular.ttf',
+    'lsd': 'lsd',
     'lua-language-server': 'bin/lua-language-server',
     'node': 'bin/node',
     'nvim': 'bin/nvim',
+    'terraform': 'terraform',
+    # None: the archive names the executable per platform; the record's 'member' gives it.
+    'yq': None,
 }
+
+
+# file: one bare executable. file-gz: one gzipped executable. file-tar/file-zip:
+# one executable from an archive. tree-tar/tree-zip: the whole archive tree.
+KINDS = ('file', 'file-gz', 'file-tar', 'file-zip', 'tree-tar', 'tree-zip', 'rustup-init')
+ARCHIVES = ('file-tar', 'file-zip', 'tree-tar', 'tree-zip')
+# Trees of data, not programs: the named file must exist but need not be executable.
+DATA_TREES = ('hack-nerd-font',)
+
+
+def entries(archive, kind):
+    """Yield (name, type, mode, opener) for each archive entry; type is dir/file/link."""
+    if kind.endswith('-zip'):
+        with zipfile.ZipFile(archive) as source:
+            for info in source.infolist():
+                mode = info.external_attr >> 16
+                if (mode & 0o170000) == 0o120000:
+                    yield info.filename, 'link', mode, lambda info=info: source.read(info).decode()
+                elif info.is_dir():
+                    yield info.filename, 'dir', mode, None
+                else:
+                    yield info.filename, 'file', mode, lambda info=info: source.open(info)
+        return
+    with tarfile.open(archive, 'r:gz') as source:
+        for member in source.getmembers():
+            kind_of = 'dir' if member.isdir() else 'file' if member.isfile() else 'link' if member.issym() else 'other'
+            opener = (lambda member=member: source.extractfile(member)) if kind_of == 'file' else (lambda member=member: member.linkname)
+            yield member.name, kind_of, member.mode, opener
 
 
 def file_hash(path):
@@ -69,17 +112,19 @@ def reviewed_record(tool, version, platform):
     record = records[ident]
     destination = PurePosixPath(record['destination'])
     if (record['version'] != version or tool not in ORIGINS
-            or record['kind'] not in ('file-gz', 'file-tar', 'tree-tar', 'rustup-init')
+            or record['kind'] not in KINDS
             or (tool == 'rustup-init') != (record['kind'] == 'rustup-init')
-            or (record['kind'] == 'file-gz') == (tool in EXECUTABLES or tool == 'rustup-init')
+            or (record['kind'] in ('file', 'file-gz')) == (tool in EXECUTABLES or tool == 'rustup-init')
             or not re.fullmatch('[0-9a-f]{64}', record['sha256'])
             or re.search(r'[\x00-\x20\x7f]', record['url'])
             or not record['url'].startswith(ORIGINS[tool])
             or destination.is_absolute() or '..' in destination.parts
             or not str(destination).startswith('.local/')
             # One plain directory name, or '' for archives with no top-level directory
-            or (record['kind'] in ('file-tar', 'tree-tar')
-                and not re.fullmatch(r'([A-Za-z0-9_+-][A-Za-z0-9._+-]*)?', record['archive_root']))):
+            or (record['kind'] in ARCHIVES
+                and not re.fullmatch(r'([A-Za-z0-9_+-][A-Za-z0-9._+-]*)?', record['archive_root']))
+            or ((EXECUTABLES.get(tool, '') is None) != ('member' in record))
+            or ('member' in record and not re.fullmatch(r'[A-Za-z0-9_+-][A-Za-z0-9._+-]*', record['member']))):
         raise ValueError('invalid reviewed artifact metadata')
     if tool == 'rustup-init' and (
             os.environ.get('RUSTUP_UPDATE_ROOT', 'https://static.rust-lang.org/rustup') != 'https://static.rust-lang.org/rustup'
@@ -148,30 +193,30 @@ def extract(archive, stage, record, ident):
     root, seen, links = record['archive_root'], set(), []
     prefix = (root,) if root else ()
     base = stage / root if root else stage
-    with tarfile.open(archive, 'r:gz') as source:
-        for member in source.getmembers():
-            name = PurePosixPath(member.name)
-            if (name.is_absolute() or '..' in name.parts or not name.parts
-                    or name.parts[:len(prefix)] != prefix):
-                raise ValueError('unsafe archive path/layout')
-            if str(name) in seen:
-                raise ValueError('duplicate archive entry')
-            seen.add(str(name))
-            target = stage.joinpath(*name.parts)
-            if member.isdir():
-                target.mkdir(parents=True, exist_ok=True)
-            elif member.isfile():
-                target.parent.mkdir(parents=True, exist_ok=True)
-                with source.extractfile(member) as stream, target.open('xb') as output:
-                    shutil.copyfileobj(stream, output)
-                target.chmod(0o755 if member.mode & 0o111 else 0o644)
-            elif member.issym():
-                link = PurePosixPath(member.linkname)
-                if link.is_absolute() or not Path(os.path.normpath(str(target.parent / link))).is_relative_to(base):
-                    raise ValueError('escaping archive symlink')
-                links.append((target, member.linkname))
-            else:
-                raise ValueError('archive hardlink/device/unsupported entry refused')
+    for raw, kind_of, mode, opener in entries(archive, record['kind']):
+        name = PurePosixPath(raw)
+        if (name.is_absolute() or '..' in name.parts or not name.parts
+                or name.parts[:len(prefix)] != prefix):
+            raise ValueError('unsafe archive path/layout')
+        if str(name) in seen:
+            raise ValueError('duplicate archive entry')
+        seen.add(str(name))
+        target = stage.joinpath(*name.parts)
+        if kind_of == 'dir':
+            target.mkdir(parents=True, exist_ok=True)
+        elif kind_of == 'file':
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with opener() as stream, target.open('xb') as output:
+                shutil.copyfileobj(stream, output)
+            target.chmod(0o755 if mode & 0o111 else 0o644)
+        elif kind_of == 'link':
+            linkname = opener()
+            link = PurePosixPath(linkname)
+            if link.is_absolute() or not Path(os.path.normpath(str(target.parent / link))).is_relative_to(base):
+                raise ValueError('escaping archive symlink')
+            links.append((target, linkname))
+        else:
+            raise ValueError('archive hardlink/device/unsupported entry refused')
     for target, link in links:
         if not target.parent.resolve().is_relative_to(base):
             raise ValueError('escaping archive symlink parent')
@@ -179,15 +224,17 @@ def extract(archive, stage, record, ident):
         target.symlink_to(link)
     if any(not target.resolve().is_relative_to(base) for target, _ in links):
         raise ValueError('escaping archive symlink chain')
-    executable = EXECUTABLES[ident.split('/')[0]]
-    payload = base / executable if record['kind'] == 'file-tar' else base
+    executable = record.get('member') or EXECUTABLES[ident.split('/')[0]]
+    single = record['kind'].startswith('file-')
+    payload = base / executable if single else base
     if payload.is_symlink() or not payload.exists():
         raise ValueError('expected archive payload absent')
-    if record['kind'] == 'file-tar' and not payload.is_file():
+    if single and not payload.is_file():
         raise ValueError('expected a regular artifact executable')
-    if record['kind'] == 'tree-tar':
+    if not single:
         executable = payload / executable
-        if not executable.is_file() or executable.is_symlink() or not executable.stat().st_mode & 0o111:
+        data = ident.split('/')[0] in DATA_TREES
+        if not executable.is_file() or executable.is_symlink() or not (data or executable.stat().st_mode & 0o111):
             raise ValueError('expected tree executable absent')
     return payload
 
@@ -216,7 +263,7 @@ def publish(home, ident, record, work):
         payload = work / 'download'
         if record['kind'] == 'file-gz':
             payload = decompress(payload, work / 'extract')
-        elif record['kind'] != 'rustup-init':
+        elif record['kind'] in ARCHIVES:
             payload = extract(payload, work / 'extract', record, ident)
         with tempfile.TemporaryDirectory(prefix='.' + destination.name + '.', dir=destination.parent) as directory:
             staged = Path(directory) / 'payload'
@@ -289,5 +336,5 @@ if __name__ == '__main__':
         main()
     except subprocess.CalledProcessError as error:
         sys.exit(error.returncode)
-    except (OSError, ValueError, KeyError, tarfile.TarError, EOFError, RuntimeError) as error:
+    except (OSError, ValueError, KeyError, tarfile.TarError, zipfile.BadZipFile, EOFError, RuntimeError) as error:
         sys.exit(str(error))

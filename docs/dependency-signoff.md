@@ -1,214 +1,83 @@
-# First-order dependency sign-off (2026-11-17)
+# Dependency inventory
 
-Mark each row **K** (keep) or **D** (drop). "Suggest" is a first-pass opinion only.
-Scope: everything `assimilate.sh` installs, plus what is live on this Mac for
-Claude Code, Codex, Zed, VS Code and Cursor (these are not managed by the repo).
+Everything the dotfiles install, and how each one is pinned. Last reviewed
+2026-11-18. Versions follow a seven-day minimum release age.
 
-## 1. Installed by `assimilate.sh`
+How pins are enforced:
 
-### Homebrew (`Brewfile`)
+- **SHA-256 download:** `scripts/security/install-artifact.sh` checks the download
+  against `scripts/security/artifacts.json` before unpacking. It records a hash of
+  every installed file, and every `assimilate.sh` run (including `--check`) refuses
+  a changed byte.
+- **Source build:** `scripts/security/build-source.sh` checks the tarball against
+  `scripts/security/sources.json` and builds with the Command Line Tools. Its
+  libraries are pinned sources too. It keeps the same per-file receipt and check.
+- **Commit:** `scripts/security/check-clone.sh` requires the exact reviewed commit,
+  the reviewed origin and a clean checkout.
+- **Lock file:** exact versions with integrity hashes, installed with hashes required.
 
-| Package | Used by | Suggest | K/D |
+Nothing re-checks a binary at launch; drift shows up on the next
+`assimilate.sh --check`.
+
+## Command-line tools
+
+| Tool | Version | Pinned by | Notes |
 |---|---|---|---|
-| coreutils | GNU tools | D unless you need GNU flags | |
-| curl | macOS ships curl | D | |
-| duckdb | ad-hoc analytics | K if used | |
-| git | core | K | |
-| gh | PR workflow | K | |
-| hashicorp/tap/terraform (+ `tap "hashicorp/tap"`, `trusted: true`) | infra | K if used; third-party tap | |
-| htop | monitoring | D (Activity Monitor/`top`) | |
-| jq | `assimilate.sh`, Claude sync | K (required) | |
-| lsd | `ls` alias | D (cosmetic) | |
-| lua | standalone interpreter | D (Neovim embeds LuaJIT) | |
-| neovim | editor | K | |
-| mosh | remote shells | K if used with Tailscale/devbox | |
-| postgresql@17 | psql, PATH in `shared.sh` | K if used | |
-| pre-commit | gitleaks hook | K | |
-| tmux | terminal | K | |
-| tree | dir listing | D (`lsd --tree` / `find`) | |
-| wget | downloads | D (curl covers it) | |
-| yq | Codex config sync | K (required) | |
-| zsh-autosuggestions | zsh | K/D (taste) | |
-| zsh-syntax-highlighting | zsh | K/D (taste) | |
-| cask font-hack-nerd-font | icons in nvim/tmux | D if devicons dropped | |
+| Node (node, npm, npx) | 26.13.1 | SHA-256 download | the only Node; no nvm or Homebrew Node |
+| Neovim | 0.12.6 (macOS), 0.12.4 (Linux x86_64) | SHA-256 download | |
+| gh | 2.103.3 | SHA-256 download | |
+| terraform | 1.17.1 | SHA-256 download | HashiCorp's SHA256SUMS |
+| duckdb | 2.0.0 | SHA-256 download | |
+| jq | 1.8.2 | SHA-256 download | used by `assimilate.sh` |
+| yq | 4.54.3 | SHA-256 download | merges Codex settings in `codex/sync-config.sh` |
+| lsd | 1.2.0 | SHA-256 download | `ls` and `tree` aliases |
+| delta | 0.19.2 | SHA-256 download | macOS arm64 and Linux x86_64 |
+| gcloud | 577.0.0 | SHA-256 download | |
+| rustup-init | 1.29.2 | SHA-256 download | only when rustup is missing |
+| lua-language-server | 3.19.2 | SHA-256 download | |
+| rust-analyzer | 2026-11-02 | SHA-256 download | |
+| Hack Nerd Font | 3.5.1 | SHA-256 download | macOS; copied into `~/Library/Fonts` |
+| Socket Firewall (`sfw`) | 1.15.4 | SHA-256 download | wraps npm, bun and uv; sends telemetry |
+| tmux | 3.8 | source build | with libevent 2.1.13 |
+| mosh | 1.4.0 | source build | with protobuf 21.12; Apple CommonCrypto on macOS |
+| PostgreSQL | 17.12 | source build | with OpenSSL 3.5.9 for TLS |
+| pre-commit | 4.6.2 | lock file | `scripts/security/requirements-pre-commit-py312.txt` |
+| git | Apple Git | macOS | from the Command Line Tools |
+| curl | macOS | macOS | |
 
-### Pinned git checkouts
+## Shell, tmux and Neovim
 
-| Checkout | Pin | Suggest | K/D |
-|---|---|---|---|
-| ohmyzsh/ohmyzsh | e7aa0c5 | D — `plugins=()`, only gives theme + completion; replace with ~20 lines of zsh | |
-| tmux-plugins/tpm | v3.1.0 | **D — cloned but never run** (`tmux.conf:35`) | |
-| erikw/tmux-powerline | v3.2.0 | K/D (cosmetic status bar) | |
+| Item | Pin |
+|---|---|
+| oh-my-zsh | commit `e7aa0c5` |
+| zsh-autosuggestions | v0.7.1, commit `e52ee8c` |
+| zsh-syntax-highlighting | 0.8.0, commit `db085e4` |
+| tmux-powerline | v3.2.0, commit `6079ace` |
+| Neovim plugins | exact commits in `nvim/lazy-lock.json`: lazy.nvim, nvim-lspconfig, telescope.nvim, plenary.nvim, nvim-tree.lua, nvim-web-devicons, lualine.nvim, bufferline.nvim, gruvbox.nvim, vim-fugitive, vim-gitgutter |
+| Neovim syntax | Neovim's bundled Treesitter parsers |
+| Language servers | ty 0.0.99 and ruff 0.17.4 (`nvim/lsp/python/uv.lock`); typescript 5.9.3 and typescript-language-server 6.0.2 (`nvim/lsp/node/package-lock.json`); lua-language-server and rust-analyzer above |
+| Commenting | Neovim's built-in `gc` (Ctrl-/) |
 
-### Verified binary artifacts (`scripts/security/artifacts.json`)
+## Removed
 
-| Artifact | Version | Suggest | K/D |
-|---|---|---|---|
-| rustup-init | 1.29.2 | K if you write Rust | |
-| delta | 0.19.2 | K/D (git pager, cosmetic) | |
-| gcloud | 577.0.0 | K if you use GCP; very large surface | |
-| nvim (Linux only) | 0.12.4 | K | |
-| Socket Firewall `sfw-free` | 1.15.4 | K (it is a defence); note mandatory telemetry | |
+| Removed | Replaced by |
+|---|---|
+| Homebrew (all packages, the font cask and the hashicorp tap) | the pins above |
+| nvm, Homebrew Node | pinned Node |
+| coreutils, htop, wget, tree, Homebrew curl, Homebrew git, lua | macOS tools and `lsd --tree` |
+| tpm | tmux-powerline from its pinned checkout |
+| Comment.nvim, indent-blankline.nvim, nvim-treesitter | Neovim built-ins |
+| markdown-preview.nvim | Zed's built-in preview |
+| jedi-language-server | ty and ruff |
+| eslint, vscode-langservers-extracted | not needed |
 
-### Other runtime installs
+## Agent and editor setup (machine-local, not managed by this repo)
 
-| Item | Suggest | K/D |
-|---|---|---|
-| `uv python install` (Python toolchain) | K | |
-| pre-commit hook: gitleaks v8.30.1 | K | |
-
-## 2. Neovim
-
-### Plugins (`nvim/lazy-lock.json`)
-
-| Plugin | Purpose | Suggest | K/D |
-|---|---|---|---|
-| folke/lazy.nvim | plugin manager | K, or D with native `vim.pack` (0.12) | |
-| neovim/nvim-lspconfig | server definitions | D possible — you already pass explicit `cmd`; inline configs in `lsp.lua` | |
-| nvim-treesitter/nvim-treesitter | highlighting | K/D — `ensure_installed = {}`; 0.12 bundles core parsers | |
-| nvim-telescope/telescope.nvim | fuzzy finder | K (or replace with `:find` + fzf) | |
-| nvim-lua/plenary.nvim | telescope dep only | follows telescope | |
-| nvim-tree/nvim-tree.lua | file tree | D (netrw/`:Ex`) | |
-| nvim-tree/nvim-web-devicons | icons | D (cosmetic; needed by tree/lualine/bufferline) | |
-| nvim-lualine/lualine.nvim | statusline | D (cosmetic) | |
-| akinsho/bufferline.nvim | tab bar | D (cosmetic) | |
-| ellisonleao/gruvbox.nvim | colorscheme | D — Neovim ships `colorscheme retrobox` (gruvbox-like) | |
-| airblade/vim-gitgutter | git signs | K/D | |
-| tpope/vim-fugitive | git UI | K/D | |
-| lukas-reineke/indent-blankline.nvim | indent guides | **D — no `require("ibl").setup()`, so it does nothing** | |
-| numToStr/Comment.nvim | commenting | **D — built in since 0.10 (`gc`)**; also no `commit` in `plugins.lua` | |
-| iamcco/markdown-preview.nvim | md preview | **D — already `enabled = false`; still in lock** | |
-
-### Language servers
-
-| Server | Source | Suggest | K/D |
-|---|---|---|---|
-| jedi-language-server 0.47.0 | `nvim/lsp/python` (uv) | K | |
-| typescript 5.9.3 + typescript-language-server 6.0.2 | `nvim/lsp/node` (npm) | K if you write TS | |
-| eslint 10.12.0 | `nvim/lsp/node` | D — large npm tree; projects carry their own | |
-| vscode-langservers-extracted 4.10.0 | `nvim/lsp/node` (only eslint server used) | D with eslint | |
-| lua-language-server | external, not installed by repo | K/D | |
-| rust-analyzer | rustup component | K if Rust | |
-
-## 3. Claude Code (live in `~/.claude`)
-
-### Plugins
-
-| Plugin | Marketplace | Suggest | K/D |
-|---|---|---|---|
-| github | claude-plugins-official | K (currently failing auth) | |
-| code-review | claude-plugins-official | K | |
-| pr-review-toolkit | claude-plugins-official | K/D (overlaps code-review) | |
-| security-guidance | claude-plugins-official | K | |
-| frontend-design | claude-plugins-official | K/D | |
-| skill-creator | claude-plugins-official | K/D | |
-| playwright | claude-plugins-official | K/D (overlaps chrome-devtools MCP + built-in browser) | |
-| pyright-lsp | claude-plugins-official | K/D | |
-| typescript-lsp | claude-plugins-official | K/D | |
-| rust-analyzer-lsp | claude-plugins-official | K/D | |
-| lua-lsp | claude-plugins-official | K/D | |
-| telegram | claude-plugins-official | D unless used | |
-| posthog | claude-plugins-official | K if used; very large skill set | |
-| planetscale | planetscale/claude-plugin | K if used | |
-| ralph-wiggum | enabled in settings, **not installed** | D (remove stale entry) | |
-
-Marketplaces: `anthropics/claude-plugins-official`, `planetscale/claude-plugin`,
-`Artemis-xyz/artemis-skills` (registered, no plugins installed → D?).
-
-### MCP servers (`~/.claude.json`)
-
-| Server | Transport | Suggest | K/D |
-|---|---|---|---|
-| chrome-devtools | `npx chrome-devtools-mcp@latest` | **unpinned `@latest`** — pin or D | |
-| x402 | `npx -y @x402scan/mcp@latest` | **unpinned; wallet** — D unless used | |
-| agentcash | `npx -y agentcash@latest` | **unpinned; wallet** — D unless used | |
-| artemis-tools | local venv binary | K (work) | |
-| datadog-mcp | HTTP (deprecated endpoint) | K, move to `/v1/mcp` | |
-| openrouter | HTTP (unauthenticated) | D unless used | |
-| huntress | HTTP (railway.app) | K (work) | |
-| cloudflare-api | HTTP | K/D | |
-
-### Hooks (`settings.json`)
-
-| Hook | Command | Suggest | K/D |
-|---|---|---|---|
-| PreToolUse | `~/.claude/hooks/pretooluse-permissions.sh` | K | |
-| SessionStart | `rex __internal session-start` | K if using Rex | |
-| Stop | `afplay` sound + `osascript` notification | K | |
-
-### Skills (`~/.claude/skills`, 54 + `_shared`)
-
-Mostly from claudefather. `~/.agents/skills/` (read by Codex and Cursor) holds a
-second copy (~86 entries, incl. Cursor-style `create-rule`, `update-cursor-settings`).
-`~/.claude/skills/synced/` is the Claude app's own skill sync, not a duplicate.
-`agentcash` was removed from both on 2026-11-17.
-
-| Group | Skills | K/D |
-|---|---|---|
-| Review/quality | review-changes, review-pr, security-audit, tech-debt, docs-review, access-path-audit, data-model-audit, design-review, frontend-performance-audit, visual-crawl, cache-audit, verify-completion | |
-| Workflow | commit-push-pr, quick-commit, worktree, implement-plan, weigh-development-paths, development-retro, file-github-issue, github-pr-video-evidence, init-project, repo-health | |
-| Session | context-resume, session-handoff, name-session, notes, lessons, notifications | |
-| Product | product-enhance, product-vision, investigate-app | |
-| Infra: Modal | modal-deploy, modal-logs, modal-status | |
-| Infra: Railway | railway-deploy, railway-logs, railway-status | |
-| Infra: Vercel | vercel-deploy, vercel-logs, vercel-status | |
-| Data: Neon | neon-branch, neon-info, neon-query | |
-| Data: Snowflake/dbt | snowflake-query, snowflake-cutover, dbt, validate-postgres-optimization | |
-| Meta | claudefather-migrate, heist, find-skills | |
-| Other | agentcash, rex | |
-
-Commands (`~/.claude/commands`, 13): artemis-skills-setup, claudefather-sync,
-context-resume, freeze, name-session, private, reconcile, session-checkpoint,
-session-handoff, session-name, session-resume, unfreeze, unprivate.
-
-Agents (`~/.claude/agents`, 8): code-reviewer, dbt-engineer, modal-ops,
-neon-analyst, railway-ops, snowflake-analyst, spec-reviewer, vercel-ops.
-
-## 4. Codex (live in `~/.codex/config.toml`)
-
-### Plugins
-
-| Plugin | Marketplace | Suggest | K/D |
-|---|---|---|---|
-| visualize, browser, chrome, computer-use, unified-computer-use, codex-app-tools | openai-bundled | K (first party) | |
-| documents, pdf, spreadsheets, presentations, template-creator | openai-primary-runtime | K/D | |
-| google-calendar, slack | openai-curated | D unless used | |
-| code-review, frontend-design, github, playwright, posthog, pr-review-toolkit, security-guidance, skill-creator, typescript-lsp | claude-plugins-official | mirror Claude decisions | |
-| planetscale | planetscale | mirror Claude decision | |
-
-Git marketplaces: claude-plugins-official, planetscale, artemis-skills (unused → D?).
-
-### MCP servers
-
-| Server | Transport | Suggest | K/D |
-|---|---|---|---|
-| node_repl | ChatGPT.app bundled | K | |
-| computer-use | bundled, `enabled = false` | D | |
-| openaiDeveloperDocs | HTTP | K | |
-| agentcash, x402, chrome-devtools | `npx …@latest` | **unpinned** — same as Claude | |
-| artemis-tools | local venv | K | |
-| datadog **and** datadog-mcp | HTTP | D one (keep `/v1/mcp`) | |
-| openrouter, huntress | HTTP | mirror Claude | |
-| raindrop, sentry, slack | HTTP | D unless used | |
-
-### Skills and hooks
-
-- `~/.codex/skills`: github-pr-video-evidence, hatch-pet
-- `~/.codex/skills/.system` (bundled): imagegen, openai-docs, review-agent, skill-creator, skill-installer
-- Hooks: same three as Claude (pretooluse-permissions, rex session-start, Stop sound/notification)
-
-## 5. Editors
-
-| Editor | Installed extensions | Notes | K/D |
-|---|---|---|---|
-| Zed | catppuccin-icons, html, sql | Python uses built-in `ty` | |
-| VS Code | **none installed** | `vscode/vscode_extensions.txt` lists 23 stale names → D the file | |
-| Cursor | anysphere.remote-containers, anysphere.remote-ssh | `code` on PATH is Cursor's CLI | |
-
-## 6. Repo-only tooling (not installed by `assimilate.sh`)
-
-CI/security scanners pinned in `scripts/security/`: gitleaks, shellcheck,
-osv-scanner, zizmor 1.29.0; pre-commit Linux lock (cfgv, distlib, filelock,
-identify, nodeenv, packaging, platformdirs, pre-commit, python-discovery,
-pyyaml, virtualenv); GitHub Action `actions/checkout` v7.0.1 (SHA-pinned);
-`scripts/docker/requirements.in`: notebook, pandas, certifi.
+| Tool | Current state on the laptop |
+|---|---|
+| Claude Code MCP | chrome-devtools (`chrome-devtools-mcp@1.12.0` on the pinned npx), datadog-mcp (`/v1/mcp`), cloudflare-api, openrouter |
+| Codex MCP | chrome-devtools (same pin), datadog-mcp (`/v1/mcp`), node_repl, openaiDeveloperDocs, openrouter, raindrop, sentry, slack; computer-use disabled |
+| Removed MCP | x402, agentcash, artemis-tools, huntress, Codex's duplicate `datadog` |
+| Claude plugins | ralph-wiggum disabled; artemis-skills marketplace removed |
+| Zed | catppuccin-icons only; `auto_install_extensions.html = false` |
+| Skills | `~/.claude/skills` (Claude Code) and `~/.agents/skills` (Codex, Cursor) are separate copies; the Codex copy has broken `~/.Codex/` paths |

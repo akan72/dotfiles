@@ -62,11 +62,11 @@ if [ "$actual_args" != "$expected_args" ]; then
   exit 1
 fi
 
-grep -Fq '[01/09] Existing installation preflight' "$test_home/console.log"
+grep -Fq '[01/10] Existing installation preflight' "$test_home/console.log"
 grep -Fq 'FAILED: Agent settings (exit 1)' "$test_home/console.log"
 grep -Fq 'Full log:' "$test_home/console.log"
 if grep -Fq 'FIXTURE_HOMEBREW_ROUTINE_NOISE' "$test_home/console.log"; then exit 1; fi
-if [ "$(uname -s)" = Darwin ]; then grep -Fq '1|1|1|bundle check' "$test_home/brew.log"; fi
+test ! -e "$test_home/brew.log"  # setup never calls Homebrew
 # Full command output is available only when explicitly requested.
 set +e
 HOME="$test_home" PATH="$test_home/bin:$test_dir/fixtures/bin:$PATH" \
@@ -77,7 +77,6 @@ set -e
 test "$verbose_status" = 1
 test "$(find "$test_home/backups" -type f -name '.bunfig.toml.*')" = "$bun_backup"
 test "$(readlink "$test_home/.config/.bunfig.toml")" = "$repo_root/.bunfig.toml"
-if [ "$(uname -s)" = Darwin ]; then grep -Fq 'FIXTURE_HOMEBREW_ROUTINE_NOISE' "$test_home/verbose.log"; fi
 # The read-only mode creates logs but never links configuration or calls package managers.
 mkdir "$test_home/check-home"
 HOME="$test_home/check-home" PATH="$test_home/bin:$test_dir/fixtures/bin:$PATH" \
@@ -108,7 +107,7 @@ for mode in regular check; do
   test "$(cat "$test_home/cli-home/.local/share/google-cloud-sdk/fixture")" = 'unmanaged gcloud'
 done
 if grep -Fq 'Assimilation Successful!' "$test_home/check.log"; then exit 1; fi
-# A rejected existing checkout stops the full install before links/Homebrew/settings.
+# A rejected existing checkout stops the full install before links/settings.
 mkdir "$test_home/bad-home"
 git -c core.hooksPath=/dev/null init -q "$test_home/bad-home/.oh-my-zsh"
 git -C "$test_home/bad-home/.oh-my-zsh" remote add origin https://example.invalid/wrong.git
@@ -122,7 +121,7 @@ mkdir -p "$test_home/scripts/security"
 cp "$repo_root/scripts/security/pins.sh" "$test_home/scripts/security/"
 sed '/^# Run the reviewed setup phases/,$d' "$repo_root/assimilate.sh" > "$test_home/dispatch.sh"
 cat >> "$test_home/dispatch.sh" <<'STAGES'
-for phase in installation_preflight link_config package_policy sync_agents python_and_hooks omz_checkout install_clis tmux_checkouts nvim_plugins; do
+for phase in installation_preflight link_config package_policy install_clis sync_agents python_and_hooks omz_checkout source_tools tmux_checkouts nvim_plugins; do
   eval "function $phase () { :; }"
 done
 if [ "${TEST_DISPATCH_FAILURE:-0}" = 1 ]; then
@@ -161,4 +160,4 @@ if [ "$logger_status" != 23 ]; then cat "$test_home/logger-console.log" >&2; exi
 test ! -e "$test_home/should-not-continue"
 grep -Fq 'FAILED: fixture failure (exit 23)' "$test_home/logger-console.log"
 grep -Fq 'useful-fixture-diagnostic' "$test_home/logger-console.log"
-echo "assimilate: checkout-relative paths, structured failures, quiet Homebrew policy and early checkout/CLI preflight passed"
+echo "assimilate: checkout-relative paths, structured failures, quiet package policy and early checkout/CLI/source preflight passed"

@@ -50,19 +50,16 @@ elapsed-time updates and checksum/install milestones. Run
 `bash ./assimilate.sh --check` to validate existing checkouts and CLI installations first; this creates logs but changes no configuration or packages.
 Preflight checks pinned artifact metadata, existing installation receipts and hashes,
 destination/launcher conflicts and checkout integrity before linking files or
-invoking Homebrew. Unmanaged delta/gcloud copies are reported together and left
+installing anything. Unmanaged artifact copies are reported together and left
 untouched; missing destinations are ready for later installation. Existing rustup
-is retained under the separate playbook update policy. Homebrew automatic
-updates, dependent upgrades and install cleanup are disabled for the setup's
-bundle commands; first installs still use the reviewed distribution boundary.
+is retained under the separate playbook update policy. Homebrew is not used.
 
 ### Reviewed release policy
 
 Read the shared [security and maintenance guide](docs/editor-security.md) before
 installing or updating tools. It covers prerequisites, pinned artifacts, checkout
-integrity, Homebrew's rolling-distribution boundary, package cooldowns, Socket,
-local scans and reviewed editor/notebook updates. Use uv for personal Python;
-retain Apple/Homebrew runtimes required by the system and formula dependencies.
+integrity, source builds, package cooldowns, Socket, local scans and reviewed
+editor/notebook updates. Use uv for personal Python.
 
 Neovim 0.12+ uses native LSP/completion/snippets with externally managed servers.
 See [reviewed editor setup](docs/editor-security.md#explicit-external-server-setup)

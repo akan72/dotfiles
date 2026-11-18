@@ -8,25 +8,23 @@ the separate Mac replication playbook, not the recurring dotfiles installer.
 
 ## Bootstrap and release policy
 
-Install Apple's Command Line Tools, a reviewed official Homebrew release and a
-checksum-verified standalone uv first; preflight also needs `jq`, `python3` and `curl`.
-Never stream mutable installers into a shell. Use uv for personal Python projects/tools; retain Apple's Python and
-Homebrew Python required by formula dependencies.
+Install Apple's Command Line Tools and a checksum-verified standalone uv first;
+the Command Line Tools provide git, `python3`, `curl` and the compilers for the
+source builds. Homebrew is not used. Never stream mutable installers into a shell.
+Use uv for personal Python projects and tools.
 
-`artifacts.json` under `scripts/security` pins delta, gcloud, Linux Neovim,
-rustup-init and the Lua and Rust language servers for its explicitly listed
-platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
+`artifacts.json` under `scripts/security` pins every downloaded tool (see the
+[dependency inventory](dependency-signoff.md)) for its explicitly listed platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
 without writing or downloading. Normal installation verifies HTTPS and SHA-256,
 rejects unsafe archive paths/links and refuses unmanaged destinations. Missing
-platform artifacts have no unchecked fallback; Intel delta uses a separately
-reviewed Homebrew install. Existing rustup is retained: review its installed
+platform artifacts have no unchecked fallback. Existing rustup is retained: review its installed
 version and the Mac playbook's Rust update commands separately. Pinning rustup-init
 does not pin the downstream toolchain downloads.
 
-Homebrew is a trusted rolling distribution. Setup disables automatic updates,
-dependent upgrades and cleanup for its bundle commands. `brew bundle --no-upgrade`
-does not lock first installs or patch existing packages. Review `brew outdated --json=v2` and upgrade selected packages separately. The Brewfile's Terraform
-exception trusts only that named formula; it does not install uv.
+tmux, mosh and PostgreSQL have no official macOS binaries, so `build-source.sh`
+builds them from tarballs pinned by SHA-256 in `sources.json`, with libevent
+and protobuf linked in statically and OpenSSL from its own pinned prefix. It keeps the same per-file receipts as
+downloaded artifacts. Upgrading any tool means changing its pin.
 
 Plugin checkouts require their approved origin, full commit, exact repository
 root and no tracked, untracked or ignored changes. GitHub's optional `.git` suffix
