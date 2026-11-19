@@ -221,10 +221,12 @@ function package_policy () {
 "$DOTFILES/scripts/security/npm-age.sh"
 }
 
-# tmux, mosh and PostgreSQL are built from reviewed source (scripts/security/sources.json)
-# and linked into ~/.local/bin; links replace only symlinks, never real files.
+# On macOS, tmux, mosh and PostgreSQL are built from reviewed source
+# (scripts/security/sources.json) and linked into ~/.local/bin; links replace only
+# symlinks, never real files. Linux hosts use their distribution's signed packages.
 function source_tools () {
   local name version tool link
+  if [ "$OS" != Darwin ]; then notice 'SKIP source builds: use the distribution packages for tmux, mosh and PostgreSQL'; return 0; fi
   for name in tmux mosh postgresql; do
     "$DOTFILES/scripts/security/build-source.sh" "$name"
     version=$(jq -er --arg n "$name" '.sources[$n].version' "$DOTFILES/scripts/security/sources.json")
@@ -239,6 +241,7 @@ function source_tools () {
 
 function source_preflight () {
   local name failed=0
+  [ "$OS" = Darwin ] || return 0
   for name in tmux mosh postgresql; do
     "$DOTFILES/scripts/security/build-source.sh" --check "$name" || failed=1
   done

@@ -76,7 +76,7 @@ jobs=$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)
 if [ "$(uname -s)" = Darwin ] && [ -z "${SDKROOT:-}" ]; then
   printf 'int main(void){return 0;}\n' > "$work/probe.c"
   if ! cc "$work/probe.c" -o "$work/probe" 2>/dev/null; then
-    for sdk in $(ls -d "$(xcode-select -p)"/SDKs/MacOSX[0-9]*.sdk 2>/dev/null | sort -t X -k 3 -V -r); do
+    for sdk in $(printf '%s\n' "$(xcode-select -p)"/SDKs/MacOSX[0-9]*.sdk | sort -t X -k 3 -V -r); do
       if SDKROOT="$sdk" cc "$work/probe.c" -o "$work/probe" 2>/dev/null; then
         export SDKROOT="$sdk"
         echo "NOTE: default macOS SDK does not link with this linker; using ${sdk##*/}. Update the Command Line Tools." >&2

@@ -43,9 +43,9 @@ OSV-Scanner) still come from Homebrew, with versions checked by
 | Hack Nerd Font | 3.5.1 | SHA-256 download | macOS; copied into `~/Library/Fonts`, which `--check` compares with the pinned files and never overwrites |
 | Socket Firewall (`sfw`) | 1.15.4 | SHA-256 download | wraps npm, bun and uv; sends telemetry; trusts only the pinned CA bundle |
 | Mozilla CA bundle | 2026-11-05 | SHA-256 download | from curl.se; the one CA source for Socket, `SSL_CERT_FILE` and the pinned OpenSSL |
-| tmux | 3.8 | source build | with libevent 2.1.13 |
-| mosh | 1.4.0 | source build | with protobuf 21.12; Apple CommonCrypto on macOS |
-| PostgreSQL | 17.12 | source build | with OpenSSL 3.5.9, which trusts the pinned CA bundle, for verified TLS |
+| tmux | 3.8 | source build (macOS) | with libevent 2.1.13; Linux uses distro packages |
+| mosh | 1.4.0 | source build (macOS) | with protobuf 21.12 and Apple CommonCrypto; Linux uses distro packages |
+| PostgreSQL | 17.12 | source build (macOS) | with OpenSSL 3.5.9, which trusts the pinned CA bundle; Linux uses distro packages |
 | pre-commit | 4.6.2 | lock file | `scripts/security/requirements-pre-commit-py312.txt`; `--check` re-verifies every installed file against its RECORD hash |
 | git | Apple Git | macOS | from the Command Line Tools |
 | curl | macOS | macOS | |

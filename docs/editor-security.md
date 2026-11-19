@@ -22,7 +22,7 @@ platform artifacts have no unchecked fallback. Existing rustup is retained: revi
 version and the Mac playbook's Rust update commands separately. Pinning rustup-init
 does not pin the downstream toolchain downloads.
 
-tmux, mosh and PostgreSQL have no official macOS binaries, so `build-source.sh`
+tmux, mosh and PostgreSQL have no official macOS binaries, so on macOS `build-source.sh`
 builds them from tarballs pinned by SHA-256 in `sources.json`, with libevent
 and protobuf linked in statically and OpenSSL from its own pinned prefix. It keeps the same per-file receipts as
 downloaded artifacts. Upgrading any tool means changing its pin.

@@ -16,15 +16,11 @@ export UV_MALWARE_CHECK=1
 export CLOUDSDK_PYTHON_ARGS="-B"
 # Keep an explicitly selected CA path; otherwise use the pinned Mozilla CA bundle
 # (scripts/security/artifacts.json) for uv-managed Python and other OpenSSL users.
-if [ "${SSL_CERT_FILE+x}" != x ]; then
-  for _public_ca in "$HOME/.local/share/dotfiles-ca/cacert.pem"; do
-    if [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
-      export SSL_CERT_FILE="$_public_ca"
-      break
-    fi
-  done
-  unset _public_ca
+_public_ca="$HOME/.local/share/dotfiles-ca/cacert.pem"
+if [ "${SSL_CERT_FILE+x}" != x ] && [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
+  export SSL_CERT_FILE="$_public_ca"
 fi
+unset _public_ca
 # Keep machine-local application state outside the synchronized checkout.
 export XDG_CONFIG_HOME="$HOME/.config"
 # Keep gh authentication outside the checkout, independently of XDG_CONFIG_HOME.
