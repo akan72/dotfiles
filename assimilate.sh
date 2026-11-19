@@ -144,7 +144,7 @@ function cli_artifacts () {
   [ "$OS-$ARCH" != Linux-x86_64 ] || echo nvim:0.12.4
   # Pinned Node and CLI tools; assimilate itself needs jq and yq from here.
   case "$OS-$ARCH" in Darwin-arm64|Darwin-x86_64|Linux-x86_64|Linux-aarch64)
-    echo node:26.13.1 lsd:1.2.0 yq:4.54.3 jq:1.8.2 gh:2.103.3 terraform:1.17.1 duckdb:2.0.0 ;;
+    echo ca-bundle:2026-11-05 node:26.13.1 lsd:1.2.0 yq:4.54.3 jq:1.8.2 gh:2.103.3 terraform:1.17.1 duckdb:2.0.0 ;;
   esac
   case "$OS" in Darwin) echo nvim:0.12.6 hack-nerd-font:3.5.1 ;; esac
 }
@@ -161,6 +161,8 @@ function cli_preflight () {
 function installation_preflight () {
   cli_preflight
   source_preflight
+  fonts_preflight
+  precommit_preflight
   checkout_preflight
 }
 
@@ -257,6 +259,13 @@ fi
 
 }
 
+# An installed pre-commit venv must still match the lock it was built from.
+function precommit_preflight () {
+  local venv="$HOME/.local/share/dotfiles-pre-commit"
+  [ -e "$venv" ] || return 0
+  python3 -I "$DOTFILES/scripts/security/verify-venv.py" "$venv" "$venv/requirements.txt"
+}
+
 function python_and_hooks () {
 if command -v uv >/dev/null 2>&1; then
   uv python install
@@ -269,6 +278,7 @@ if command -v uv >/dev/null 2>&1 && ! cmp -s "$lock" "$venv/requirements.txt"; t
   command uv pip install --python "$venv/bin/python" --require-hashes --only-binary :all: --no-deps -r "$lock"
   cp "$lock" "$venv/requirements.txt"
 fi
+[ ! -e "$venv" ] || python3 -I "$DOTFILES/scripts/security/verify-venv.py" "$venv" "$lock"
 if [ -x "$venv/bin/pre-commit" ]; then
   [ ! -e "$HOME/.local/bin/pre-commit" ] || [ -L "$HOME/.local/bin/pre-commit" ] || { echo "Review existing $HOME/.local/bin/pre-commit" >&2; return 1; }
   ln -sfn "$venv/bin/pre-commit" "$HOME/.local/bin/pre-commit"
@@ -309,12 +319,30 @@ export PATH="$HOME/.local/bin:$PATH"
 # Point ~/.local/bin/node, npm and npx at the pinned Node; replace only symlinks
 # (such as an old nvm link), never a regular file someone installed there.
 # macOS only reads fonts from ~/Library/Fonts: copy the pinned Hack Nerd Font there.
-function link_fonts () {
-  local source="$HOME/.local/share/fonts/hack-nerd-font-3.5.1" font
+# Copies must stay byte-identical to the verified pinned files; any other file
+# with the same name is refused, never overwritten. --check runs the same test.
+function fonts_preflight () {
+  local source="$HOME/.local/share/fonts/hack-nerd-font-3.5.1" font dest failed=0
   [ "$OS" = Darwin ] && [ -d "$source" ] || return 0
+  for font in "$source"/*.ttf; do
+    dest="$HOME/Library/Fonts/${font##*/}"
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      if [ -L "$dest" ] || ! cmp -s "$font" "$dest"; then
+        echo "Review existing $dest: it is not the pinned Hack Nerd Font" >&2; failed=1
+      fi
+    fi
+  done
+  [ "$failed" = 0 ]
+}
+
+function link_fonts () {
+  local source="$HOME/.local/share/fonts/hack-nerd-font-3.5.1" font dest
+  [ "$OS" = Darwin ] && [ -d "$source" ] || return 0
+  fonts_preflight
   mkdir -p "$HOME/Library/Fonts"
   for font in "$source"/*.ttf; do
-    cmp -s "$font" "$HOME/Library/Fonts/${font##*/}" || cp "$font" "$HOME/Library/Fonts/"
+    dest="$HOME/Library/Fonts/${font##*/}"
+    [ -e "$dest" ] || cp "$font" "$dest"
   done
 }
 

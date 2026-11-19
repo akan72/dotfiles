@@ -52,7 +52,7 @@ Preflight checks pinned artifact metadata, existing installation receipts and ha
 destination/launcher conflicts and checkout integrity before linking files or
 installing anything. Unmanaged artifact copies are reported together and left
 untouched; missing destinations are ready for later installation. Existing rustup
-is retained under the separate playbook update policy. Homebrew is not used.
+is retained under the separate playbook update policy. Setup never uses Homebrew; only the optional local secret scanners (gitleaks, ShellCheck, OSV-Scanner) still come from it.
 
 ### Reviewed release policy
 

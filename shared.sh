@@ -14,10 +14,10 @@ export GPG_TTY
 export UV_MALWARE_CHECK=1
 # gcloud's Python must not write bytecode caches into its pinned, hash-checked install.
 export CLOUDSDK_PYTHON_ARGS="-B"
-# macOS's OpenSSL PEM can lag the Homebrew CA bundle used by uv-managed Python.
-# Keep an explicitly selected CA path; otherwise use the maintained public bundle.
-if [ "$(uname -s)" = Darwin ] && [ "${SSL_CERT_FILE+x}" != x ]; then
-  for _public_ca in /opt/homebrew/etc/ca-certificates/cert.pem /usr/local/etc/ca-certificates/cert.pem; do
+# Keep an explicitly selected CA path; otherwise use the pinned Mozilla CA bundle
+# (scripts/security/artifacts.json) for uv-managed Python and other OpenSSL users.
+if [ "${SSL_CERT_FILE+x}" != x ]; then
+  for _public_ca in "$HOME/.local/share/dotfiles-ca/cacert.pem"; do
     if [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
       export SSL_CERT_FILE="$_public_ca"
       break

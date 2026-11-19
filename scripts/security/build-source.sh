@@ -49,6 +49,24 @@ trap 'rm -rf "$work"' EXIT HUP INT TERM
 echo "Downloading $name $version"
 curl -fsSL --proto =https --proto-redir =https -o "$work/source" "$url"
 [ "$(shasum -a 256 "$work/source" | cut -c1-64)" = "$sha" ] || { echo "source SHA-256 mismatch: $name" >&2; exit 1; }
+# Refuse unsafe entries before extraction: absolute or parent paths, entries
+# outside the reviewed top directory, escaping links, devices and hard links.
+python3 -I - "$work/source" "$top" <<'PYCHECK' || { echo "unsafe source archive: $name" >&2; exit 1; }
+import posixpath,sys,tarfile
+top=sys.argv[2]
+with tarfile.open(sys.argv[1]) as archive:
+    for member in archive.getmembers():
+        name=posixpath.normpath(member.name)
+        parts=name.split('/')
+        if member.name.startswith('/') or '..' in member.name.split('/') or parts[0]!=top:
+            sys.exit('unsafe path: '+member.name)
+        if member.issym():
+            target=posixpath.normpath(posixpath.join(posixpath.dirname(name),member.linkname))
+            if member.linkname.startswith('/') or target.split('/')[0]!=top:
+                sys.exit('escaping link: '+member.name)
+        elif not (member.isfile() or member.isdir()):
+            sys.exit('unsupported entry: '+member.name)
+PYCHECK
 mkdir "$work/src"; tar -xf "$work/source" -C "$work/src"
 [ -d "$work/src/$top" ] || { echo "unexpected source layout: $name" >&2; exit 1; }
 cd "$work/src/$top"
@@ -75,7 +93,10 @@ case "$name" in
     # Shared as well as static: PostgreSQL's libpq refuses a static OpenSSL
     # because OpenSSL registers an atexit handler.
     ./Configure --prefix="$prefix" --openssldir="$prefix/ssl" --libdir=lib no-tests no-docs
-    make -j"$jobs"; make DESTDIR="$stage" install_sw install_ssldirs ;;
+    make -j"$jobs"; make DESTDIR="$stage" install_sw install_ssldirs
+    # Trust the pinned Mozilla CA bundle by default, so TLS verification works
+    # without SSL_CERT_FILE (for example psql's sslrootcert=system).
+    ln -s "$HOME/.local/share/dotfiles-ca/cacert.pem" "$stage$prefix/ssl/cert.pem" ;;
   libevent)
     ./configure --prefix="$prefix" --disable-shared --disable-openssl --disable-samples --disable-libevent-regress --disable-debug-mode
     make -j"$jobs"; make DESTDIR="$stage" install ;;

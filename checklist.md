@@ -4,7 +4,8 @@
 > all dotfiles and installs every pinned tool listed in the
 > [dependency inventory](docs/dependency-signoff.md): SHA-256-pinned downloads,
 > commit-pinned checkouts, and tmux, mosh and PostgreSQL built from pinned source.
-> Homebrew is not used. The steps below are manual steps not automated by setup.
+> Setup never uses Homebrew; only the optional local secret scanners still come
+> from it. The steps below are manual steps not automated by setup.
 
 ## Initial setup
 

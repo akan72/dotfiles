@@ -10,7 +10,8 @@ separate Mac replication playbook, not the recurring dotfiles installer.
 
 Install Apple's Command Line Tools and a checksum-verified standalone uv first;
 the Command Line Tools provide git, `python3`, `curl` and the compilers for the
-source builds. Homebrew is not used. Never stream mutable installers into a shell.
+source builds. Setup never uses Homebrew; only the optional local secret scanners (gitleaks, ShellCheck, OSV-Scanner) still come from it.
+Never stream mutable installers into a shell.
 Use uv for personal Python projects and tools.
 
 `artifacts.json` under `scripts/security` pins every downloaded tool (see the
@@ -105,7 +106,8 @@ so a secret split across separate commits may be missed. Gitleaks is
 pattern-based; static checks do not prove that software or this Mac is free of malware.
 
 `scanners.lock.json` records the reviewed scanner versions; the runner refuses
-any other version. It is not an installer: Homebrew supplies the Mac scanners.
+any other version. It is not an installer: on a Mac, install gitleaks, ShellCheck
+and OSV-Scanner from Homebrew yourself. Setup does not install them.
 CI's pre-commit and zizmor wheel locks require hashes and binary wheels and do not
 resolve dependencies. CI's Pre-commit job is a required check, but its Gitleaks
 hook only scans staged changes; the Secret history job scans every commit. Review

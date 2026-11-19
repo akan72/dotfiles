@@ -47,8 +47,10 @@ jobs:
           bash tests/security-scans.sh
           bash tests/npm-age.sh
           bash tests/artifact-integrity.sh
+          bash tests/build-source.sh
           python3 -I -S -B tests/source-snapshot.py
           python3 -I -S -B tests/socket-installer.py
+          python3 -I -S -B tests/verify-venv.py
           sh tests/gh-auth-refresh.sh
       - name: Check Git configuration
         run: git config --file gitconfig --list >/dev/null

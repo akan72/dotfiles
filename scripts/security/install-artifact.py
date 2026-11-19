@@ -18,6 +18,7 @@ import time
 
 ORIGINS = {
     'delta': 'https://github.com/dandavison/delta/releases/download/',
+    'ca-bundle': 'https://curl.se/ca/',
     'duckdb': 'https://github.com/duckdb/duckdb/releases/download/',
     'gcloud': 'https://storage.googleapis.com/cloud-sdk-release/',
     'gh': 'https://github.com/cli/cli/releases/download/',
@@ -55,8 +56,9 @@ EXECUTABLES = {
 # one executable from an archive. tree-tar/tree-zip: the whole archive tree.
 KINDS = ('file', 'file-gz', 'file-tar', 'file-zip', 'tree-tar', 'tree-zip', 'rustup-init')
 ARCHIVES = ('file-tar', 'file-zip', 'tree-tar', 'tree-zip')
-# Trees of data, not programs: the named file must exist but need not be executable.
-DATA_TREES = ('hack-nerd-font',)
+# Data, not programs: a tree's named file need not be executable, and a single
+# data file is installed read-only (0644) instead of executable.
+DATA_TREES = ('hack-nerd-font', 'ca-bundle')
 
 
 def entries(archive, kind):
@@ -271,7 +273,7 @@ def publish(home, ident, record, work):
                 shutil.copytree(payload, staged, symlinks=True)
             else:
                 shutil.copy2(payload, staged)
-                staged.chmod(0o755)
+                staged.chmod(0o644 if ident.split('/')[0] in DATA_TREES else 0o755)
             os.rename(staged, destination)
         state = home / '.local/state/dotfiles-security/artifacts'
         state.mkdir(parents=True, exist_ok=True, mode=0o700)

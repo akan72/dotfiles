@@ -128,7 +128,7 @@ class Installer(unittest.TestCase):
         result = self.run_install()
         guard = Path(result['destination']).with_name('launch.py')
         with mock.patch.dict(os.environ, {'NODE_OPTIONS': '--require=/untrusted.js',
-                                         'NODE_TLS_REJECT_UNAUTHORIZED': '0'}), \
+                                         'NODE_TLS_REJECT_UNAUTHORIZED': '0', 'NODE_USE_SYSTEM_CA': '1'}), \
              mock.patch.object(os, 'execve') as execute, mock.patch.object(sys, 'argv', ['launch.py', '--version']):
             runpy.run_path(str(guard))
         binary, arguments, environment = execute.call_args.args
@@ -138,6 +138,7 @@ class Installer(unittest.TestCase):
                             'NODE_EXTRA_CA_CERTS': str(guard.with_name('ca-certificates.pem')),
                             'SSL_CERT_DIR': str(guard.with_name('empty-ca'))}.items():
             self.assertEqual(environment[name], value)
+        self.assertNotIn('NODE_USE_SYSTEM_CA', environment)
 
     def test_ca_loader_must_match_reviewed_digest(self):
         self.ca_data=b'tampered'
