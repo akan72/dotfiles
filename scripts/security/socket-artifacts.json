@@ -15,7 +15,7 @@
       "sha256": "b19f96f0dd3ebc4ecc7111dbc43cc2b095f37bf759273c0bd9c0c4784ea24731"
     }
   },
-  "ca_sha256": "f356a97fb33148de963979b5b164c0b8de13c5bfe0ffe913ef68208d6364a419",
-  "ca_source": "Reviewed incident-patched Homebrew ca-certificates 2026-10-20 public PEM; use /opt/homebrew/etc/ca-certificates/cert.pem or /usr/local/etc/ca-certificates/cert.pem",
+  "ca_sha256": "427c064216761a1e72a8b30f0d954d08cb6e4435a82091fb865afd20c8497285",
+  "ca_source": "Pinned Mozilla CA bundle cacert-2026-11-05.pem from curl.se (scripts/security/artifacts.json ca-bundle), installed at ~/.local/share/dotfiles-ca/cacert.pem",
   "embedded_runtime": "Node 24.21.0; bundled roots include incident-excluded emSign ECC G3. Guarded launcher disables bundled trust and uses the pinned clean PEM snapshot."
 }

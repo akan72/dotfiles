@@ -87,13 +87,13 @@ def verify(data, record, architecture):
 
 
 def load_ca_bundle(manifest):
-    for name in ('/opt/homebrew/etc/ca-certificates/cert.pem', '/usr/local/etc/ca-certificates/cert.pem'):
-        path = Path(name)
-        if path.exists():
-            data = read_regular(path)
-            if hashlib.sha256(data).hexdigest() == manifest['ca_sha256']:
-                return data
-    raise ValueError('Reviewed patched Homebrew CA bundle unavailable; update Homebrew CA data first')
+    # The pinned Mozilla CA bundle that assimilate.sh installs (artifacts.json ca-bundle).
+    path = Path.home() / '.local/share/dotfiles-ca/cacert.pem'
+    if path.exists():
+        data = read_regular(path)
+        if hashlib.sha256(data).hexdigest() == manifest['ca_sha256']:
+            return data
+    raise ValueError('Reviewed CA bundle unavailable; run assimilate.sh to install the pinned ca-bundle first')
 
 
 def guard_source(destination, ca, empty, digest, ca_digest):
@@ -121,6 +121,8 @@ for path,expected,mode in ((Path(BINARY),EXPECTED,0o755),(Path(CA),EXPECTED_CA,0
 folder=Path(EMPTY)
 if folder.is_symlink() or not folder.is_dir() or folder.stat().st_uid!=os.getuid() or stat.S_IMODE(folder.stat().st_mode)!=0o700 or any(folder.iterdir()):sys.exit('Socket empty CA directory changed')
 env=dict(os.environ)
+# Only the pinned bundle decides trust; NODE_USE_SYSTEM_CA conflicts with --use-openssl-ca.
+env.pop('NODE_USE_SYSTEM_CA',None)
 env.update(NODE_OPTIONS='--use-openssl-ca',NODE_EXTRA_CA_CERTS=CA,SSL_CERT_FILE=CA,SSL_CERT_DIR=EMPTY,NODE_TLS_REJECT_UNAUTHORIZED='1')
 os.execve(BINARY,[BINARY,*sys.argv[1:]],env)
 ''' % (str(destination),str(ca),str(empty),digest,ca_digest)).encode()

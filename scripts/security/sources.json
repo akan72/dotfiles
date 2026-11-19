@@ -1,0 +1,11 @@
+{
+  "note": "Source tarballs built by build-source.sh. Each sha256 matched both the upstream-published digest (GitHub release digest or postgresql.org .sha256) and Homebrew's recorded checksum on 2026-11-18, except mosh and protobuf, which publish none and matched Homebrew's.",
+  "sources": {
+    "openssl": {"version": "3.5.9", "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz", "sha256": "603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a", "root": "openssl-3.5.9"},
+    "libevent": {"version": "2.1.13", "url": "https://github.com/libevent/libevent/releases/download/release-2.1.13-stable/libevent-2.1.13-stable.tar.gz", "sha256": "f7e9383b8c0baa81b687e5b5eecc01beefaf1b19b64151d95ed61647fe7a315c", "root": "libevent-2.1.13-stable"},
+    "protobuf": {"version": "21.12", "url": "https://github.com/protocolbuffers/protobuf/releases/download/v21.12/protobuf-all-21.12.tar.gz", "sha256": "2c6a36c7b5a55accae063667ef3c55f2642e67476d96d355ff0acb13dbb47f09", "root": "protobuf-21.12"},
+    "tmux": {"version": "3.8", "url": "https://github.com/tmux/tmux/releases/download/3.8/tmux-3.8.tar.gz", "sha256": "e79c699c7e949dccd0a4a125e17b8d1261e311b16979dbc8eb34542f3966d82e", "root": "tmux-3.8"},
+    "mosh": {"version": "1.4.0", "url": "https://github.com/mobile-shell/mosh/releases/download/mosh-1.4.0/mosh-1.4.0.tar.gz", "sha256": "872e4b134e5df29c8933dff12350785054d2fd2839b5ae6b5587b14db1465ddd", "root": "mosh-1.4.0"},
+    "postgresql": {"version": "17.12", "url": "https://ftp.postgresql.org/pub/source/v17.12/postgresql-17.12.tar.bz2", "sha256": "9cf136a703d8ee2f83465c43be4e9e8e7930c82b0bfba13be7e2537be769ac55", "root": "postgresql-17.12"}
+  }
+}

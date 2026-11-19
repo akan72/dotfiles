@@ -12,17 +12,15 @@ export LANG='en_US.UTF-8'
 GPG_TTY=$(tty 2>/dev/null) || GPG_TTY=''
 export GPG_TTY
 export UV_MALWARE_CHECK=1
-# macOS's OpenSSL PEM can lag the Homebrew CA bundle used by uv-managed Python.
-# Keep an explicitly selected CA path; otherwise use the maintained public bundle.
-if [ "$(uname -s)" = Darwin ] && [ "${SSL_CERT_FILE+x}" != x ]; then
-  for _public_ca in /opt/homebrew/etc/ca-certificates/cert.pem /usr/local/etc/ca-certificates/cert.pem; do
-    if [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
-      export SSL_CERT_FILE="$_public_ca"
-      break
-    fi
-  done
-  unset _public_ca
+# gcloud's Python must not write bytecode caches into its pinned, hash-checked install.
+export CLOUDSDK_PYTHON_ARGS="-B"
+# Keep an explicitly selected CA path; otherwise use the pinned Mozilla CA bundle
+# (scripts/security/artifacts.json) for uv-managed Python and other OpenSSL users.
+_public_ca="$HOME/.local/share/dotfiles-ca/cacert.pem"
+if [ "${SSL_CERT_FILE+x}" != x ] && [ -f "$_public_ca" ] && [ -r "$_public_ca" ]; then
+  export SSL_CERT_FILE="$_public_ca"
 fi
+unset _public_ca
 # Keep machine-local application state outside the synchronized checkout.
 export XDG_CONFIG_HOME="$HOME/.config"
 # Keep gh authentication outside the checkout, independently of XDG_CONFIG_HOME.
@@ -52,11 +50,6 @@ _prepend_path() {
 
 _prepend_path "/usr/local/bin"                          # Homebrew (Intel)
 _prepend_path "/opt/homebrew/bin"                       # Homebrew (ARM/M1)
-# Postgres — guarded so shells without Homebrew (e.g. the Linux dev box) don't
-# error on every startup
-if command -v brew >/dev/null 2>&1; then
-  _prepend_path "$(brew --prefix postgresql@17)/bin"
-fi
 _prepend_path "$HOME/.yarn/bin"                         # Yarn global bins
 _prepend_path "$HOME/.config/yarn/global/node_modules/.bin"
 export BUN_INSTALL="$HOME/.bun"
@@ -81,7 +74,10 @@ fi
 # general
 alias vi=nvim
 alias vim=nvim
-command -v lsd >/dev/null 2>&1 && alias ls="lsd -al"
+if command -v lsd >/dev/null 2>&1; then
+  alias ls="lsd -al"
+  alias tree="lsd --tree"
+fi
 # shellcheck disable=SC2139 # Resolve this explicit trusted HOME path when sourced.
 alias claude="$HOME/.local/bin/claude"
 

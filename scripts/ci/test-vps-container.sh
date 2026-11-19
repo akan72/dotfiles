@@ -12,8 +12,7 @@ grep -Fq 'curl-minimal' "$runner"
 
 grep -Fq 'scripts/security/install-artifact.sh' assimilate.sh
 grep -Fq 'scripts/security/check-clone.sh' assimilate.sh
-# shellcheck disable=SC2016 # Match literal installer source.
-grep -Fq 'brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"' assimilate.sh
+grep -Fq 'scripts/security/build-source.sh' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC' assimilate.sh
 grep -Fq 'ASSIMILATE_SKIP_PLUGIN_SYNC=1 ./assimilate.sh' "$runner"
 grep -Fq 'ASSIMILATE_SOURCE_MODE=archive' "$runner"

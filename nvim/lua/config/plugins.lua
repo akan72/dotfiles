@@ -29,14 +29,6 @@ require("lazy").setup({
         end,
     },
 
-    -- Markdown preview (load only for markdown files)
-    {
-        "iamcco/markdown-preview.nvim",
-        commit = 'a923f5fc5ba36a3b17e289dc35dc17f66d0548ee',
-        ft = "markdown",
-        enabled = false, -- Release binaries need independently reviewed hashes.
-    },
-
     -- Fuzzyfinder (load on its keys / :Telescope)
     {
         'nvim-telescope/telescope.nvim',
@@ -100,12 +92,6 @@ require("lazy").setup({
         end,
     },
 
-    -- Vertical indent lines
-    {
-        "lukas-reineke/indent-blankline.nvim",
-        commit = '29be0919b91fb59eca9e90690d76014233392bef',
-    },
-
     -- bufferline
     {
         'akinsho/bufferline.nvim',
@@ -113,14 +99,6 @@ require("lazy").setup({
         dependencies = { 'nvim-tree/nvim-web-devicons' },
         config = function()
             require("config.plugins.bufferline")
-        end,
-    },
-
-    -- Comments
-    {
-        'numToStr/Comment.nvim',
-        config = function()
-            require('Comment').setup()
         end,
     },
 }, {

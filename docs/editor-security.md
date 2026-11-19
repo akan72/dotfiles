@@ -8,25 +8,24 @@ separate Mac replication playbook, not the recurring dotfiles installer.
 
 ## Bootstrap and release policy
 
-Install Apple's Command Line Tools, a reviewed official Homebrew release and a
-checksum-verified standalone uv first; preflight also needs `jq`, `python3` and `curl`.
-Never stream mutable installers into a shell. Use uv for personal Python projects/tools; retain Apple's Python and
-Homebrew Python required by formula dependencies.
+Install Apple's Command Line Tools and a checksum-verified standalone uv first;
+the Command Line Tools provide git, `python3`, `curl` and the compilers for the
+source builds. Setup never uses Homebrew; only the optional local secret scanners (gitleaks, ShellCheck, OSV-Scanner) still come from it.
+Never stream mutable installers into a shell.
+Use uv for personal Python projects and tools.
 
-`artifacts.json` under `scripts/security` pins delta, gcloud, Linux Neovim,
-rustup-init and the Lua and Rust language servers for its explicitly listed
-platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
+`artifacts.json` under `scripts/security` pins every downloaded tool (see the
+[dependency inventory](dependency-signoff.md)) for its explicitly listed platforms. `install-artifact.sh --check TOOL VERSION OS-arch` checks metadata, destinations, receipts and installed hashes
 without writing or downloading. Normal installation verifies HTTPS and SHA-256,
 rejects unsafe archive paths/links and refuses unmanaged destinations. Missing
-platform artifacts have no unchecked fallback; Intel delta uses a separately
-reviewed Homebrew install. Existing rustup is retained: review its installed
+platform artifacts have no unchecked fallback. Existing rustup is retained: review its installed
 version and the Mac playbook's Rust update commands separately. Pinning rustup-init
 does not pin the downstream toolchain downloads.
 
-Homebrew is a trusted rolling distribution. Setup disables automatic updates,
-dependent upgrades and cleanup for its bundle commands. `brew bundle --no-upgrade`
-does not lock first installs or patch existing packages. Review `brew outdated --json=v2` and upgrade selected packages separately. The Brewfile's Terraform
-exception trusts only that named formula; it does not install uv.
+tmux, mosh and PostgreSQL have no official macOS binaries, so on macOS `build-source.sh`
+builds them from tarballs pinned by SHA-256 in `sources.json`, with libevent
+and protobuf linked in statically and OpenSSL from its own pinned prefix. It keeps the same per-file receipts as
+downloaded artifacts. Upgrading any tool means changing its pin.
 
 Plugin checkouts require their approved origin, full commit, exact repository
 root and no tracked, untracked or ignored changes. GitHub's optional `.git` suffix
@@ -107,7 +106,8 @@ so a secret split across separate commits may be missed. Gitleaks is
 pattern-based; static checks do not prove that software or this Mac is free of malware.
 
 `scanners.lock.json` records the reviewed scanner versions; the runner refuses
-any other version. It is not an installer: Homebrew supplies the Mac scanners.
+any other version. It is not an installer: on a Mac, install gitleaks, ShellCheck
+and OSV-Scanner from Homebrew yourself. Setup does not install them.
 CI's pre-commit and zizmor wheel locks require hashes and binary wheels and do not
 resolve dependencies. CI's Pre-commit job is a required check, but its Gitleaks
 hook only scans staged changes; the Secret history job scans every commit. Review
@@ -170,7 +170,8 @@ loading again while loading the verified plugins itself.
 
 Startup disables missing-plugin installation, project-local lazy specs, package/rock
 download channels and update checking. Neovim **0.12 or newer** is required.
-Markdown preview remains disabled until its separate binary artifacts are reviewed.
+markdown-preview.nvim is removed: its Node server needed a large npm graph and
+localhost-origin hardening. Use Zed's built-in `markdown: open preview` instead.
 
 ### Treesitter
 
@@ -264,14 +265,15 @@ The Node lock was resolved on 21 October 2026 with npm's seven-day minimum age,
 using TypeScript LS 6.0.2 and TypeScript 5.9.3. ESLint and the VSCode extracted
 servers were removed on 15 November 2026 without re-resolving, leaving the remaining
 entries unchanged. It contains the complete two-package dependency graph and integrity
-hashes. No global npm packages are installed. Use the reviewed Node26.12.1 for this
-recorded recipe; review a successor explicitly rather than downgrading an existing
-newer patched runtime.
+hashes. No global npm packages are installed. Node itself is the SHA-256-pinned
+v26.13.1 release in `scripts/security/artifacts.json`, which `assimilate.sh`
+installs under `~/.local/share/dotfiles-node` and links as `~/.local/bin/node`,
+`npm` and `npx`. Neither nvm nor Homebrew Node is used.
 
 ```sh
 (
   set -eu
-  test "$(node --version)" = v26.12.1
+  test "$(node --version)" = v26.13.1
   test ! -L "$LSP_HOME/node"
   mkdir -p "$LSP_HOME/node"
   cp "$DOTFILES/nvim/lsp/node/package.json" "$DOTFILES/nvim/lsp/node/package-lock.json" "$LSP_HOME/node/"

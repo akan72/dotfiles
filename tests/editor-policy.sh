@@ -54,7 +54,7 @@ good()
 local config = fixture .. '-config'
 vim.fn.mkdir(config)
 local lock = vim.json.decode(table.concat(vim.fn.readfile(root .. '/nvim/lazy-lock.json'), '\n'))
-lock['Comment.nvim'] = nil
+lock['bufferline.nvim'] = nil
 vim.fn.writefile({vim.json.encode(lock)}, config .. '/lazy-lock.json')
 local verify, checked = policy.verify, 0
 policy.verify = function() checked = checked + 1 end

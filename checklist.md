@@ -1,9 +1,11 @@
 # Checklist
 
 > **Most setup is automated by [`assimilate.sh`](./assimilate.sh).** It symlinks
-> all dotfiles and installs oh-my-zsh, Homebrew packages (`brew bundle`), Rust,
-> git-delta, tmux plugin manager + plugins, and bootstraps the Neovim plugin
-> manager. The steps below are manual steps not currently automated by setup.
+> all dotfiles and installs every pinned tool listed in the
+> [dependency inventory](docs/dependency-signoff.md): SHA-256-pinned downloads,
+> commit-pinned checkouts, and tmux, mosh and PostgreSQL built from pinned source.
+> Setup never uses Homebrew; only the optional local secret scanners still come
+> from it. The steps below are manual steps not automated by setup.
 
 ## Initial setup
 
@@ -47,10 +49,10 @@
 - Follow the [reviewed bootstrap policy](README.md#installation), including the verified standalone uv bootstrap.
 - Install [Ghostty](https://ghostty.org/) (terminal; config is symlinked from `ghostty/`)
 - Install [Zed](https://zed.dev/) (editor; `settings.json` + `keymap.json` symlinked from `zed/`)
+- Install Apple's Command Line Tools (`xcode-select --install`): they provide git and the compilers for the source builds.
 - Install a reviewed exact [Claude Code](https://docs.anthropic.com/en/docs/claude-code) release through the approved package policy; verify native updater settings separately.
 - tmux-powerline comes from the pinned bootstrap; TPM is not used.
 
-> The Hack Nerd Font is installed automatically via `brew bundle`
-> (`cask "font-hack-nerd-font"`) ; it remains a separately trusted rolling channel.
-> oh-my-zsh, zsh plugins, tmux-powerline and the Neovim plugins are all
-> handled by `assimilate.sh`.
+> The Hack Nerd Font, oh-my-zsh, the zsh plugins, tmux-powerline and the Neovim
+> plugins are all installed and pinned by `assimilate.sh`. For Markdown preview,
+> use Zed's built-in `markdown: open preview`.

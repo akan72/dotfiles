@@ -50,27 +50,19 @@ else
   export EDITOR='nvim'
 fi
 
-# zsh-autosuggestions (installed via brew on macOS, may be missing elsewhere)
-if command -v brew >/dev/null 2>&1; then
-  _zsh_autosug="$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-  [ -f "$_zsh_autosug" ] && source "$_zsh_autosug"
-  unset _zsh_autosug
-fi
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" --no-use  # Load nvm without auto-use (auto-use errors with "N/A" when no .nvmrc is set)
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# zsh plugins: pinned checkouts from assimilate.sh (scripts/security/pins.sh)
+_zsh_plugins="$HOME/.local/share/zsh-plugins"
+[ -f "$_zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh" ] && source "$_zsh_plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
 
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 alias snowsql=/Applications/SnowSQL.app/Contents/MacOS/snowsql
 
-# .zsh syntax highlighting (installed via brew on macOS, may be missing elsewhere)
-if [ -f /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
-  source /opt/homebrew/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-fi
+# Syntax highlighting must load after other widgets, so it stays late in this file.
+[ -f "$_zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ] && source "$_zsh_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+unset _zsh_plugins
 
 autoload -U +X bashcompinit && bashcompinit
-complete -o nospace -C /opt/homebrew/bin/terraform terraform
+complete -o nospace -C "$HOME/.local/bin/terraform" terraform
 
 fpath+=~/.zfunc; autoload -Uz compinit; compinit
 

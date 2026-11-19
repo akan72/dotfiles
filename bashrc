@@ -12,5 +12,5 @@
 
 # Terraform completion
 if [ -n "$BASH_VERSION" ]; then
-  complete -C /opt/homebrew/bin/terraform terraform
+  complete -C "$HOME/.local/bin/terraform" terraform
 fi

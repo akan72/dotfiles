@@ -130,6 +130,8 @@ function nvim_checkouts () {
 
 function checkout_preflight () {
   check_existing "$OMZ_ORIGIN" "$HOME/.oh-my-zsh" "$OMZ_COMMIT"
+  check_existing "$AUTOSUGGEST_ORIGIN" "$HOME/.local/share/zsh-plugins/zsh-autosuggestions" "$AUTOSUGGEST_COMMIT"
+  check_existing "$HIGHLIGHT_ORIGIN" "$HOME/.local/share/zsh-plugins/zsh-syntax-highlighting" "$HIGHLIGHT_COMMIT"
   check_existing "$POWERLINE_ORIGIN" "$HOME/.tmux/plugins/tmux-powerline" "$POWERLINE_COMMIT" --allow-userinfo
   if [ -d "$HOME/.local/share/nvim/lazy" ]; then nvim_checkouts check_existing; fi
 }
@@ -140,6 +142,11 @@ function cli_artifacts () {
   case "$OS-$ARCH" in Darwin-arm64|Linux-x86_64) echo delta:0.19.2 ;; esac
   echo gcloud:577.0.0
   [ "$OS-$ARCH" != Linux-x86_64 ] || echo nvim:0.12.4
+  # Pinned Node and CLI tools; assimilate itself needs jq and yq from here.
+  case "$OS-$ARCH" in Darwin-arm64|Darwin-x86_64|Linux-x86_64|Linux-aarch64)
+    echo ca-bundle:2026-11-05 node:26.13.1 lsd:1.2.0 yq:4.54.3 jq:1.8.2 gh:2.103.3 terraform:1.17.1 duckdb:2.0.0 ;;
+  esac
+  case "$OS" in Darwin) echo nvim:0.12.6 hack-nerd-font:3.5.1 ;; esac
 }
 
 function cli_preflight () {
@@ -153,6 +160,9 @@ function cli_preflight () {
 
 function installation_preflight () {
   cli_preflight
+  source_preflight
+  fonts_preflight
+  precommit_preflight
   checkout_preflight
 }
 
@@ -209,15 +219,33 @@ fi
 
 function package_policy () {
 "$DOTFILES/scripts/security/npm-age.sh"
-if [ "$OS" = Darwin ]; then
-  if ! HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1 \
-    brew bundle check --quiet --no-upgrade --file="$DOTFILES/Brewfile"; then
-    HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1 \
-      brew bundle install --no-upgrade --file="$DOTFILES/Brewfile"
-  fi
-else
-  notice 'SKIP Homebrew on this platform'
-fi
+}
+
+# On macOS, tmux, mosh and PostgreSQL are built from reviewed source
+# (scripts/security/sources.json) and linked into ~/.local/bin; links replace only
+# symlinks, never real files. Linux hosts use their distribution's signed packages.
+function source_tools () {
+  local name version tool link
+  if [ "$OS" != Darwin ]; then notice 'SKIP source builds: use the distribution packages for tmux, mosh and PostgreSQL'; return 0; fi
+  for name in tmux mosh postgresql; do
+    "$DOTFILES/scripts/security/build-source.sh" "$name"
+    version=$(jq -er --arg n "$name" '.sources[$n].version' "$DOTFILES/scripts/security/sources.json")
+    for tool in "$HOME/.local/share/dotfiles-src/$name-$version"/bin/*; do
+      link="$HOME/.local/bin/${tool##*/}"
+      if [ -L "$link" ] && [ "$(readlink "$link")" = "$tool" ]; then continue; fi
+      [ ! -e "$link" ] || [ -L "$link" ] || { echo "Review existing $link" >&2; return 1; }
+      ln -sfn "$tool" "$link"
+    done
+  done
+}
+
+function source_preflight () {
+  local name failed=0
+  [ "$OS" = Darwin ] || return 0
+  for name in tmux mosh postgresql; do
+    "$DOTFILES/scripts/security/build-source.sh" --check "$name" || failed=1
+  done
+  [ "$failed" = 0 ]
 }
 
 function sync_agents () {
@@ -234,13 +262,32 @@ fi
 
 }
 
+# An installed pre-commit venv must still match the lock it was built from.
+function precommit_preflight () {
+  local venv="$HOME/.local/share/dotfiles-pre-commit"
+  [ -e "$venv" ] || return 0
+  python3 -I "$DOTFILES/scripts/security/verify-venv.py" "$venv" "$venv/requirements.txt"
+}
+
 function python_and_hooks () {
 if command -v uv >/dev/null 2>&1; then
   uv python install
 fi
 
-# Install repository security hooks when pre-commit is available (Homebrew
-# supplies it on macOS). Linux users can install pre-commit independently.
+# pre-commit comes from a hash-locked lock in its own venv, not Homebrew.
+local lock="$DOTFILES/scripts/security/requirements-pre-commit-py312.txt" venv="$HOME/.local/share/dotfiles-pre-commit"
+if command -v uv >/dev/null 2>&1 && ! cmp -s "$lock" "$venv/requirements.txt"; then
+  command uv venv --clear --python 3.12 "$venv"
+  command uv pip install --python "$venv/bin/python" --require-hashes --only-binary :all: --no-deps -r "$lock"
+  cp "$lock" "$venv/requirements.txt"
+fi
+[ ! -e "$venv" ] || python3 -I "$DOTFILES/scripts/security/verify-venv.py" "$venv" "$lock"
+if [ -x "$venv/bin/pre-commit" ]; then
+  [ ! -e "$HOME/.local/bin/pre-commit" ] || [ -L "$HOME/.local/bin/pre-commit" ] || { echo "Review existing $HOME/.local/bin/pre-commit" >&2; return 1; }
+  ln -sfn "$venv/bin/pre-commit" "$HOME/.local/bin/pre-commit"
+fi
+
+# Install repository security hooks.
 if command -v pre-commit >/dev/null 2>&1 && [ "${ASSIMILATE_SOURCE_MODE:-git}" = git ]; then
   (cd "$DOTFILES" && pre-commit install --allow-missing-config)
 fi
@@ -249,6 +296,8 @@ fi
 
 function omz_checkout () {
 clone_pinned "$OMZ_ORIGIN" "$HOME/.oh-my-zsh" "$OMZ_COMMIT"
+clone_pinned "$AUTOSUGGEST_ORIGIN" "$HOME/.local/share/zsh-plugins/zsh-autosuggestions" "$AUTOSUGGEST_COMMIT"
+clone_pinned "$HIGHLIGHT_ORIGIN" "$HOME/.local/share/zsh-plugins/zsh-syntax-highlighting" "$HIGHLIGHT_COMMIT"
 }
 
 function install_clis () {
@@ -258,14 +307,58 @@ if [ -x "$HOME/.cargo/bin/rustup" ]; then
 fi
 case "$OS-$ARCH" in
   Darwin-arm64|Linux-x86_64) ;;
-  Darwin-x86_64) echo 'Intel delta: use the reviewed Homebrew git-delta channel.' ;;
+  Darwin-x86_64) echo 'No reviewed delta artifact for Intel Macs.' ;;
   *) echo "No reviewed delta artifact for $OS-$ARCH" >&2 ;;
 esac
 for request in $(cli_artifacts); do
   DOTFILES_ARTIFACT_PROGRESS_FD=3 "$DOTFILES/scripts/security/install-artifact.sh" "${request%%:*}" "${request#*:}" "$OS-$ARCH"
 done
+link_node
+link_fonts
 # The Linux Neovim artifact links into ~/.local/bin, used by the plugin step.
 export PATH="$HOME/.local/bin:$PATH"
+}
+
+# Point ~/.local/bin/node, npm and npx at the pinned Node; replace only symlinks
+# (such as an old nvm link), never a regular file someone installed there.
+# macOS only reads fonts from ~/Library/Fonts: copy the pinned Hack Nerd Font there.
+# Copies must stay byte-identical to the verified pinned files; any other file
+# with the same name is refused, never overwritten. --check runs the same test.
+function fonts_preflight () {
+  local source="$HOME/.local/share/fonts/hack-nerd-font-3.5.1" font dest failed=0
+  [ "$OS" = Darwin ] && [ -d "$source" ] || return 0
+  for font in "$source"/*.ttf; do
+    dest="$HOME/Library/Fonts/${font##*/}"
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      if [ -L "$dest" ] || ! cmp -s "$font" "$dest"; then
+        echo "Review existing $dest: it is not the pinned Hack Nerd Font" >&2; failed=1
+      fi
+    fi
+  done
+  [ "$failed" = 0 ]
+}
+
+function link_fonts () {
+  local source="$HOME/.local/share/fonts/hack-nerd-font-3.5.1" font dest
+  [ "$OS" = Darwin ] && [ -d "$source" ] || return 0
+  fonts_preflight
+  mkdir -p "$HOME/Library/Fonts"
+  for font in "$source"/*.ttf; do
+    dest="$HOME/Library/Fonts/${font##*/}"
+    [ -e "$dest" ] || cp "$font" "$dest"
+  done
+}
+
+function link_node () {
+  local root="$HOME/.local/share/dotfiles-node/v26.13.1" tool link
+  [ -x "$root/bin/node" ] || { notice 'SKIP Node links: no reviewed Node for this platform'; return 0; }
+  mkdir -p "$HOME/.local/bin"
+  for tool in node npm npx; do
+    link="$HOME/.local/bin/$tool"
+    if [ -L "$link" ] && [ "$(readlink "$link")" = "$root/bin/$tool" ]; then continue; fi
+    [ ! -e "$link" ] || [ -L "$link" ] || { echo "Review existing $link" >&2; return 1; }
+    ln -sfn "$root/bin/$tool" "$link"
+  done
 }
 
 function tmux_checkouts () {
@@ -287,7 +380,7 @@ mkdir -p "$LOG_ROOT"
 LOG_DIR=$(mktemp -d "$LOG_ROOT/run.XXXXXX")
 exec 3>&1 4>&2
 STEP_NUMBER=0
-TOTAL_STEPS=9
+TOTAL_STEPS=10
 if [ "$CHECK_ONLY" = 1 ]; then TOTAL_STEPS=1; fi
 STEP_NAME=Initialization
 STEP_LOG="$LOG_DIR/00.log"
@@ -299,11 +392,12 @@ if [ "$CHECK_ONLY" = 1 ]; then
   exit 0
 fi
 run_step 'Configuration links' link_config
-run_step 'Package policy and Homebrew' package_policy
+run_step 'Package policy' package_policy
+run_step 'Verified CLI artifacts' install_clis
 run_step 'Agent settings' sync_agents
 run_step 'Python and Git hooks' python_and_hooks
-run_step 'Oh My Zsh checkout' omz_checkout
-run_step 'Verified CLI artifacts' install_clis
+run_step 'Oh My Zsh and zsh plugin checkouts' omz_checkout
+run_step 'Source builds (tmux, mosh, PostgreSQL)' source_tools
 run_step 'tmux checkouts' tmux_checkouts
 run_step 'Neovim checkouts' nvim_plugins
 printf '\nAssimilation Successful!\nLogs: %s\n' "$LOG_DIR"

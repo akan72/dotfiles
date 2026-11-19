@@ -208,4 +208,70 @@ done
 server file-gz normal; printf 'changed' >> "$FIXTURE_ARCHIVE"
 if HOME="$work/home-ra-digest" bash "$work/helper/install-artifact.sh" rust-analyzer 1 Fixture >/dev/null 2>&1; then exit 1; fi
 test ! -e "$FIXTURE_MARKER"
-echo 'artifact tests passed: read-only preflight, unmanaged file/tree, no writes/network, live download heartbeat, exact curl status, digest gate, offline integrity, malformed/missing/platform/HTTP/download/traversal/link/device/layout failures, rootless Lua LS tree, gzipped rust-analyzer'
+# Zip archives, bare executables, data files/trees and per-platform member names
+# keep the same digest, layout, safe-extraction and offline integrity gates.
+kinds() {
+  python3 - "$work" "$@" <<'PYKINDS'
+import hashlib,io,json,pathlib,sys,tarfile,zipfile
+w=pathlib.Path(sys.argv[1]);tool=sys.argv[2];case=sys.argv[3]
+script=b'#!/bin/sh\ntouch "$FIXTURE_MARKER"\n'
+archive=w/'archive.tar.gz'
+def zipped(entries,links=()):
+ buf=io.BytesIO()
+ with zipfile.ZipFile(buf,'w') as z:
+  for name,data,mode in entries:
+   info=zipfile.ZipInfo(name);info.external_attr=(0o100000|mode)<<16;z.writestr(info,data)
+  for name,target in links:
+   info=zipfile.ZipInfo(name);info.external_attr=(0o120000|0o777)<<16;z.writestr(info,target)
+ return buf.getvalue()
+if tool=='terraform':
+ names={'traversal':'../escape','absolute':'/escape','wrong-layout':'other'}.get(case,'terraform')
+ archive.write_bytes(zipped([(names,script,0o755)],[('meta','../../escape')] if case=='link' else []))
+ r={'url':'https://releases.hashicorp.com/terraform/1/fixture.zip','kind':'file-zip','destination':'.local/bin/terraform','archive_root':''}
+elif tool=='hack-nerd-font':
+ archive.write_bytes(zipped([('HackNerdFontMono-Regular.ttf',b'font',0o644),('README.md',b'readme',0o644)]))
+ r={'url':'https://github.com/ryanoasis/nerd-fonts/releases/download/1/Hack.zip','kind':'tree-zip','destination':'.local/share/fonts/hack-nerd-font','archive_root':''}
+elif tool in ('jq','ca-bundle'):
+ archive.write_bytes(script if tool=='jq' else b'-----BEGIN CERTIFICATE-----\n')
+ r={'url':{'jq':'https://github.com/jqlang/jq/releases/download/1/jq','ca-bundle':'https://curl.se/ca/cacert.pem'}[tool],'kind':'file',
+    'destination':{'jq':'.local/bin/jq','ca-bundle':'.local/share/dotfiles-ca/cacert.pem'}[tool]}
+else:
+ with tarfile.open(archive,'w:gz') as tf:
+  m=tarfile.TarInfo('./yq_fixture');m.size=len(script);m.mode=0o755;tf.addfile(m,io.BytesIO(script))
+ r={'url':'https://github.com/mikefarah/yq/releases/download/1/yq.tar.gz','kind':'file-tar','destination':'.local/bin/yq','archive_root':''}
+ if case!='no-member':r['member']={'bad-member':'../yq_fixture'}.get(case,'yq_fixture')
+r.update(version='1',sha256=hashlib.sha256(archive.read_bytes()).hexdigest())
+(w/'helper/artifacts.json').write_text(json.dumps({'artifacts':{tool+'/1/Fixture':r}}))
+PYKINDS
+}
+install_kind() { HOME="$work/home-kind-$1-$2" bash "$work/helper/install-artifact.sh" "$1" 1 Fixture >/dev/null 2>&1; }
+check_kind() { HOME="$work/home-kind-$1-$2" FIXTURE_CURL_FAIL=1 bash "$work/helper/install-artifact.sh" --check "$1" 1 Fixture >/dev/null 2>&1; }
+kinds terraform normal; install_kind terraform normal
+test -x "$work/home-kind-terraform-normal/.local/bin/terraform"; check_kind terraform normal
+printf 'changed\n' >> "$work/home-kind-terraform-normal/.local/bin/terraform"
+if check_kind terraform normal; then echo 'tampered zip install accepted' >&2; exit 1; fi
+for case in traversal absolute link wrong-layout; do
+  kinds terraform "$case"
+  if install_kind terraform "$case"; then echo "unsafe zip fixture accepted: $case" >&2; exit 1; fi
+  test ! -e "$work/home-kind-terraform-$case/.local/bin/terraform"
+done
+kinds hack-nerd-font normal; install_kind hack-nerd-font normal
+font="$work/home-kind-hack-nerd-font-normal/.local/share/fonts/hack-nerd-font/HackNerdFontMono-Regular.ttf"
+test -f "$font" && test ! -x "$font"; check_kind hack-nerd-font normal
+printf 'changed' >> "$font"
+if check_kind hack-nerd-font normal; then echo 'tampered data tree accepted' >&2; exit 1; fi
+kinds jq normal; install_kind jq normal
+test -x "$work/home-kind-jq-normal/.local/bin/jq"; check_kind jq normal
+kinds jq normal; printf 'changed' >> "$FIXTURE_ARCHIVE"
+if install_kind jq digest; then echo 'bare executable with wrong digest accepted' >&2; exit 1; fi
+kinds ca-bundle normal; install_kind ca-bundle normal
+ca="$work/home-kind-ca-bundle-normal/.local/share/dotfiles-ca/cacert.pem"
+test -f "$ca" && test ! -x "$ca"; check_kind ca-bundle normal
+kinds yq normal; install_kind yq normal
+test -x "$work/home-kind-yq-normal/.local/bin/yq"; check_kind yq normal
+for case in no-member bad-member; do
+  kinds yq "$case"
+  if install_kind yq "$case"; then echo "invalid member metadata accepted: $case" >&2; exit 1; fi
+done
+test ! -e "$FIXTURE_MARKER"
+echo 'artifact tests passed: read-only preflight, unmanaged file/tree, no writes/network, live download heartbeat, exact curl status, digest gate, offline integrity, malformed/missing/platform/HTTP/download/traversal/link/device/layout failures, rootless Lua LS tree, gzipped rust-analyzer, zip archives, bare executables, data files and trees, member names'
